@@ -3,4 +3,6 @@
 #include "ThisIsLogic.h"
 #include "Modules/ModuleManager.h"
 
-IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, ThisIsLogic, "ThisIsLogic" );
+IMPLEMENT_PRIMARY_GAME_MODULE(
+	FDefaultGameModuleImpl, ThisIsLogic, "ThisIsLogic" 
+);
