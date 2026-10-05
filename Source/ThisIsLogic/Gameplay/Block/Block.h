@@ -5,7 +5,12 @@
 #include "ProceduralMeshComponent.h"
 #include "Materials/MaterialInterface.h"
 #include "Materials/MaterialInstanceDynamic.h"
+
 #include "Block.generated.h"
+
+class ABlock;
+
+DECLARE_MULTICAST_DELEGATE(FOnBlockWidthChanged);
 
 UCLASS()
 class THISISLOGIC_API ABlock : public AActor
@@ -16,14 +21,13 @@ class THISISLOGIC_API ABlock : public AActor
 
 		ABlock()
 		{
-			this->PrimaryActorTick.
-				bCanEverTick = false;
+			this->PrimaryActorTick.bCanEverTick = false;
 
 			FName MeshName = TEXT("Mesh");
 
 			this->Mesh =
 				CreateDefaultSubobject<
-					UProceduralMeshComponent
+				UProceduralMeshComponent
 				>(MeshName);
 
 			this->RootComponent = this->Mesh;
@@ -40,18 +44,31 @@ class THISISLOGIC_API ABlock : public AActor
 			this->ApplyMaterial();
 		}
 
+		float GetWidth() const
+		{
+			return this->Width;
+		}
+
+		template<typename UserClass>
+		void AddWidthChangedListener(
+			UserClass* Listener,
+			void (UserClass::* Callback)()
+		)
+		{
+			this->OnWidthChanged.
+				AddUObject(Listener, Callback);
+		}
+
 	private:
 
 		void BuildMesh()
 		{
-			TArray<FVector> Vertices =
-				this->GetVertices();
+			TArray<FVector> Vertices = this->GetVertices();
 
-			TArray<int32>
-				Triangles = {
-					0, 1, 2,
-					0, 2, 3
-				};
+			TArray<int32> Triangles = {
+				0, 1, 2,
+				0, 2, 3
+			};
 
 			FVector Up = FVector::UpVector;
 
@@ -75,9 +92,37 @@ class THISISLOGIC_API ABlock : public AActor
 				);
 		}
 
+		void SetWidth(float NewWidth)
+		{
+			this->Width = NewWidth;
+
+			this->UpdateMeshVertices();
+
+			this->OnWidthChanged.Broadcast();
+		}
+
+		void UpdateMeshVertices()
+		{
+			TArray<FVector> Vertices = this->GetVertices();
+
+			TArray<FVector> Normals;
+			TArray<FVector2D> UVs;
+			TArray<FLinearColor> VertexColors;
+			TArray<FProcMeshTangent> Tangents;
+
+			this->Mesh->
+				UpdateMeshSection_LinearColor(
+					0,
+					Vertices,
+					Normals,
+					UVs,
+					VertexColors,
+					Tangents
+				);
+		}
+
 		TArray<FVector> GetVertices() const
 		{
-
 			float HalfWidth = this->Width * 0.5f;
 			float HalfHeight = this->Height * 0.5f;
 
@@ -109,12 +154,9 @@ class THISISLOGIC_API ABlock : public AActor
 
 			if (bHasMaterial)
 			{
-				UMaterialInstanceDynamic*
-					DynamicMaterial =
-						UMaterialInstanceDynamic::
-							Create(
-								this->Material, this
-							);
+				UMaterialInstanceDynamic* DynamicMaterial =
+					UMaterialInstanceDynamic::
+						Create(this->Material, this);
 
 				FName ColorParameterName =
 					TEXT("Color");
@@ -129,6 +171,8 @@ class THISISLOGIC_API ABlock : public AActor
 					SetMaterial(0, DynamicMaterial);
 			}
 		}
+
+		FOnBlockWidthChanged OnWidthChanged;
 
 		UPROPERTY(VisibleAnywhere)
 		TObjectPtr<UProceduralMeshComponent> Mesh;
