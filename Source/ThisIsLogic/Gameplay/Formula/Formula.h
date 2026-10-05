@@ -38,24 +38,14 @@ class THISISLOGIC_API AFormula : public AActor
 			Block->SetOwner(this);
 
 			Block->
-				AddWidthChangedListener(
+				SetWidthChangedListener(
 					this, &AFormula::OnBlockWidthChanged
 				);
-		}
 
-		void MoveBlock(ABlock* Block, double DesiredY)
-		{
-			double MinY = this->GetMinY(Block);
-			double MaxY = this->GetMaxY(Block);
-
-			double ClampedY =
-				FMath::Clamp(DesiredY, MinY, MaxY);
-
-			FVector Location = Block->GetActorLocation();
-
-			Location.Y = ClampedY;
-
-			Block->SetActorLocation(Location);
+			Block->
+				SetMoveRequestedListener(
+					this, &AFormula::OnBlockMoveRequested
+				);
 		}
 
 	protected:
@@ -77,6 +67,30 @@ class THISISLOGIC_API AFormula : public AActor
 
 	private:
 
+		void OnBlockMoveRequested(
+			ABlock* Block, const FVector& DesiredLocation
+		)
+		{
+			double DesiredY = DesiredLocation.Y;
+
+			this->MoveBlock(Block, DesiredY);
+		}
+
+		void MoveBlock(ABlock* Block, double DesiredY)
+		{
+			double MinY = this->GetMinY(Block);
+			double MaxY = this->GetMaxY(Block);
+
+			double ClampedY =
+				FMath::Clamp(DesiredY, MinY, MaxY);
+
+			FVector Location = Block->GetActorLocation();
+
+			Location.Y = ClampedY;
+
+			Block->SetActorLocation(Location);
+		}
+
 		double GetMinY(const ABlock* Block) const
 		{
 			FVector FormulaLocation =
@@ -90,7 +104,7 @@ class THISISLOGIC_API AFormula : public AActor
 
 			double FormulaLocationY = FormulaLocation.Y;
 
-			return 
+			return
 				FormulaLocationY - HalfLength + HalfWidth;
 		}
 
@@ -109,10 +123,13 @@ class THISISLOGIC_API AFormula : public AActor
 				FormulaLocationY + HalfLength - HalfWidth;
 		}
 
-		void OnBlockWidthChanged()
+		void OnBlockWidthChanged(ABlock* Block)
 		{
+			FString BlockName = Block->GetName();
+
 			UE_LOGFMT(
-				LogTemp, Warning, "A block width changed"
+				LogTemp, Warning,
+				"Block width changed: {0}", BlockName
 			);
 		}
 

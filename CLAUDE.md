@@ -20,11 +20,20 @@ Platforms: Windows
   including `git fetch` to see something the author has just pushed.
 - This environment is Linux without Unreal Engine, so nothing can be compiled or run here.
   Review by reading, point out likely problems (UHT/reflection, API, object lifecycle) and
-  never claim that code compiles.
+  never claim that code compiles. The author knows this: do not say it in every answer.
+- Do not repeat reminders the author already knows, such as the build order, which files
+  depend on which, or when a feature will work again.
 - Names and structure change often: re-read the current code instead of trusting earlier
   names, including the ones in this file.
 - One topic per conversation. When asked what changes in this file, reply with only the
   changed parts.
+- The author is new to Unreal and has not written C++ in many years. Do not assume engine
+  knowledge: explain each Unreal concept in plain words the first time it comes up in a
+  conversation. Design pattern names are welcome, with a short explanation.
+- Write plain Portuguese and avoid excessive anglicisms. Keep in English only names
+  (classes, functions, editor panels) and well-established terms such as commit or push.
+  A sentence like "traduz o input e faz o picking no press" is too much: say it in
+  Portuguese or explain the term.
 
 ## Scope and simplicity
 
@@ -52,6 +61,12 @@ Platforms: Windows
 - No method chaining or fluent interfaces.
 - Keep suggestions small and testable in the editor. Prefer increments that show something
   on screen, and stub whatever depends on unfinished systems.
+- Calls go down, events go up: an owner calls its parts directly; a part only notifies its
+  owner through an event.
+- Events a class sends to its owner use single-listener delegates (`DECLARE_DELEGATE_*`),
+  bound through a `Set...Listener` method and called with `Execute` after a `check` on
+  `IsBound()`. A part without an owner is an error. Prefer explicit calls over optional
+  ones such as `ExecuteIfBound`.
 
 ## Code style
 
@@ -76,8 +91,9 @@ Platforms: Windows
   logs (`UE_LOGFMT`); do not suggest the debugger.
 - Live Coding handles small changes; reinstancing and automatic compilation of new classes
   are off. Structural changes (new classes, new or changed `UPROPERTY`/`UFUNCTION`, other
-  reflection changes) need the editor closed and a rebuild with Ctrl+F5. Say so whenever a
-  suggestion is structural, and group structural changes when possible.
+  reflection changes) need the editor closed and a rebuild with Ctrl+F5. Flag a structural
+  suggestion in a few words, without repeating these steps, and group structural changes
+  when possible.
 - The author creates new source files with Visual Studio's Add New Item, setting Location to
   the right folder: always state the exact folder.
 - Git through TortoiseGit, committing directly to `main`. Keep git simple: no branch
@@ -103,6 +119,7 @@ Source/ThisIsLogic/
   BasicComponents/   CameraPawn.h, ThisIsLogicGameMode.h, ThisIsLogicPlayerController.h
   Gameplay/Block/    Block.h
   Gameplay/Formula/  Formula.h
+  Input/             PointerTarget.h
 Content/             folders by feature
   Levels/            Main (startup map)
   Gameplay/Block/    M_Block (Unlit, Color parameter), BP_Block
@@ -116,34 +133,33 @@ Classes (summary only; read the code for details):
 
 - `ACameraPawn`: top-down orthographic camera, set up in `BeginPlay`.
 - `AThisIsLogicGameMode`: uses `ACameraPawn` as the default pawn.
-- `AThisIsLogicPlayerController`: adds the mapping context, binds `IA_Click`
-  (Started, Triggered, Completed) and currently drives the drag.
+- `AThisIsLogicPlayerController`: adds the mapping context and binds `IA_Click` (Started,
+  Triggered, Completed). Routes the mouse to whatever is under the cursor through
+  `IPointerTarget`; knows no gameplay classes (see Input design).
+- `IPointerTarget`: C++-only interface with `PointerPressed`, `PointerHeld` (every frame
+  while the button is down) and `PointerReleased`. Points are in world space, on the
+  horizontal plane through the press point.
 - `ABlock`: procedural rectangle mesh (`Width`, `Height`), color through a dynamic material
-  instance, width-changed event (`AddWidthChangedListener`).
-- `AFormula`: owns its blocks (`AddBlock` sets the owner and subscribes to their events)
-  and clamps their movement to its `Length` (`MoveBlock`). Relayout on width change is a stub.
+  instance. Implements `IPointerTarget`: keeps its grab offset and asks its owner to move it.
+  Owner events: width changed (`SetWidthChangedListener`) and move requested
+  (`SetMoveRequestedListener`).
+- `AFormula`: owns its blocks (`AddBlock` sets the owner and listens to their events). On a
+  move request it keeps only Y and clamps it so the block stays within its `Length`. Blocks
+  can still overlap; relayout on width change is a stub.
 
-## Open design discussion: input and drag
+## Input design
 
-Today the player controller finds the block under the cursor, keeps the grabbed block and
-drives the drag, asking the block's formula to move it. It knows game rules that are not its
-own (high coupling, low cohesion), so it will be reorganized.
-
-The author's current direction (not final):
-
-- Each interactive element finds out by itself that it was clicked; no central dispatcher.
-- The block tells its formula, through a callback, where it wants to go. The formula applies
-  its limits and places the block where it can be.
-- `AFormula` keeps an auxiliary structure that summarizes the layout of its blocks. It updates
-  it from block events (move, width change) and repositions and notifies the affected blocks.
-
-Options considered so far:
-
-- The controller only translates input and passes world points through a drag `UINTERFACE`.
-- Engine click events (`bEnableClickEvents`): the release only reaches the actor if the
-  cursor is still over it.
-- `EnableInput` on each actor: every enabled actor receives every click and must check
-  whether it was the target.
+- The player controller is a thin router (Mediator). It speaks only in mouse terms
+  (pressed, held, released); each element decides what they mean (drag, click, ...).
+- It remembers which element received the press (capture), so held and released reach it
+  even after the cursor has left it.
+- Devices, keys and combinations (right click, wheel, double click, Shift + click) are
+  Enhanced Input data: Input Actions, Mapping Contexts and Triggers. Add one Input Action
+  per intention, not code per device.
+- Input that points (mouse) goes to the element under the cursor. Input that does not point
+  (keyboard) should go to a current selection or to the game, when that is needed.
+- Rejected: engine click events (no capture, no drag event) and `EnableInput` on each actor
+  (every actor would check every click).
 
 ## Roadmap
 
@@ -152,9 +168,11 @@ Numbers follow the author's task list. `[x]` done, `[~]` in progress, `[ ]` to d
 **3 Blocks**
 - [x] 3.2 Drag and drop blocks with the mouse: pick the block under the cursor, move it
   while the button is held, drop it on release.
-- [~] Reorganize the input (see the open design discussion).
+- [x] Reorganize the input (see Input design).
 - [ ] 3.3 Add and remove blocks.
-- [ ] 3.4 Lay out an expression as a row of blocks.
+- [ ] 3.4 Lay out an expression as a row of blocks. Author's direction: `AFormula` keeps an
+  auxiliary structure that summarizes the layout of its blocks, updates it from block events
+  (move, width change) and repositions and notifies the affected blocks.
 - [ ] 3.5 Equivalence indicator (cyan / red / gray), with a stub.
 - [ ] 3.6 Validity indicator, with a stub.
 

@@ -6,14 +6,21 @@
 #include "Materials/MaterialInterface.h"
 #include "Materials/MaterialInstanceDynamic.h"
 
+#include "../../Input/PointerTarget.h"
+
 #include "Block.generated.h"
 
 class ABlock;
 
-DECLARE_MULTICAST_DELEGATE(FOnBlockWidthChanged);
+DECLARE_DELEGATE_OneParam(FOnBlockWidthChanged, ABlock*);
+
+DECLARE_DELEGATE_TwoParams(
+	FOnBlockMoveRequested, ABlock*, const FVector&
+);
 
 UCLASS()
-class THISISLOGIC_API ABlock : public AActor
+class THISISLOGIC_API ABlock :
+	public AActor, public IPointerTarget
 {
 	GENERATED_BODY()
 
@@ -27,7 +34,7 @@ class THISISLOGIC_API ABlock : public AActor
 
 			this->Mesh =
 				CreateDefaultSubobject<
-				UProceduralMeshComponent
+					UProceduralMeshComponent
 				>(MeshName);
 
 			this->RootComponent = this->Mesh;
@@ -50,13 +57,54 @@ class THISISLOGIC_API ABlock : public AActor
 		}
 
 		template<typename UserClass>
-		void AddWidthChangedListener(
+		void SetWidthChangedListener(
 			UserClass* Listener,
-			void (UserClass::* Callback)()
+			void (UserClass::* Callback)(ABlock*)
 		)
 		{
 			this->OnWidthChanged.
-				AddUObject(Listener, Callback);
+				BindUObject(Listener, Callback);
+		}
+
+		template<typename UserClass>
+		void SetMoveRequestedListener(
+			UserClass* Listener,
+			void (UserClass::* Callback)(
+				ABlock*, const FVector&
+			)
+		)
+		{
+			this->OnMoveRequested.
+				BindUObject(Listener, Callback);
+		}
+
+		virtual void PointerPressed(
+			const FVector& Point
+		)
+			override
+		{
+			FVector Location = this->GetActorLocation();
+
+			this->GrabOffset = Location - Point;
+		}
+
+		virtual void PointerHeld(const FVector& Point)
+			override
+		{
+			bool bHasMoveListener =
+				this->OnMoveRequested.IsBound();
+
+			check(bHasMoveListener);
+
+			FVector DesiredLocation =
+				Point + this->GrabOffset;
+
+			this->OnMoveRequested.
+				Execute(this, DesiredLocation);
+		}
+
+		virtual void PointerReleased() override
+		{
 		}
 
 	private:
@@ -98,7 +146,7 @@ class THISISLOGIC_API ABlock : public AActor
 
 			this->UpdateMeshVertices();
 
-			this->OnWidthChanged.Broadcast();
+			this->OnWidthChanged.Execute(this);
 		}
 
 		void UpdateMeshVertices()
@@ -149,14 +197,13 @@ class THISISLOGIC_API ABlock : public AActor
 
 		void ApplyMaterial()
 		{
-			bool bHasMaterial =
-				this->Material != nullptr;
+			bool bHasMaterial = this->Material != nullptr;
 
 			if (bHasMaterial)
 			{
 				UMaterialInstanceDynamic* DynamicMaterial =
 					UMaterialInstanceDynamic::
-						Create(this->Material, this);
+					Create(this->Material, this);
 
 				FName ColorParameterName =
 					TEXT("Color");
@@ -173,6 +220,10 @@ class THISISLOGIC_API ABlock : public AActor
 		}
 
 		FOnBlockWidthChanged OnWidthChanged;
+
+		FOnBlockMoveRequested OnMoveRequested;
+
+		FVector GrabOffset = FVector::ZeroVector;
 
 		UPROPERTY(VisibleAnywhere)
 		TObjectPtr<UProceduralMeshComponent> Mesh;

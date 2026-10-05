@@ -6,10 +6,10 @@
 #include "InputMappingContext.h"
 #include "EnhancedInputComponent.h"
 #include "Logging/StructuredLog.h"
+#include "UObject/ScriptInterface.h"
 
-#include "../Gameplay/Block/Block.h"
-#include "../Gameplay/Formula/Formula.h"
-   
+#include "../Input/PointerTarget.h"
+
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/PlayerController.h"
 #include "ThisIsLogicPlayerController.generated.h"
@@ -60,7 +60,8 @@ class THISISLOGIC_API AThisIsLogicPlayerController :
 
 		void RegisterMappingContext()
 		{
-			ULocalPlayer* LocalPlayer = this->GetLocalPlayer();
+			ULocalPlayer* LocalPlayer =
+				this->GetLocalPlayer();
 
 			UEnhancedInputLocalPlayerSubsystem*
 				InputSubsystem =
@@ -86,7 +87,7 @@ class THISISLOGIC_API AThisIsLogicPlayerController :
 					ETriggerEvent::Started,
 					this,
 					&AThisIsLogicPlayerController::
-						OnClickStarted
+					OnClickStarted
 				);
 
 			EnhancedInput->
@@ -95,7 +96,7 @@ class THISISLOGIC_API AThisIsLogicPlayerController :
 					ETriggerEvent::Completed,
 					this,
 					&AThisIsLogicPlayerController::
-						OnClickCompleted
+					OnClickCompleted
 				);
 
 			EnhancedInput->
@@ -113,65 +114,61 @@ class THISISLOGIC_API AThisIsLogicPlayerController :
 			FHitResult Hit;
 
 			bool bHasHit =
-				this->
-					GetHitResultUnderCursor(
-						ECC_Visibility, false, Hit
-					);
+				this->GetHitResultUnderCursor(
+					ECC_Visibility, false, Hit
+				);
 
 			if (bHasHit)
 			{
 				AActor* HitActor = Hit.GetActor();
 
-				ABlock* HitBlock = Cast<ABlock>(HitActor);
+				IPointerTarget* PointerTarget =
+					Cast<IPointerTarget>(HitActor);
 
-				bool bHitBlock = HitBlock != nullptr;
+				bool bIsPointerTarget =
+					PointerTarget != nullptr;
 
-				if (bHitBlock)
+				if (bIsPointerTarget)
 				{
-					FVector GrabPoint = Hit.ImpactPoint;
+					FVector PressPoint = Hit.ImpactPoint;
 
-					this->GrabBlock(HitBlock, GrabPoint);
+					this->PointerPressed(
+						HitActor, PressPoint
+					);
 				}
 			}
 		}
 
-		void GrabBlock(
-			ABlock* HitBlock, const FVector& GrabPoint
+		void PointerPressed(
+			AActor* Target, const FVector& PressPoint
 		)
 		{
-			this->DraggedBlock = HitBlock;
+			this->PressedTarget = Target;
 
-			FVector BlockLocation =
-				HitBlock->GetActorLocation();
+			this->PressPlane =
+				FPlane(PressPoint, FVector::UpVector);
 
-			this->GrabOffset = BlockLocation - GrabPoint;
+			this->PressedTarget->PointerPressed(PressPoint);
 
-			FString BlockName = HitBlock->GetName();
+			FString TargetName = Target->GetName();
 
 			UE_LOGFMT(
-				LogTemp, Warning, "Picked: {0}", BlockName
+				LogTemp, Warning, "Pressed: {0}", TargetName
 			);
-		}
-
-		void OnClickCompleted()
-		{
-			this->DraggedBlock = nullptr;
-
-			UE_LOGFMT(LogTemp, Warning, "Released");
 		}
 
 		void OnClickTriggered()
 		{
-			bool bIsDragging =
-				this->DraggedBlock != nullptr;
+			bool bHasPressedTarget =
+				this->HasPressedTarget();
 
-			if (bIsDragging)
+			if (bHasPressedTarget)
 			{
-				this->DragBlock();
+				this->PointerHeld();
 			}
 		}
 
-		void DragBlock()
+		void PointerHeld()
 		{
 			FVector MouseOrigin;
 			FVector MouseDirection;
@@ -184,48 +181,44 @@ class THISISLOGIC_API AThisIsLogicPlayerController :
 
 			if (bHasMouse)
 			{
-				AActor* BlockOwner =
-					this->DraggedBlock->GetOwner();
-
-				AFormula* Formula = Cast<AFormula>(BlockOwner);
-
-				bool bHasFormula = Formula != nullptr;
-
-				if (bHasFormula)
-				{
-					this->MoveBlock(
-						MouseOrigin, MouseDirection,
-						Formula
+				FVector PointerPoint =
+					FMath::RayPlaneIntersection(
+						MouseOrigin,
+						MouseDirection,
+						this->PressPlane
 					);
-				}
+
+				this->PressedTarget->
+					PointerHeld(PointerPoint);
 			}
 		}
 
-		void MoveBlock(
-			FVector MouseOrigin, FVector MouseDirection,
-			AFormula* Formula
-		)
+		void OnClickCompleted()
 		{
-			FVector BlockLocation =
-				this->DraggedBlock->GetActorLocation();
+			bool bHasPressedTarget =
+				this->HasPressedTarget();
 
-			FPlane BlockPlane =
-				FPlane(BlockLocation, FVector::UpVector);
+			if (bHasPressedTarget)
+			{
+				this->PointerReleased();
+			}
+		}
 
-			FVector MousePoint =
-				FMath::RayPlaneIntersection(
-					MouseOrigin,
-					MouseDirection,
-					BlockPlane
-				);
+		void PointerReleased()
+		{
+			this->PressedTarget->PointerReleased();
 
-			FVector DesiredLocation =
-				MousePoint + this->GrabOffset;
+			this->PressedTarget = nullptr;
 
-			Formula->MoveBlock(
-				this->DraggedBlock,
-				DesiredLocation.Y
-			);
+			UE_LOGFMT(LogTemp, Warning, "Released");
+		}
+
+		bool HasPressedTarget() const
+		{
+			UObject* PressedObject =
+				this->PressedTarget.GetObject();
+
+			return PressedObject != nullptr;
 		}
 
 		UPROPERTY(EditDefaultsOnly, Category = "Input")
@@ -235,7 +228,7 @@ class THISISLOGIC_API AThisIsLogicPlayerController :
 		TObjectPtr<UInputAction> ClickAction;
 
 		UPROPERTY()
-		TObjectPtr<ABlock> DraggedBlock;
+		TScriptInterface<IPointerTarget> PressedTarget;
 
-		FVector GrabOffset = FVector::ZeroVector;
+		FPlane PressPlane = FPlane(ForceInit);
 };
