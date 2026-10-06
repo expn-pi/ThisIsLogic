@@ -140,12 +140,14 @@ Classes (summary only; read the code for details):
   while the button is down) and `PointerReleased`. Points are in world space, on the
   horizontal plane through the press point.
 - `ABlock`: procedural rectangle mesh (`Width`, `Height`), color through a dynamic material
-  instance. Implements `IPointerTarget`: keeps its grab offset and asks its owner to move it.
-  Owner events: width changed (`SetWidthChangedListener`) and move requested
-  (`SetMoveRequestedListener`).
-- `AFormula`: owns its blocks (`AddBlock` sets the owner and listens to their events). On a
-  move request it keeps only Y and clamps it so the block stays within its `Length`. Blocks
-  can still overlap; relayout on width change is a stub.
+  instance. Implements `IPointerTarget`: keeps its grab offset and asks its owner to move it
+  while held and to drop it on release. Owner events: width changed
+  (`SetWidthChangedListener`), move requested (`SetMoveRequestedListener`) and drop requested
+  (`SetDropRequestedListener`).
+- `AFormula`: owns its blocks (`AddBlock` sets the owner and listens to their events) and lays
+  them out as a row (see Layout design). On a move request it keeps only Y, clamps it to the
+  row, reorders the row and lifts the block above it; on a drop request it lays the row out
+  again, which puts the block into its slot.
 
 ## Input design
 
@@ -161,6 +163,20 @@ Classes (summary only; read the code for details):
 - Rejected: engine click events (no capture, no drag event) and `EnableInput` on each actor
   (every actor would check every click).
 
+## Layout design
+- `Blocks` is the only source of the order. Positions are always derived from it by
+  `LayoutBlocks` (left to right from the row's left edge, adding widths), never adjusted one
+  block at a time. The row is centered on the formula; its width is the sum of the block
+  widths (`TotalWidth`, kept in sync).
+- While dragging, the block swaps with a neighbor when its edge facing that neighbor passes
+  the neighbor's center (it covers half of it). Only the neighbors are checked each frame; the
+  row is laid out again after each swap, and the dragged block is then put back under the
+  cursor in the same frame.
+- Rejected: attaching each block to its left neighbor (dragging would carry the blocks on its
+  right, and the order would live in two places); swapping when the center passes the
+  neighbor's center (a wide block cannot pass a narrow one at the end of the row) or the
+  neighbor's edge (blocks of different widths swap back and forth every frame).
+
 ## Roadmap
 
 Numbers follow the author's task list. `[x]` done, `[~]` in progress, `[ ]` to do.
@@ -170,9 +186,8 @@ Numbers follow the author's task list. `[x]` done, `[~]` in progress, `[ ]` to d
   while the button is held, drop it on release.
 - [x] Reorganize the input (see Input design).
 - [ ] 3.3 Add and remove blocks.
-- [ ] 3.4 Lay out an expression as a row of blocks. Author's direction: `AFormula` keeps an
-  auxiliary structure that summarizes the layout of its blocks, updates it from block events
-  (move, width change) and repositions and notifies the affected blocks.
+- [ ] 3.4 Lay out an expression as a row of blocks. Author's - [x] 3.4 Lay out the blocks as a row and reorder them by dragging (see Layout design).
+- [ ] Give each block a text and show it on screen.
 - [ ] 3.5 Equivalence indicator (cyan / red / gray), with a stub.
 - [ ] 3.6 Validity indicator, with a stub.
 

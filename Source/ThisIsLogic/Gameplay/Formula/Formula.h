@@ -25,7 +25,7 @@ class THISISLOGIC_API AFormula : public AActor
 
 			USceneComponent* Root =
 				CreateDefaultSubobject<
-					USceneComponent
+				USceneComponent
 				>(RootName);
 
 			this->RootComponent = Root;
@@ -46,6 +46,13 @@ class THISISLOGIC_API AFormula : public AActor
 				SetMoveRequestedListener(
 					this, &AFormula::OnBlockMoveRequested
 				);
+
+			Block->
+				SetDropRequestedListener(
+					this, &AFormula::OnBlockDropRequested
+				);
+
+			this->UpdateTotalWidth();
 		}
 
 	protected:
@@ -63,82 +70,289 @@ class THISISLOGIC_API AFormula : public AActor
 					this->AddBlock(Block);
 				}
 			}
+
+			this->LayoutBlocks();
 		}
 
 	private:
 
-		void OnBlockMoveRequested(
-			ABlock* Block, const FVector& DesiredLocation
-		)
+		void UpdateTotalWidth()
 		{
-			double DesiredY = DesiredLocation.Y;
+			double Sum = 0.0;
 
-			this->MoveBlock(Block, DesiredY);
+			for (const ABlock* Block : this->Blocks)
+			{
+				double BlockWidth = Block->GetWidth();
+
+				Sum = Sum + BlockWidth;
+			}
+
+			this->TotalWidth = Sum;
 		}
 
-		void MoveBlock(ABlock* Block, double DesiredY)
-		{
-			double MinY = this->GetMinY(Block);
-			double MaxY = this->GetMaxY(Block);
-
-			double ClampedY =
-				FMath::Clamp(DesiredY, MinY, MaxY);
-
-			FVector Location = Block->GetActorLocation();
-
-			Location.Y = ClampedY;
-
-			Block->SetActorLocation(Location);
-		}
-
-		double GetMinY(const ABlock* Block) const
+		void LayoutBlocks()
 		{
 			FVector FormulaLocation =
 				this->GetActorLocation();
 
-			double HalfLength = this->Length * 0.5;
+			double CursorY = this->GetLeftEdgeY();
+
+			for (ABlock* Block : this->Blocks)
+			{
+				double BlockWidth = Block->GetWidth();
+
+				double HalfWidth = BlockWidth * 0.5;
+
+				FVector Location = FormulaLocation;
+
+				Location.Y = CursorY + HalfWidth;
+
+				Block->SetActorLocation(Location);
+
+				CursorY = CursorY + BlockWidth;
+			}
+		}
+
+		double GetLeftEdgeY() const
+		{
+			FVector FormulaLocation =
+				this->GetActorLocation();
+
+			double HalfTotalWidth = this->TotalWidth * 0.5;
+
+			double FormulaLocationY = FormulaLocation.Y;
+
+			return FormulaLocationY - HalfTotalWidth;
+		}
+
+		double GetRightEdgeY() const
+		{
+			FVector FormulaLocation =
+				this->GetActorLocation();
+
+			double HalfTotalWidth = this->TotalWidth * 0.5;
+
+			double FormulaLocationY = FormulaLocation.Y;
+
+			return FormulaLocationY + HalfTotalWidth;
+		}
+
+		void OnBlockMoveRequested(
+			ABlock* Block,
+			const FVector& DesiredLocation
+		)
+		{
+			double DesiredY = DesiredLocation.Y;
+
+			double CenterY = this->ClampY(Block, DesiredY);
+
+			this->ReorderBlock(Block, CenterY);
+
+			this->MoveBlock(Block, CenterY);
+		}
+
+		double ClampY(
+			const ABlock* Block, double DesiredY
+		) const
+		{
+			double MinY = this->GetMinY(Block);
+			double MaxY = this->GetMaxY(Block);
+
+			return FMath::Clamp(DesiredY, MinY, MaxY);
+		}
+
+		double GetMinY(
+			const ABlock* Block
+		) const
+		{
+			double LeftEdgeY = this->GetLeftEdgeY();
 
 			double BlockWidth = Block->GetWidth();
 
 			double HalfWidth = BlockWidth * 0.5;
 
-			double FormulaLocationY = FormulaLocation.Y;
-
-			return
-				FormulaLocationY - HalfLength + HalfWidth;
+			return LeftEdgeY + HalfWidth;
 		}
 
-		double GetMaxY(const ABlock* Block) const
+		double GetMaxY(
+			const ABlock* Block
+		) const
+		{
+			double RightEdgeY = this->GetRightEdgeY();
+
+			double BlockWidth = Block->GetWidth();
+
+			double HalfWidth = BlockWidth * 0.5;
+
+			return RightEdgeY - HalfWidth;
+		}
+
+		void ReorderBlock(
+			ABlock* Block, double CenterY
+		)
+		{
+			double BlockWidth = Block->GetWidth();
+
+			double HalfWidth = BlockWidth * 0.5;
+
+			double LeftEdgeY = CenterY - HalfWidth;
+
+			double RightEdgeY = CenterY + HalfWidth;
+
+			int32 Index = this->Blocks.Find(Block);
+
+			bool bIsPastNext =
+				this->IsPastNextBlock(Index, RightEdgeY);
+
+			this->ReoderIncresing(Index, RightEdgeY);
+
+			this->ReorderDecresing(Index, LeftEdgeY);
+		}
+
+		void ReoderIncresing(
+			int32 Index, double RightEdgeY
+		)
+		{
+			bool bIsPastNext =
+				this->IsPastNextBlock(Index, RightEdgeY);
+
+			while (bIsPastNext)
+			{
+				int32 NextIndex = Index + 1;
+
+				this->Blocks.Swap(Index, NextIndex);
+
+				this->LayoutBlocks();
+
+				Index = NextIndex;
+
+				bIsPastNext =
+					this->IsPastNextBlock(
+						Index, RightEdgeY
+					);
+			}
+		}
+
+		void ReorderDecresing(
+			int32 Index, double LeftEdgeY
+		) 
+		{
+			bool bIsPastPrevious =
+				this->IsPastPreviousBlock(
+					Index, LeftEdgeY
+				);
+
+			while (bIsPastPrevious)
+			{
+				int32 PreviousIndex = Index - 1;
+
+				this->Blocks.Swap(Index, PreviousIndex);
+
+				this->LayoutBlocks();
+
+				Index = PreviousIndex;
+
+				bIsPastPrevious =
+					this->IsPastPreviousBlock(
+						Index, LeftEdgeY
+					);
+			}
+		}
+
+		bool IsPastNextBlock(
+			int32 Index, double RightEdgeY
+		) const
+		{
+			bool bIsPast = false;
+
+			int32 NextIndex = Index + 1;
+
+			bool bHasNextBlock =
+				this->Blocks.IsValidIndex(NextIndex);
+
+			if (bHasNextBlock)
+			{
+				const ABlock* NextBlock =
+					this->Blocks[NextIndex];
+
+				FVector NextLocation =
+					NextBlock->GetActorLocation();
+
+				double NextLocationY = NextLocation.Y;
+
+				bIsPast = RightEdgeY > NextLocationY;
+			}
+
+			return bIsPast;
+		}
+
+		bool IsPastPreviousBlock(
+			int32 Index, double LeftEdgeY
+		) const
+		{
+			bool bIsPast = false;
+
+			int32 PreviousIndex = Index - 1;
+
+			bool bHasPreviousBlock =
+				this->Blocks.IsValidIndex(PreviousIndex);
+
+			if (bHasPreviousBlock)
+			{
+				const ABlock* PreviousBlock =
+					this->Blocks[PreviousIndex];
+
+				FVector PreviousLocation =
+					PreviousBlock->GetActorLocation();
+
+				bIsPast = LeftEdgeY < PreviousLocation.Y;
+			}
+
+			return bIsPast;
+		}
+
+		void MoveBlock(
+			ABlock* Block, double CenterY
+		)
 		{
 			FVector FormulaLocation =
 				this->GetActorLocation();
 
-			double HalfLength = this->Length * 0.5;
+			FVector Location = FormulaLocation;
 
-			double HalfWidth = Block->GetWidth() * 0.5;
+			Location.Y = CenterY;
 
-			double FormulaLocationY = FormulaLocation.Y;
+			double FormulaLocationZ = FormulaLocation.Z;
 
-			return
-				FormulaLocationY + HalfLength - HalfWidth;
+			Location.Z =
+				FormulaLocationZ + this->DragHeight;
+
+			Block->SetActorLocation(Location);
 		}
 
-		void OnBlockWidthChanged(ABlock* Block)
+		void OnBlockDropRequested(
+			ABlock* Block
+		)
 		{
-			FString BlockName = Block->GetName();
-
-			UE_LOGFMT(
-				LogTemp, Warning,
-				"Block width changed: {0}", BlockName
-			);
+			this->LayoutBlocks();
 		}
 
-		UPROPERTY(EditAnywhere, Category = "Formula")
-		float Length = 1000.f;
+		void OnBlockWidthChanged(
+			ABlock* Block
+		)
+		{
+			this->UpdateTotalWidth();
+
+			this->LayoutBlocks();
+		}
 
 		UPROPERTY(EditAnywhere, Category = "Formula")
 		TArray<TObjectPtr<ABlock>> InitialBlocks;
 
 		UPROPERTY()
 		TArray<TObjectPtr<ABlock>> Blocks;
+
+		double TotalWidth = 0.0;
+
+		static constexpr double DragHeight = 10.0;
 };

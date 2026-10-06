@@ -18,6 +18,8 @@ DECLARE_DELEGATE_TwoParams(
 	FOnBlockMoveRequested, ABlock*, const FVector&
 );
 
+DECLARE_DELEGATE_OneParam(FOnBlockDropRequested, ABlock*);
+
 UCLASS()
 class THISISLOGIC_API ABlock :
 	public AActor, public IPointerTarget
@@ -78,6 +80,16 @@ class THISISLOGIC_API ABlock :
 				BindUObject(Listener, Callback);
 		}
 
+		template<typename UserClass>
+		void SetDropRequestedListener(
+			UserClass* Listener,
+			void (UserClass::* Callback)(ABlock*)
+		)
+		{
+			this->OnDropRequested.
+				BindUObject(Listener, Callback);
+		}
+
 		virtual void PointerPressed(
 			const FVector& Point
 		)
@@ -105,6 +117,12 @@ class THISISLOGIC_API ABlock :
 
 		virtual void PointerReleased() override
 		{
+			bool bHasDropListener =
+				this->OnDropRequested.IsBound();
+
+			check(bHasDropListener);
+
+			this->OnDropRequested.Execute(this);
 		}
 
 	private:
@@ -222,6 +240,8 @@ class THISISLOGIC_API ABlock :
 		FOnBlockWidthChanged OnWidthChanged;
 
 		FOnBlockMoveRequested OnMoveRequested;
+
+		FOnBlockDropRequested OnDropRequested;
 
 		FVector GrabOffset = FVector::ZeroVector;
 
