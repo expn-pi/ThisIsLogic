@@ -201,15 +201,15 @@ class THISISLOGIC_API AFormula : public AActor
 
 			int32 Index = this->Blocks.Find(Block);
 
-			bool bIsPastNext =
-				this->IsPastNextBlock(Index, RightEdgeY);
+			Index =
+				this->ReorderIncreasing(
+					Index, RightEdgeY
+				);
 
-			this->ReoderIncresing(Index, RightEdgeY);
-
-			this->ReorderDecresing(Index, LeftEdgeY);
+			this->ReorderDecreasing(Index, LeftEdgeY);
 		}
 
-		void ReoderIncresing(
+		int32 ReorderIncreasing(
 			int32 Index, double RightEdgeY
 		)
 		{
@@ -231,11 +231,13 @@ class THISISLOGIC_API AFormula : public AActor
 						Index, RightEdgeY
 					);
 			}
+
+			return Index;
 		}
 
-		void ReorderDecresing(
+		void ReorderDecreasing(
 			int32 Index, double LeftEdgeY
-		) 
+		)
 		{
 			bool bIsPastPrevious =
 				this->IsPastPreviousBlock(

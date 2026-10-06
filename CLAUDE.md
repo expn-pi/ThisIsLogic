@@ -164,6 +164,7 @@ Classes (summary only; read the code for details):
   (every actor would check every click).
 
 ## Layout design
+
 - `Blocks` is the only source of the order. Positions are always derived from it by
   `LayoutBlocks` (left to right from the row's left edge, adding widths), never adjusted one
   block at a time. The row is centered on the formula; its width is the sum of the block
@@ -186,7 +187,7 @@ Numbers follow the author's task list. `[x]` done, `[~]` in progress, `[ ]` to d
   while the button is held, drop it on release.
 - [x] Reorganize the input (see Input design).
 - [ ] 3.3 Add and remove blocks.
-- [ ] 3.4 Lay out an expression as a row of blocks. Author's - [x] 3.4 Lay out the blocks as a row and reorder them by dragging (see Layout design).
+- [x] 3.4 Lay out the blocks as a row and reorder them by dragging (see Layout design).
 - [ ] Give each block a text and show it on screen.
 - [ ] 3.5 Equivalence indicator (cyan / red / gray), with a stub.
 - [ ] 3.6 Validity indicator, with a stub.
