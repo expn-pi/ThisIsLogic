@@ -72,7 +72,7 @@ Boolean logic puzzle game in Unreal Engine 5.8.3, built as a public portfolio pr
 - Two indicators:
   - Validity: is the sequence a well-formed formula?
   - Equivalence with the level's starting expression: cyan if equivalent, red if not, gray when the expression is invalid.
-- Visuals: simple 2D made with basic 3D. Top-down orthographic camera; blocks are meshes, not textures.
+- Visuals: simple 2D made with basic 3D. Top-down orthographic camera; blocks are meshes, not textures: capsules, or circles when the text is short.
 
 ## Project layout
 
@@ -85,6 +85,7 @@ Source/ThisIsLogic/
   Gameplay/Formula/  Formula.h
   Input/             PointerTarget.h
   Logic/             LogicTypes.h, FormulaStub.h (logic core, no engine dependencies)
+  Visuals/           RoundedBackgroundComponent.h
 Content/             folders by feature
   Levels/            Main (startup map)
   Gameplay/Block/    M_Block (Unlit, Color parameter), BP_Block
@@ -100,8 +101,9 @@ Classes (summary only; read the code for details):
 - `AThisIsLogicGameMode`: uses `ACameraPawn` as the default pawn.
 - `AThisIsLogicPlayerController`: adds the mapping context and binds `IA_Click` (Started, Triggered, Completed). Routes the mouse to whatever is under the cursor through `IPointerTarget`; knows no gameplay classes (see Input design).
 - `IPointerTarget`: C++-only interface with `PointerPressed`, `PointerHeld` (every frame while the button is down) and `PointerReleased`. Points are in world space, on the horizontal plane through the press point.
-- `ABlock`: procedural rectangle mesh, color through a dynamic material instance, `Text` shown by a text render component (`Label`). `Width` comes from the text (plus `TextMargin` on each side, never less than `Height`) and is applied in `OnConstruction`. `SetText` only stores the text, between a deferred spawn and `FinishSpawning`. Implements `IPointerTarget`: keeps its grab offset and asks its owner to move it while held and to drop it on release. Owner events: width changed (`SetWidthChangedListener`), move requested (`SetMoveRequestedListener`) and drop requested (`SetDropRequestedListener`).
-- `AFormula`: in `BeginPlay`, gets tokens from `FFormulaStub` and creates one block per  token through `FBlockFactory` (`BlockClass`, set to `BP_Block` in the Details panel). Owns its blocks (`AddBlock` sets the owner and listens to their events) and lays them out as a row (see Layout design). On a move request it keeps only Y, clamps it to the row, reorders the row and lifts the block above it; on a drop request it lays the row out again, which puts the block into its slot.
+- `ABlock`: its root component is a `URoundedBackgroundComponent` (`Background`); `Text` is shown by a text render component (`Label`). `Width` comes from the text (plus `TextMargin` on each side, never less than `Height`). `OnConstruction` applies the text and builds the background with the block's size; the private `SetWidth`, not called yet, resizes it. `SetText` only stores the text, between a deferred spawn and `FinishSpawning`. Implements `IPointerTarget`: keeps its grab offset and asks its owner to move it while held and to drop it on release. Owner events: width changed (`SetWidthChangedListener`), move requested (`SetMoveRequestedListener`) and drop requested (`SetDropRequestedListener`).
+- `URoundedBackgroundComponent`: a `UProceduralMeshComponent` that draws a rounded rectangle in one color (dynamic material instance with a `Color` parameter), usable by any actor. `Build(Width, Height)` creates the mesh and the material; `Resize(Width, Height)` only moves the vertices. Editable: `Material`, `Color`, `CornerSegments` (edges that cut each corner; 0 is a plain rectangle) and `CornerRadius`. On `BP_Block` the radius is 50, half the block's `Height`: blocks are capsules, or circles when `Width` equals `Height` (see Background design).
+- `AFormula`: in `BeginPlay`, gets tokens from `FFormulaStub` and creates one block per token through `FBlockFactory` (`BlockClass`, set to `BP_Block` in the Details panel). Owns its blocks (`AddBlock` sets the owner and listens to their events) and lays them out as a row (see Layout design). On a move request it keeps only Y, clamps it to the row, reorders the row and lifts the block above it; on a drop request it lays the row out again, which puts the block into its slot.
 - `FBlockFactory`: plain C++, built with the world and the block class. `CreateBlock(Token)` spawns a block with a deferred spawn, so the text is set before `OnConstruction`.
 - `FFormulaStub`: plain C++; returns the tokens of a fixed example formula, in place of the level data and the analyzer. Temporary: its formula changes freely, and it may be deleted or reused in a test.
 - `ETokenKind` and `FToken` (`LogicTypes.h`): plain C++, no reflection. A token is a kind and its text. One kind per concept; notation variants belong to the analyzer.
@@ -124,9 +126,18 @@ Classes (summary only; read the code for details):
 
 - Data flow: level texts (DataTable) → analyzer → tokens → factory → blocks → formula. For now `FFormulaStub` stands in for the level data and the analyzer and returns the same tokens the analyzer will.
 - The factory is the only place that knows which block class to create (Simple Factory); `AFormula` knows only `ABlock`. Actors cannot take constructor parameters (the engine calls the default constructor, also for the class default object), so the factory uses a deferred spawn to fill in a block before `OnConstruction`.
-- Planned: `ABlock` becomes abstract, with `APropositionBlock` (sentence, letter, minimized or maximized; decides which text to show) and `AOperatorBlock` (operator kind, fixed text). `ABlock` keeps what all blocks share: showing a text, recomputing the width, rebuilding the mesh and notifying the owner (a protected method for the subclasses). Letters come from a small level-wide table (sentence → letter), which can also feed a legend like the "Define:" lists of textbook exercises.
+- Planned: `ABlock` becomes abstract, with `APropositionBlock` (sentence, letter, minimized or maximized; decides which text to show) and `AOperatorBlock` (operator kind, fixed text). `ABlock` keeps what all blocks share: showing a text, recomputing the width, resizing the background and notifying the owner (a protected method for the subclasses). Letters come from a small level-wide table (sentence → letter), which can also feed a legend like the "Define:" lists of textbook exercises.
 - Shared types are grouped by domain (`Logic/LogicTypes.h`), not by kind of type.
 - Rejected: parentheses as proposition markers (they also group); splitting the formula text only at spaces (propositions contain spaces); global `Structs`/`Enumerators` files in a `SharedData` folder (unrelated types side by side, included everywhere).
+
+## Background design
+
+- The mesh is a triangle fan: vertex 0 is the center, vertices 1 to 4(n+1) are the outline, and the triangles are (0, i, i+1) plus the closing (0, last, 1). This works because the shape is convex.
+- The outline goes bottom-left, bottom-right, top-right, top-left: counter-clockwise on screen, where +X points up and +Y right. Only that order faces the camera (the material is single-sided); the reverse is culled. It looks clockwise only when X and Y are drawn as on paper.
+- Each corner has n+1 vertices and every edge turns 90/(n+1) degrees. The vertices sit at half steps around the corner's arc center (r inward from the rectangle corner), at r / cos(half step) from it, so the edges are tangent to the circle of radius r. With n = 0 this is the exact rectangle, and the straight sides always lie on the rectangle's edges, so the size never changes.
+- `Build` precomputes the offset of each outline vertex from its rectangle corner (it depends only on n and r) and creates the vertex array once. `Resize` only places the four corners, adds the offsets in place and calls `UpdateMeshSection_LinearColor`, which cannot change the vertex count: changing n needs `Build`.
+- `check`s: n ≥ 0 (also `ClampMin` in the Details panel) and r ≤ half the smaller side.
+- Rejected: an actor for the background (the click would find the background, not the block); rounding drawn by the material (collision stays rectangular, and it needs UVs); vertices on the circle at the tangent points (no n = 0, duplicate vertices in capsules); one corner list mirrored for the others (mirroring reverses the order, rotation keeps it); scaling the component to resize (stretches the corners and the label).
 
 ## Roadmap
 
@@ -138,13 +149,13 @@ Items are numbered in order. A new item takes its place in the sequence, and the
 - [x] 1.3 Lay out the blocks as a row and reorder them by dragging (see Layout design).
 - [x] 1.4 Show a text on each block; the width comes from the text.
 - [x] 1.5 Create the formula's blocks from tokens, through a factory and a stub (see Block creation design).
-- [ ] 1.6 Split `ABlock` into an abstract class with `APropositionBlock` and `AOperatorBlock`; the factory chooses by token kind.
-- [ ] 1.7 Minimize and maximize proposition blocks.
-- [ ] 1.8 Levels in a DataTable imported from CSV, starting with stubs.
-- [ ] 1.9 The analyzer: text → tokens, plain C++, checked with logs. First piece of the logic core.
-- [ ] 1.10 Arrange the analyzer and the formula so that neither takes on unrelated tasks.
-- [ ] 1.11 Decide whether precomputed levels are worth saving.
-- [ ] 1.12 Rounded block corners.
+- [x] 1.6 Rounded block corners: capsules and circles (see Background design).
+- [ ] 1.7 Split `ABlock` into an abstract class with `APropositionBlock` and `AOperatorBlock`; the factory chooses by token kind.
+- [ ] 1.8 Minimize and maximize proposition blocks.
+- [ ] 1.9 Levels in a DataTable imported from CSV, starting with stubs.
+- [ ] 1.10 The analyzer: text → tokens, plain C++, checked with logs. First piece of the logic core.
+- [ ] 1.11 Arrange the analyzer and the formula so that neither takes on unrelated tasks.
+- [ ] 1.12 Decide whether precomputed levels are worth saving.
 - [ ] 1.13 Add and remove blocks.
 - [ ] 1.14 Equivalence indicator (cyan / red / gray), with a stub.
 - [ ] 1.15 Validity indicator, with a stub.
@@ -176,3 +187,4 @@ Items are numbered in order. A new item takes its place in the sequence, and the
 ## Pending
 
 - Remove the engine dependencies of the logic core: `LogicTypes.h` and `FormulaStub.h` include `CoreMinimal.h` (`FString`, `TArray`, `check`). Acceptable while the stub stands in for the analyzer. Tokens reach gameplay code (`FBlockFactory`), so their texts will need a conversion at that border; details to be decided with the analyzer.
+- The corner radius is a fixed value (`CornerRadius`) that has to be kept at half the block's `Height` by hand. To be revised: derive it from the size, or turn it into a 0 to 1 fraction of half the smaller side.

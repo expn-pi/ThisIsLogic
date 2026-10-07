@@ -2,12 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "ProceduralMeshComponent.h"
-#include "Materials/MaterialInterface.h"
 #include "Components/TextRenderComponent.h"
-#include "Materials/MaterialInstanceDynamic.h"
 
 #include "../../Input/PointerTarget.h"
+#include "../../Visuals/RoundedBackgroundComponent.h"
 
 #include "Block.generated.h"
 
@@ -33,14 +31,14 @@ class THISISLOGIC_API ABlock :
 		{
 			this->PrimaryActorTick.bCanEverTick = false;
 
-			FName MeshName = TEXT("Mesh");
+			FName BackgroundName = TEXT("Background");
 
-			this->Mesh =
+			this->Background =
 				CreateDefaultSubobject<
-					UProceduralMeshComponent
-				>(MeshName);
+					URoundedBackgroundComponent
+				>(BackgroundName);
 
-			this->RootComponent = this->Mesh;
+			this->RootComponent = this->Background;
 
 			FName LabelName = TEXT("Label");
 
@@ -49,7 +47,7 @@ class THISISLOGIC_API ABlock :
 					UTextRenderComponent
 				>(LabelName);
 
-			this->Label->SetupAttachment(this->Mesh);
+			this->Label->SetupAttachment(this->Background);
 
 			FVector LabelLocation = FVector(0.f, 0.f, 1.f);
 
@@ -78,8 +76,9 @@ class THISISLOGIC_API ABlock :
 			Super::OnConstruction(Transform);
 
 			this->ApplyText();
-			this->BuildMesh();
-			this->ApplyMaterial();
+
+			this->Background->
+				Build(this->Width, this->Height);
 		}
 
 		float GetWidth() const
@@ -184,120 +183,17 @@ class THISISLOGIC_API ABlock :
 			float WidthWithMargins = TextWidth + Margins;
 
 			return
-				FMath::
-				Max(
-					WidthWithMargins, this->Height
-				);
-		}
-
-		void BuildMesh()
-		{
-			TArray<FVector> Vertices = this->GetVertices();
-
-			TArray<int32> Triangles = {
-				0, 1, 2,
-				0, 2, 3
-			};
-
-			FVector Up = FVector::UpVector;
-
-			TArray<FVector> Normals;
-			Normals.Init(Up, 4);
-
-			TArray<FVector2D> UVs;
-			TArray<FLinearColor> VertexColors;
-			TArray<FProcMeshTangent> Tangents;
-
-			this->Mesh->
-				CreateMeshSection_LinearColor(
-					0,
-					Vertices,
-					Triangles,
-					Normals,
-					UVs,
-					VertexColors,
-					Tangents,
-					true
-				);
+				FMath::Max(WidthWithMargins, this->Height);
 		}
 
 		void SetWidth(float NewWidth)
 		{
 			this->Width = NewWidth;
 
-			this->UpdateMeshVertices();
+			this->Background->
+				Resize(this->Width, this->Height);
 
 			this->OnWidthChanged.Execute(this);
-		}
-
-		void UpdateMeshVertices()
-		{
-			TArray<FVector> Vertices = this->GetVertices();
-
-			TArray<FVector> Normals;
-			TArray<FVector2D> UVs;
-			TArray<FLinearColor> VertexColors;
-			TArray<FProcMeshTangent> Tangents;
-
-			this->Mesh->
-				UpdateMeshSection_LinearColor(
-					0,
-					Vertices,
-					Normals,
-					UVs,
-					VertexColors,
-					Tangents
-				);
-		}
-
-		TArray<FVector> GetVertices() const
-		{
-			float HalfWidth = this->Width * 0.5f;
-			float HalfHeight = this->Height * 0.5f;
-
-			FVector BottomLeft =
-				FVector(-HalfHeight, -HalfWidth, 0.f);
-
-			FVector BottomRight =
-				FVector(-HalfHeight, HalfWidth, 0.f);
-
-			FVector TopRight =
-				FVector(HalfHeight, HalfWidth, 0.f);
-
-			FVector TopLeft =
-				FVector(HalfHeight, -HalfWidth, 0.f);
-
-			TArray<FVector> Vertices;
-			Vertices.Add(BottomLeft);
-			Vertices.Add(BottomRight);
-			Vertices.Add(TopRight);
-			Vertices.Add(TopLeft);
-
-			return Vertices;
-		}
-
-		void ApplyMaterial()
-		{
-			bool bHasMaterial = this->Material != nullptr;
-
-			if (bHasMaterial)
-			{
-				UMaterialInstanceDynamic* DynamicMaterial =
-					UMaterialInstanceDynamic::
-					Create(this->Material, this);
-
-				FName ColorParameterName =
-					TEXT("Color");
-
-				DynamicMaterial->
-					SetVectorParameterValue(
-						ColorParameterName,
-						this->Color
-					);
-
-				this->Mesh->
-					SetMaterial(0, DynamicMaterial);
-			}
 		}
 
 		FOnBlockWidthChanged OnWidthChanged;
@@ -322,13 +218,7 @@ class THISISLOGIC_API ABlock :
 		// Background
 
 		UPROPERTY(VisibleAnywhere)
-		TObjectPtr<UProceduralMeshComponent> Mesh;
-
-		UPROPERTY(EditAnywhere, Category = "Block")
-		TObjectPtr<UMaterialInterface> Material;
-
-		UPROPERTY(EditAnywhere, Category = "Block")
-		FLinearColor Color = FLinearColor::Blue;
+		TObjectPtr<URoundedBackgroundComponent> Background;
 
 		// Block
 
