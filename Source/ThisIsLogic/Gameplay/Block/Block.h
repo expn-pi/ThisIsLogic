@@ -4,6 +4,7 @@
 #include "GameFramework/Actor.h"
 #include "ProceduralMeshComponent.h"
 #include "Materials/MaterialInterface.h"
+#include "Components/TextRenderComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 
 #include "../../Input/PointerTarget.h"
@@ -40,6 +41,33 @@ class THISISLOGIC_API ABlock :
 				>(MeshName);
 
 			this->RootComponent = this->Mesh;
+
+			FName LabelName = TEXT("Label");
+
+			this->Label =
+				CreateDefaultSubobject<
+					UTextRenderComponent
+				>(LabelName);
+
+			this->Label->SetupAttachment(this->Mesh);
+
+			FVector LabelLocation = FVector(0.f, 0.f, 1.f);
+
+			FRotator LabelRotation =
+				FRotator(90.f, 180.f, 0.f);
+
+			this->Label->
+				SetRelativeLocationAndRotation(
+					LabelLocation, LabelRotation
+				);
+
+			this->Label->
+				SetHorizontalAlignment(EHTA_Center);
+
+			this->Label->
+				SetVerticalAlignment(EVRTA_TextCenter);
+
+			this->Label->SetWorldSize(50.f);
 		}
 
 		virtual void OnConstruction(
@@ -49,6 +77,7 @@ class THISISLOGIC_API ABlock :
 		{
 			Super::OnConstruction(Transform);
 
+			this->ApplyText();
 			this->BuildMesh();
 			this->ApplyMaterial();
 		}
@@ -56,6 +85,11 @@ class THISISLOGIC_API ABlock :
 		float GetWidth() const
 		{
 			return this->Width;
+		}
+
+		void SetText(const FString& NewText)
+		{
+			this->Text = NewText;
 		}
 
 		template<typename UserClass>
@@ -126,6 +160,35 @@ class THISISLOGIC_API ABlock :
 		}
 
 	private:
+
+		void ApplyText()
+		{
+			FText LabelText =
+				FText::FromString(this->Text);
+
+			this->Label->SetText(LabelText);
+
+			this->Width = this->GetWidthForText();
+		}
+
+		float GetWidthForText() const
+		{
+			FVector TextSize =
+				this->Label->GetTextLocalSize();
+
+			float TextWidth =
+				static_cast<float>(TextSize.Y);
+
+			float Margins = this->TextMargin * 2.f;
+
+			float WidthWithMargins = TextWidth + Margins;
+
+			return
+				FMath::
+				Max(
+					WidthWithMargins, this->Height
+				);
+		}
 
 		void BuildMesh()
 		{
@@ -245,6 +308,19 @@ class THISISLOGIC_API ABlock :
 
 		FVector GrabOffset = FVector::ZeroVector;
 
+		// Text
+
+		UPROPERTY(VisibleAnywhere)
+		TObjectPtr<UTextRenderComponent> Label;
+
+		UPROPERTY(EditAnywhere, Category = "Block")
+		FString Text = TEXT("A");
+
+		UPROPERTY(EditAnywhere, Category = "Block")
+		float TextMargin = 20.f;
+
+		// Background
+
 		UPROPERTY(VisibleAnywhere)
 		TObjectPtr<UProceduralMeshComponent> Mesh;
 
@@ -254,7 +330,9 @@ class THISISLOGIC_API ABlock :
 		UPROPERTY(EditAnywhere, Category = "Block")
 		FLinearColor Color = FLinearColor::Blue;
 
-		UPROPERTY(EditAnywhere, Category = "Block")
+		// Block
+
+		UPROPERTY(VisibleAnywhere, Category = "Block")
 		float Width = 100.f;
 
 		UPROPERTY(EditAnywhere, Category = "Block")

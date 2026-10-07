@@ -6,8 +6,10 @@
 #include "PointerTarget.generated.h"
 
 UINTERFACE(
-	MinimalAPI, meta =
-		(CannotImplementInterfaceInBlueprint)
+	MinimalAPI,
+	meta = (
+		CannotImplementInterfaceInBlueprint
+	)
 )
 class UPointerTarget : public UInterface
 {
@@ -20,9 +22,15 @@ class THISISLOGIC_API IPointerTarget
 
 	public:
 
-		virtual void PointerPressed(const FVector& Point) = 0;
+		virtual void
+			PointerPressed(
+				const FVector& Point
+			) = 0;
 
-		virtual void PointerHeld(const FVector& Point) = 0;
+		virtual void
+			PointerHeld(
+				const FVector& Point
+			) = 0;
 
 		virtual void PointerReleased() = 0;
 };

@@ -3,6 +3,8 @@
 #include "CoreMinimal.h"
 
 #include "../Block/Block.h"
+#include "../Block/BlockFactory.h"
+#include "../../Logic/FormulaStub.h"
 
 #include "GameFramework/Actor.h"
 #include "Logging/StructuredLog.h"
@@ -61,20 +63,38 @@ class THISISLOGIC_API AFormula : public AActor
 		{
 			Super::BeginPlay();
 
-			for (ABlock* Block : this->InitialBlocks)
-			{
-				bool bHasBlock = Block != nullptr;
-
-				if (bHasBlock)
-				{
-					this->AddBlock(Block);
-				}
-			}
+			this->CreateBlocks();
 
 			this->LayoutBlocks();
 		}
 
 	private:
+
+		void CreateBlocks()
+		{
+			bool bHasBlockClass =
+				this->BlockClass != nullptr;
+
+			check(bHasBlockClass);
+
+			UWorld* World = this->GetWorld();
+
+			FBlockFactory BlockFactory =
+				FBlockFactory(World, this->BlockClass);
+
+			FFormulaStub FormulaStub;
+
+			TArray<FToken> Tokens =
+				FormulaStub.GetTokens();
+
+			for (const FToken& Token : Tokens)
+			{
+				ABlock* Block =
+					BlockFactory.CreateBlock(Token);
+
+				this->AddBlock(Block);
+			}
+		}
 
 		void UpdateTotalWidth()
 		{
@@ -349,7 +369,7 @@ class THISISLOGIC_API AFormula : public AActor
 		}
 
 		UPROPERTY(EditAnywhere, Category = "Formula")
-		TArray<TObjectPtr<ABlock>> InitialBlocks;
+		TSubclassOf<ABlock> BlockClass;
 
 		UPROPERTY()
 		TArray<TObjectPtr<ABlock>> Blocks;
