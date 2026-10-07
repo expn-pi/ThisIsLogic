@@ -1,8 +1,6 @@
 # This is Logic
 
-Boolean logic puzzle game in Unreal Engine 5.8.3, built as a public portfolio project.
-Game logic in C++. Blueprints only as data (subclasses that fill in fields), no visual scripting.
-Platforms: Windows
+Boolean logic puzzle game in Unreal Engine 5.8.3, built as a public portfolio project. Game logic in C++. Blueprints only as data (subclasses that fill in fields), no visual scripting. Platforms: Windows.
 
 ## Working with the author (read first)
 
@@ -36,6 +34,7 @@ Platforms: Windows
 - Prefer plain helper classes held as members and built with constructor parameters over piling components onto one actor.
 - No method chaining or fluent interfaces.
 - Keep suggestions small and testable in the editor. Prefer increments that show something on screen, and stub whatever depends on unfinished systems.
+- The logic core (`Logic/`) has no engine dependencies, only standard C++, so it can be tested and reused on its own. Conversions to engine types happen where gameplay code calls it.
 - Calls go down, events go up: an owner calls its parts directly; a part only notifies its owner through an event.
 - Events a class sends to its owner use single-listener delegates (`DECLARE_DELEGATE_*`), bound through a `Set...Listener` method and called with `Execute` after a `check` on `IsBound()`. A part without an owner is an error. Prefer explicit calls over optional ones such as `ExecuteIfBound`.
 
@@ -53,6 +52,7 @@ Platforms: Windows
   - Long access paths are broken across lines up to the called method.
 - Few comments.
 - Follow this style in every detail when suggesting code; when in doubt, mirror the existing files.
+- Markdown and text files (`CLAUDE.md`, `README.md`, `LICENSE`): one line per paragraph or list item, never wrapped by hand.
 
 ## Author's environment
 
@@ -62,7 +62,7 @@ Platforms: Windows
 - The author creates new source files with Visual Studio's Add New Item, setting Location to the right folder: always state the exact folder.
 - Git through TortoiseGit, committing directly to `main`. Keep git simple: no branch workflows. `.gitignore` in place, no Git LFS (the repository stays minimal).
 - Visual Studio's formatter moves `public:` and `private:` back to the class's indentation. When reviewing pasted code, point out this lost indentation.
-  
+
 ## Game design
 
 - In the style of logic course exercises: the player simplifies "complex" boolean expressions.
@@ -77,12 +77,14 @@ Platforms: Windows
 ## Project layout
 
 ```
+README.md            project overview (GitHub page)
+LICENSE              MIT
 Source/ThisIsLogic/
   BasicComponents/   CameraPawn.h, ThisIsLogicGameMode.h, ThisIsLogicPlayerController.h
   Gameplay/Block/    Block.h, BlockFactory.h
   Gameplay/Formula/  Formula.h
   Input/             PointerTarget.h
-  Logic/             LogicTypes.h, FormulaStub.h (logic core, plain C++)
+  Logic/             LogicTypes.h, FormulaStub.h (logic core, no engine dependencies)
 Content/             folders by feature
   Levels/            Main (startup map)
   Gameplay/Block/    M_Block (Unlit, Color parameter), BP_Block
@@ -96,82 +98,50 @@ Classes (summary only; read the code for details):
 
 - `ACameraPawn`: top-down orthographic camera, set up in `BeginPlay`.
 - `AThisIsLogicGameMode`: uses `ACameraPawn` as the default pawn.
-- `AThisIsLogicPlayerController`: adds the mapping context and binds `IA_Click` (Started, Triggered, Completed). Routes the mouse to whatever is under the cursor through
-  `IPointerTarget`; knows no gameplay classes (see Input design).
-- `IPointerTarget`: C++-only interface with `PointerPressed`, `PointerHeld` (every frame while the button is down) and `PointerReleased`. Points are in world space, on the
-  horizontal plane through the press point.
-- `ABlock`: procedural rectangle mesh, color through a dynamic material instance, `Text` shown by a text render component (`Label`). `Width` comes from the text (plus
-  `TextMargin` on each side, never less than `Height`) and is applied in `OnConstruction`.
-  `SetText` only stores the text, between a deferred spawn and `FinishSpawning`. Implements
-  `IPointerTarget`: keeps its grab offset and asks its owner to move it while held and to drop it on release. Owner events: width changed (`SetWidthChangedListener`), move
-  requested (`SetMoveRequestedListener`) and drop requested (`SetDropRequestedListener`).
+- `AThisIsLogicPlayerController`: adds the mapping context and binds `IA_Click` (Started, Triggered, Completed). Routes the mouse to whatever is under the cursor through `IPointerTarget`; knows no gameplay classes (see Input design).
+- `IPointerTarget`: C++-only interface with `PointerPressed`, `PointerHeld` (every frame while the button is down) and `PointerReleased`. Points are in world space, on the horizontal plane through the press point.
+- `ABlock`: procedural rectangle mesh, color through a dynamic material instance, `Text` shown by a text render component (`Label`). `Width` comes from the text (plus `TextMargin` on each side, never less than `Height`) and is applied in `OnConstruction`. `SetText` only stores the text, between a deferred spawn and `FinishSpawning`. Implements `IPointerTarget`: keeps its grab offset and asks its owner to move it while held and to drop it on release. Owner events: width changed (`SetWidthChangedListener`), move requested (`SetMoveRequestedListener`) and drop requested (`SetDropRequestedListener`).
 - `AFormula`: in `BeginPlay`, gets tokens from `FFormulaStub` and creates one block per  token through `FBlockFactory` (`BlockClass`, set to `BP_Block` in the Details panel). Owns its blocks (`AddBlock` sets the owner and listens to their events) and lays them out as a row (see Layout design). On a move request it keeps only Y, clamps it to the row, reorders the row and lifts the block above it; on a drop request it lays the row out again, which puts the block into its slot.
-- `FBlockFactory`: plain C++, built with the world and the block class. `CreateBlock(Token)`
-  spawns a block with a deferred spawn, so the text is set before `OnConstruction`.
-- `FFormulaStub`: plain C++; returns the tokens of a fixed formula, `(C ∧ ¬M) → P`, in place
-  of the level data and the analyzer.
-- `ETokenKind` and `FToken` (`LogicTypes.h`): plain C++, no reflection. A token is a kind and
-  its text. One kind per concept; notation variants belong to the analyzer.
+- `FBlockFactory`: plain C++, built with the world and the block class. `CreateBlock(Token)` spawns a block with a deferred spawn, so the text is set before `OnConstruction`.
+- `FFormulaStub`: plain C++; returns the tokens of a fixed example formula, in place of the level data and the analyzer. Temporary: its formula changes freely, and it may be deleted or reused in a test.
+- `ETokenKind` and `FToken` (`LogicTypes.h`): plain C++, no reflection. A token is a kind and its text. One kind per concept; notation variants belong to the analyzer.
 
 ## Input design
 
-- The player controller is a thin router (Mediator). It speaks only in mouse terms
-  (pressed, held, released); each element decides what they mean (drag, click, ...).
-- It remembers which element received the press (capture), so held and released reach it
-  even after the cursor has left it.
-- Devices, keys and combinations (right click, wheel, double click, Shift + click) are
-  Enhanced Input data: Input Actions, Mapping Contexts and Triggers. Add one Input Action
-  per intention, not code per device.
-- Input that points (mouse) goes to the element under the cursor. Input that does not point
-  (keyboard) should go to a current selection or to the game, when that is needed.
-- Rejected: engine click events (no capture, no drag event) and `EnableInput` on each actor
-  (every actor would check every click).
+- The player controller is a thin router (Mediator). It speaks only in mouse terms (pressed, held, released); each element decides what they mean (drag, click, ...).
+- It remembers which element received the press (capture), so held and released reach it even after the cursor has left it.
+- Devices, keys and combinations (right click, wheel, double click, Shift + click) are Enhanced Input data: Input Actions, Mapping Contexts and Triggers. Add one Input Action per intention, not code per device.
+- Input that points (mouse) goes to the element under the cursor. Input that does not point (keyboard) should go to a current selection or to the game, when that is needed.
+- Rejected: engine click events (no capture, no drag event) and `EnableInput` on each actor (every actor would check every click).
 
 ## Layout design
 
-- `Blocks` is the only source of the order. Positions are always derived from it by
-  `LayoutBlocks` (left to right from the row's left edge, adding widths), never adjusted one
-  block at a time. The row is centered on the formula; its width is the sum of the block
-  widths (`TotalWidth`, kept in sync).
-- While dragging, the block swaps with a neighbor when its edge facing that neighbor passes
-  the neighbor's center (it covers half of it). Only the neighbors are checked each frame; the
-  row is laid out again after each swap, and the dragged block is then put back under the
-  cursor in the same frame.
-- Rejected: attaching each block to its left neighbor (dragging would carry the blocks on its
-  right, and the order would live in two places); swapping when the center passes the
-  neighbor's center (a wide block cannot pass a narrow one at the end of the row) or the
-  neighbor's edge (blocks of different widths swap back and forth every frame).
+- `Blocks` is the only source of the order. Positions are always derived from it by `LayoutBlocks` (left to right from the row's left edge, adding widths), never adjusted one block at a time. The row is centered on the formula; its width is the sum of the block widths (`TotalWidth`, kept in sync).
+- While dragging, the block swaps with a neighbor when its edge facing that neighbor passes the neighbor's center (it covers half of it). Only the neighbors are checked each frame; the row is laid out again after each swap, and the dragged block is then put back under the cursor in the same frame.
+- Rejected: attaching each block to its left neighbor (dragging would carry the blocks on its right, and the order would live in two places); swapping when the center passes the neighbor's center (a wide block cannot pass a narrow one at the end of the row) or the neighbor's edge (blocks of different widths swap back and forth every frame).
 
 ## Block creation design
 
 - Data flow: level texts (DataTable) → analyzer → tokens → factory → blocks → formula. For now `FFormulaStub` stands in for the level data and the analyzer and returns the same tokens the analyzer will.
-- The factory is the only place that knows which block class to create (Simple Factory);
-  `AFormula` knows only `ABlock`. Actors cannot take constructor parameters (the engine calls the default constructor, also for the class default object), so the factory uses a deferred spawn to fill in a block before `OnConstruction`.
-- Planned: `ABlock` becomes abstract, with `APropositionBlock` (sentence, letter, minimized or maximized; decides which text to show) and `AOperatorBlock` (operator kind, fixed
-  text). `ABlock` keeps what all blocks share: showing a text, recomputing the width, rebuilding the mesh and notifying the owner (a protected method for the subclasses).
-  Letters come from a small level-wide table (sentence → letter), which can also feed a legend like the "Define:" lists of textbook exercises.
+- The factory is the only place that knows which block class to create (Simple Factory); `AFormula` knows only `ABlock`. Actors cannot take constructor parameters (the engine calls the default constructor, also for the class default object), so the factory uses a deferred spawn to fill in a block before `OnConstruction`.
+- Planned: `ABlock` becomes abstract, with `APropositionBlock` (sentence, letter, minimized or maximized; decides which text to show) and `AOperatorBlock` (operator kind, fixed text). `ABlock` keeps what all blocks share: showing a text, recomputing the width, rebuilding the mesh and notifying the owner (a protected method for the subclasses). Letters come from a small level-wide table (sentence → letter), which can also feed a legend like the "Define:" lists of textbook exercises.
 - Shared types are grouped by domain (`Logic/LogicTypes.h`), not by kind of type.
 - Rejected: parentheses as proposition markers (they also group); splitting the formula text only at spaces (propositions contain spaces); global `Structs`/`Enumerators` files in a `SharedData` folder (unrelated types side by side, included everywhere).
 
 ## Roadmap
 
-Items are numbered in order. A new item takes its place in the sequence, and the items
-after it are renumbered. `[x]` done, `[~]` in progress, `[ ]` to do.
+Items are numbered in order. A new item takes its place in the sequence, and the items after it are renumbered. `[x]` done, `[~]` in progress, `[ ]` to do.
 
 **1 Blocks**
-- [x] 1.1 Drag and drop blocks with the mouse: pick the block under the cursor, move it
-  while the button is held, drop it on release.
+- [x] 1.1 Drag and drop blocks with the mouse: pick the block under the cursor, move it while the button is held, drop it on release.
 - [x] 1.2 Reorganize the input (see Input design).
 - [x] 1.3 Lay out the blocks as a row and reorder them by dragging (see Layout design).
 - [x] 1.4 Show a text on each block; the width comes from the text.
-- [x] 1.5 Create the formula's blocks from tokens, through a factory and a stub (see Block
-  creation design).
-- [ ] 1.6 Split `ABlock` into an abstract class with `APropositionBlock` and
-  `AOperatorBlock`; the factory chooses by token kind.
+- [x] 1.5 Create the formula's blocks from tokens, through a factory and a stub (see Block creation design).
+- [ ] 1.6 Split `ABlock` into an abstract class with `APropositionBlock` and `AOperatorBlock`; the factory chooses by token kind.
 - [ ] 1.7 Minimize and maximize proposition blocks.
 - [ ] 1.8 Levels in a DataTable imported from CSV, starting with stubs.
-- [ ] 1.9 The analyzer: text → tokens, plain C++, checked with logs. First piece of the
-  logic core.
+- [ ] 1.9 The analyzer: text → tokens, plain C++, checked with logs. First piece of the logic core.
 - [ ] 1.10 Arrange the analyzer and the formula so that neither takes on unrelated tasks.
 - [ ] 1.11 Decide whether precomputed levels are worth saving.
 - [ ] 1.12 Rounded block corners.
@@ -180,14 +150,11 @@ after it are renumbered. `[x]` done, `[~]` in progress, `[ ]` to do.
 - [ ] 1.15 Validity indicator, with a stub.
 
 **2 Logic core (plain C++)**
-- [ ] 2.1 Represent boolean expressions as a tree: propositions, constants and the
-  operators of `ETokenKind`.
-- [ ] 2.2 Parse the tokens into a tree, with precedence and parentheses; this also decides
-  validity.
+- [ ] 2.1 Represent boolean expressions as a tree: propositions, constants and the operators of `ETokenKind`.
+- [ ] 2.2 Parse the tokens into a tree, with precedence and parentheses; this also decides validity.
 - [ ] 2.3 Evaluate expressions and check equivalence with a truth table.
 - [ ] 2.4 Measure the size of an expression (basis for goals and scoring).
-- [ ] 2.5 Compute the minimal form of an expression (goal of each level). Cost under
-  review: the solution in the level data may be enough.
+- [ ] 2.5 Compute the minimal form of an expression (goal of each level). Cost under review: the solution in the level data may be enough.
 - [ ] 2.6 Automated tests for the core.
 
 **3 Game rules**
@@ -208,4 +175,4 @@ after it are renumbered. `[x]` done, `[~]` in progress, `[ ]` to do.
 
 ## Pending
 
-- README and license
+- Remove the engine dependencies of the logic core: `LogicTypes.h` and `FormulaStub.h` include `CoreMinimal.h` (`FString`, `TArray`, `check`). Acceptable while the stub stands in for the analyzer. Tokens reach gameplay code (`FBlockFactory`), so their texts will need a conversion at that border; details to be decided with the analyzer.
