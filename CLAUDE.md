@@ -124,9 +124,23 @@ Classes (summary only; read the code for details):
 
 - The player controller is a thin router (Mediator). It speaks only in mouse terms (pressed, held, released); each element decides what they mean (drag, click, ...).
 - It remembers which element received the press (capture), so held and released reach it even after the cursor has left it.
-- Devices, keys and combinations (right click, wheel, double click, Shift + click) are Enhanced Input data: Input Actions, Mapping Contexts and Triggers. Add one Input Action per intention, not code per device.
+- Devices, keys and combinations (the left mouse button, a touch, a keyboard shortcut) are Enhanced Input data: Input Actions, Mapping Contexts and Triggers. Add one Input Action per intention, not code per device.
 - Input that points (mouse) goes to the element under the cursor. Input that does not point (keyboard) should go to a current selection or to the game, when that is needed.
 - Rejected: engine click events (no capture, no drag event) and `EnableInput` on each actor (every actor would check every click).
+
+## Command design
+
+- Every command works with a single pointer: press, move and release, with one finger or the left mouse button. No hover, right click, modifier keys, wheel, multi-finger or timed gestures (double tap, long press), so the same commands serve mouse and touch and carry over to another engine. Keyboard shortcuts may come later as desktop extras, never as the only way to a command.
+- A press released before the pointer moves past a small distance is a tap; moving past it starts a drag. A tap on a block selects it; a tap on the background clears the selection.
+- Besides the formula, the screen has a palette, always visible, that is the source of every new block (the operators, the level's propositions and New letter, which creates the next free letter), and a panel whose buttons change with the selection (Remove and Minimize/Maximize for a proposition; Minimize all and Maximize all with nothing selected). Undo and Restart are always visible. Every command has a button or a palette item; dragging moves blocks and is a shortcut for inserting and removing.
+- Inserting: a tap on a palette item inserts the block after the selected one, or at the end of the row with nothing selected; dragging a palette item inserts it where it is dropped.
+- Removing: the Remove button, or dropping a block on the palette, which is highlighted while the block is over it. Dropping inside the formula's area moves the block (to any of its rows, if it has several); dropping anywhere else puts it back.
+- No confirmations: every command can be undone. Undo restores a copy of the state saved before each command and rebuilds the blocks from it (Memento pattern).
+- Each command exists once, as a method of the class that owns the data; buttons and drags only call it, so undo, logs and tests see a single path.
+- Planned, once the tree exists: tapping the selected block again widens the selection to the smallest sub-formula around it, then to the next one out. A selected sub-formula can become a new proposition (Define as proposition): it takes the next free letter, the legend shows its definition, and the indicators expand it before the truth table.
+- Laws: first a legend of the laws, for reference only; later, only if play calls for it, the panel lists the laws that match the selected sub-formula, each with its result. A tap on the formula never applies a law directly.
+- In Unreal, the palette and the panel are planned as actors in the world, like the blocks, implementing `IPointerTarget`, which reuses the input routing; UMG stays for menus and the HUD. Rejected for the palette and the panel: UMG (dragging from it into the world mixes two input systems in one gesture; without Blueprints it cannot use `BindWidget`; Slate's declarative syntax is method chaining).
+- Rejected: icons or a context menu on the block (hidden commands, too small for a finger without covering the neighbors, and a context menu must repeat the main interface anyway); radial menus (no engine support, they compete with dragging on touch, and they pay off only with heavy repeated use); removing by dropping anywhere outside the row (accidental removals, as in the macOS Dock, and ambiguous with several rows); insert options only after a tap on empty space (blocks touch, so there is no empty space between them); a "+" button between each pair of blocks (many tiny targets); a Duplicate command (the palette already holds every operator and the level's propositions); confirmation dialogs (people confirm by habit); laws built into gestures, as in DragonBox (special cases, a tutorial for each gesture, and a conflict with reordering).
 
 ## Layout design
 
@@ -171,14 +185,19 @@ Items are numbered in order. A new item takes its place in the sequence, and the
 - [x] 1.5 Create the formula's blocks from tokens, through a factory and a stub (see Block creation design).
 - [x] 1.6 Rounded block corners: capsules and circles (see Background design).
 - [x] 1.7 Split `ABlock` into an abstract class with `APropositionBlock` and `AOperatorBlock`; the factory chooses by token kind.
-- [~] 1.8 Minimize and maximize proposition blocks. Done: the block switches between sentence and letter, and the row follows. Left: the real trigger (temporary: every release toggles) and the letters from the level's table (stub: "P").
-- [ ] 1.9 Levels in a DataTable imported from CSV, starting with stubs.
-- [ ] 1.10 The analyzer: text → tokens, plain C++, checked with logs. First piece of the logic core.
-- [ ] 1.11 Arrange the analyzer and the formula so that neither takes on unrelated tasks.
-- [ ] 1.12 Decide whether precomputed levels are worth saving.
-- [ ] 1.13 Add and remove blocks.
-- [ ] 1.14 Equivalence indicator (cyan / red / gray), with a stub.
-- [ ] 1.15 Validity indicator, with a stub.
+- [x] 1.8 Minimize and maximize proposition blocks: the block switches between sentence and letter, and the row follows (temporary trigger: every release toggles; letter stub: "P").
+- [ ] 1.9 Select a block with a tap, telling a tap from a drag; a tap on the background clears the selection (see Command design).
+- [ ] 1.10 The panel, with buttons that follow the selection: Minimize/Maximize for a proposition, Minimize all and Maximize all with nothing selected. It replaces the temporary trigger.
+- [ ] 1.11 Letters from a level-wide table (sentence → letter, in order of first appearance), replacing the stub "P".
+- [ ] 1.12 Levels in a DataTable imported from CSV, starting with stubs.
+- [ ] 1.13 The analyzer: text → tokens, plain C++, checked with logs. First piece of the logic core.
+- [ ] 1.14 Arrange the analyzer and the formula so that neither takes on unrelated tasks.
+- [ ] 1.15 Decide whether precomputed levels are worth saving.
+- [ ] 1.16 Remove blocks, with Undo and Restart.
+- [ ] 1.17 The palette: a tap inserts an operator, one of the level's propositions or a new letter after the selected block, or at the end of the row.
+- [ ] 1.18 Drag from the palette to insert, and drop a block on the palette to remove it.
+- [ ] 1.19 Equivalence indicator (cyan / red / gray), with a stub.
+- [ ] 1.20 Validity indicator, with a stub.
 
 **2 Logic core (plain C++)**
 - [ ] 2.1 Represent boolean expressions as a tree: propositions, constants and the operators of `ETokenKind`.
@@ -190,8 +209,10 @@ Items are numbered in order. A new item takes its place in the sequence, and the
 
 **3 Game rules**
 - [ ] 3.1 Win condition.
-- [ ] 3.2 Laws as molds to fit blocks into (De Morgan and similar).
-- [ ] 3.3 Progression between levels.
+- [ ] 3.2 Select a sub-formula: tapping the selected block again widens the selection.
+- [ ] 3.3 Define a selected sub-formula as a new proposition.
+- [ ] 3.4 A legend of the laws (De Morgan and similar), for reference.
+- [ ] 3.5 Progression between levels.
 
 **4 Interface and polish**
 - [ ] 4.1 Menu, level select and HUD (in C++).
@@ -202,6 +223,10 @@ Items are numbered in order. A new item takes its place in the sequence, and the
 - A mode to prove equivalence.
 - A mode like textbook exercises: pick the formula that matches a sentence.
 - A formula in several rows, if long propositions call for it (decide by feel).
+- Keyboard shortcuts on desktop, as extras (see Command design).
+- The panel lists the laws that match the selected sub-formula, each with its result.
+- Recognize the law the player has just applied by hand ("De Morgan").
+- Laws as molds to fit blocks into. High cost: blocks inside blocks, against `Blocks` as the only source of the order.
 
 ## Pending
 
