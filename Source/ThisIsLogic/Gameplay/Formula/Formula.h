@@ -72,15 +72,7 @@ class THISISLOGIC_API AFormula : public AActor
 
 		void CreateBlocks()
 		{
-			bool bHasBlockClass =
-				this->BlockClass != nullptr;
-
-			check(bHasBlockClass);
-
 			UWorld* World = this->GetWorld();
-
-			FBlockFactory BlockFactory =
-				FBlockFactory(World, this->BlockClass);
 
 			FFormulaStub FormulaStub;
 
@@ -90,7 +82,8 @@ class THISISLOGIC_API AFormula : public AActor
 			for (const FToken& Token : Tokens)
 			{
 				ABlock* Block =
-					BlockFactory.CreateBlock(Token);
+					FBlockFactory::
+						CreateBlock(World, Token);
 
 				this->AddBlock(Block);
 			}
@@ -367,9 +360,6 @@ class THISISLOGIC_API AFormula : public AActor
 
 			this->LayoutBlocks();
 		}
-
-		UPROPERTY(EditAnywhere, Category = "Formula")
-		TSubclassOf<ABlock> BlockClass;
 
 		UPROPERTY()
 		TArray<TObjectPtr<ABlock>> Blocks;

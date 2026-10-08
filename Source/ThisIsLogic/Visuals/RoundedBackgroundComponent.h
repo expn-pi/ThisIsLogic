@@ -31,9 +31,28 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 			this->CornerSigns.Add(TopLeft);
 		}
 
+		void SetColor(
+			const FLinearColor& NewColor
+		)
+		{
+			this->Color = NewColor;
+		}
+
+		void SetBaseMaterial(
+			UMaterialInterface* NewBaseMaterial
+		)
+		{
+			this->BaseMaterial = NewBaseMaterial;
+		}
+
+		void SetRoundness(float NewRoundness)
+		{
+			this->Roundness = NewRoundness;
+		}
+
 		void Build(float Width, float Height)
 		{
-			this->BuildCornerOffsets();
+			this->BuildCornerOffsets(Width, Height);
 			this->BuildVertices(Width, Height);
 			this->BuildMesh();
 			this->ApplyMaterial();
@@ -41,18 +60,24 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 
 		void Resize(float Width, float Height)
 		{
+			this->BuildCornerOffsets(Width, Height);
 			this->PlaceOutline(Width, Height);
 			this->UpdateMeshVertices();
 		}
 
 	private:
 
-		void BuildCornerOffsets()
+		void BuildCornerOffsets(
+			float Width, float Height
+		)
 		{
 			bool bHasValidSegments =
 				this->CornerSegments >= 0;
 
 			check(bHasValidSegments);
+
+			float CornerRadius =
+				this->GetCornerRadius(Width, Height);
 
 			this->CornerVertexCount =
 				this->CornerSegments + 1;
@@ -64,7 +89,7 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 			float HalfStepCosine = FMath::Cos(HalfStep);
 
 			float VertexDistance =
-				this->CornerRadius / HalfStepCosine;
+				CornerRadius / HalfStepCosine;
 
 			this->CornerOffsets.Reset();
 
@@ -80,7 +105,7 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 					this->CornerSigns[CornerIndex];
 
 				FVector ArcCenter =
-					-CornerSign * this->CornerRadius;
+					-CornerSign * CornerRadius;
 
 				float CornerAngle =
 					UE_HALF_PI * CornerIndex;
@@ -93,6 +118,26 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 					VertexDistance, ArcCenter
 				);
 			}
+		}
+
+		float GetCornerRadius(
+			float Width, float Height
+		) const
+		{
+			bool bHasValidRoundness =
+				FMath::
+					IsWithinInclusive(
+						this->Roundness, 0.f, 1.f
+					);
+
+			check(bHasValidRoundness);
+
+			float SmallestSide =
+				FMath::Min(Width, Height);
+
+			float SmallestHalfSide = SmallestSide * 0.5f;
+
+			return this->Roundness * SmallestHalfSide;
 		}
 
 		void CreateCornerOffsets(
@@ -123,7 +168,9 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 			}
 		}
 
-		void BuildVertices(float Width, float Height)
+		void BuildVertices(
+			float Width, float Height
+		)
 		{
 			int32 OutlineCount = this->CornerOffsets.Num();
 			int32 VertexCount = OutlineCount + 1;
@@ -135,18 +182,12 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 			this->PlaceOutline(Width, Height);
 		}
 
-		void PlaceOutline(float Width, float Height)
+		void PlaceOutline(
+			float Width, float Height
+		)
 		{
 			float HalfWidth = Width * 0.5f;
 			float HalfHeight = Height * 0.5f;
-
-			float SmallestHalfSide =
-				FMath::Min(HalfWidth, HalfHeight);
-
-			bool bRadiusFits =
-				this->CornerRadius <= SmallestHalfSide;
-
-			check(bRadiusFits);
 
 			FVector HalfSize =
 				FVector(HalfHeight, HalfWidth, 0.f);
@@ -274,25 +315,20 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 
 		void ApplyMaterial()
 		{
-			bool bHasMaterial = this->Material != nullptr;
+			UMaterialInstanceDynamic* DynamicMaterial =
+				UMaterialInstanceDynamic::
+				Create(this->BaseMaterial, this);
 
-			if (bHasMaterial)
-			{
-				UMaterialInstanceDynamic* DynamicMaterial =
-					UMaterialInstanceDynamic::
-					Create(this->Material, this);
+			FName ColorParameterName =
+				TEXT("Color");
 
-				FName ColorParameterName =
-					TEXT("Color");
+			DynamicMaterial->
+				SetVectorParameterValue(
+					ColorParameterName,
+					this->Color
+				);
 
-				DynamicMaterial->
-					SetVectorParameterValue(
-						ColorParameterName,
-						this->Color
-					);
-
-				this->SetMaterial(0, DynamicMaterial);
-			}
+			this->SetMaterial(0, DynamicMaterial);
 		}
 
 		TArray<FVector> CornerSigns;
@@ -303,8 +339,8 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 
 		TArray<FVector> Vertices;
 
-		UPROPERTY(EditAnywhere, Category = "Background")
-		TObjectPtr<UMaterialInterface> Material;
+		UPROPERTY()
+		TObjectPtr<UMaterialInterface> BaseMaterial;
 
 		UPROPERTY(EditAnywhere, Category = "Background")
 		FLinearColor Color = FLinearColor::Blue;
@@ -316,10 +352,5 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 		)
 		int32 CornerSegments = 4;
 
-		UPROPERTY(
-			EditAnywhere,
-			Category = "Background",
-			meta = (ClampMin = "0")
-		)
-		float CornerRadius = 20.f;
+		float Roundness = 1.0f;
 };

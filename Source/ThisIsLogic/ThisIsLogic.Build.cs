@@ -4,23 +4,32 @@ using UnrealBuildTool;
 
 public class ThisIsLogic : ModuleRules
 {
-	public ThisIsLogic(ReadOnlyTargetRules Target) : base(Target)
+	public ThisIsLogic(ReadOnlyTargetRules Target) :
+		base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
 		string [] Modules =
 			new string[] {
-				"Core", "CoreUObject", "Engine", "InputCore",
-				"EnhancedInput", "ProceduralMeshComponent" 
+				"Core", "CoreUObject", "Engine",
+				"InputCore", "EnhancedInput",
+				"ProceduralMeshComponent",
+				"DeveloperSettings"
 			};
 
 		PublicDependencyModuleNames.AddRange(Modules);
 
-		PrivateDependencyModuleNames.AddRange(new string[] {  });
+		PrivateDependencyModuleNames.
+			AddRange(new string[] {  });
 
 		// Uncomment if you are using Slate UI
-		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
-		
+		//PrivateDependencyModuleNames.
+		//	AddRange(
+		//		new string[] {
+		//			"Slate", "SlateCore"
+		//		}
+		//	);
+
 		// Uncomment if you are using online features
 		// PrivateDependencyModuleNames.Add("OnlineSubsystem");
 

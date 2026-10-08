@@ -5,36 +5,31 @@
 #include "Templates/SubclassOf.h"
 
 #include "Block.h"
+#include "PropositionBlock.h"
+#include "OperatorBlock.h"
 #include "../../Logic/LogicTypes.h"
 
 class FBlockFactory
 {
 	public:
 
-		FBlockFactory(
-			UWorld* InWorld,
-			TSubclassOf<ABlock> InBlockClass
-		)
-		{
-			this->World = InWorld;
-			this->BlockClass = InBlockClass;
-		}
+		FBlockFactory() = delete;
 
-		ABlock* CreateBlock(
-			const FToken& Token
-		) const
+		static ABlock* CreateBlock(
+			UWorld* World, const FToken& Token
+		)
 		{
 			FTransform Transform =
 				FTransform::Identity;
 
+			TSubclassOf<ABlock> BlockClass =
+				FBlockFactory::GetBlockClass(Token);
+
 			ABlock* Block =
-				this->World->
-					SpawnActorDeferred<
-						ABlock
-						>(
-							this->BlockClass,
-							Transform
-						);
+				World->
+				SpawnActorDeferred<
+					ABlock
+				>(BlockClass, Transform);
 
 			FString TokenText = Token.Text;
 
@@ -47,7 +42,18 @@ class FBlockFactory
 
 	private:
 
-		UWorld* World;
+		static TSubclassOf<ABlock> GetBlockClass(
+			const FToken& Token
+		)
+		{
+			bool bIsProposition =
+				Token.Kind == ETokenKind::Proposition;
 
-		TSubclassOf<ABlock> BlockClass;
+			if (bIsProposition)
+			{
+				return APropositionBlock::StaticClass();
+			}
+
+			return AOperatorBlock::StaticClass();
+		}
 };

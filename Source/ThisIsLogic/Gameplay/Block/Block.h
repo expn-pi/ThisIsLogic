@@ -6,6 +6,7 @@
 
 #include "../../Input/PointerTarget.h"
 #include "../../Visuals/RoundedBackgroundComponent.h"
+#include "../../BasicComponents/ThisIsLogicSettings.h"
 
 #include "Block.generated.h"
 
@@ -19,7 +20,7 @@ DECLARE_DELEGATE_TwoParams(
 
 DECLARE_DELEGATE_OneParam(FOnBlockDropRequested, ABlock*);
 
-UCLASS()
+UCLASS(Abstract)
 class THISISLOGIC_API ABlock :
 	public AActor, public IPointerTarget
 {
@@ -39,6 +40,8 @@ class THISISLOGIC_API ABlock :
 				>(BackgroundName);
 
 			this->RootComponent = this->Background;
+
+			this->Background->SetRoundness(1.f);
 
 			FName LabelName = TEXT("Label");
 
@@ -76,6 +79,15 @@ class THISISLOGIC_API ABlock :
 			Super::OnConstruction(Transform);
 
 			this->ApplyText();
+
+			const UThisIsLogicSettings* Settings =
+				GetDefault<UThisIsLogicSettings>();
+
+			UMaterialInterface* BlockMaterial =
+				Settings->GetBlockMaterial();
+
+			this->Background->
+				SetBaseMaterial(BlockMaterial);
 
 			this->Background->
 				Build(this->Width, this->Height);
@@ -156,6 +168,13 @@ class THISISLOGIC_API ABlock :
 			check(bHasDropListener);
 
 			this->OnDropRequested.Execute(this);
+		}
+
+	protected:
+
+		void SetColor(const FLinearColor& NewColor)
+		{
+			this->Background->SetColor(NewColor);
 		}
 
 	private:
