@@ -27,9 +27,9 @@ class THISISLOGIC_API APropositionBlock :
 			this->Sentence = NewSentence;
 		}
 
-		virtual void PointerReleased() override
+		virtual void Tapped() override
 		{
-			Super::PointerReleased();
+			Super::Tapped();
 
 			this->ToggleMinimized();
 		}

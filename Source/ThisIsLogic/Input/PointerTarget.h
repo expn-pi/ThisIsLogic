@@ -22,15 +22,17 @@ class THISISLOGIC_API IPointerTarget
 
 	public:
 
+		virtual void Tapped() = 0;
+
 		virtual void
-			PointerPressed(
-				const FVector& Point
+			DragStarted(
+				const FVector& PressPoint
 			) = 0;
 
 		virtual void
-			PointerHeld(
+			Dragged(
 				const FVector& Point
 			) = 0;
 
-		virtual void PointerReleased() = 0;
+		virtual void DragEnded() = 0;
 };

@@ -130,30 +130,40 @@ class THISISLOGIC_API AThisIsLogicPlayerController :
 
 				if (bIsPointerTarget)
 				{
-					FVector PressPoint = Hit.ImpactPoint;
+					FVector HitPoint = Hit.ImpactPoint;
 
 					this->PointerPressed(
-						HitActor, PressPoint
+						HitActor, HitPoint
 					);
 				}
 			}
 		}
 
 		void PointerPressed(
-			AActor* Target, const FVector& PressPoint
+			AActor* Target, const FVector& Point
 		)
 		{
 			this->PressedTarget = Target;
 
-			this->PressPlane =
-				FPlane(PressPoint, FVector::UpVector);
+			this->PressPoint = Point;
 
-			this->PressedTarget->PointerPressed(PressPoint);
+			this->PressPlane =
+				FPlane(Point, FVector::UpVector);
+
+			FVector2D ScreenPosition =
+				FVector2D::ZeroVector;
+
+			this->GetMouseScreenPosition(ScreenPosition);
+
+			this->PressScreenPosition = ScreenPosition;
+
+			this->bIsDragging = false;
 
 			FString TargetName = Target->GetName();
 
 			UE_LOGFMT(
-				LogTemp, Warning, "Pressed: {0}", TargetName
+				LogTemp, Warning,
+				"Pressed: {0}", TargetName
 			);
 		}
 
@@ -170,6 +180,62 @@ class THISISLOGIC_API AThisIsLogicPlayerController :
 
 		void PointerHeld()
 		{
+			if (this->bIsDragging)
+			{
+				this->Drag();
+			}
+			else
+			{
+				bool bIsPastThreshold =
+					this->IsPastDragThreshold();
+
+				if (bIsPastThreshold)
+				{
+					this->StartDrag();
+				}
+			}
+		}
+
+		bool IsPastDragThreshold() const
+		{
+			FVector2D ScreenPosition =
+				FVector2D::ZeroVector;
+
+			bool bHasMouse =
+				this->GetMouseScreenPosition(
+					ScreenPosition
+				);
+
+			double Distance =
+				FVector2D::Distance(
+					this->PressScreenPosition,
+					ScreenPosition
+				);
+
+			double Threshold =
+				AThisIsLogicPlayerController::
+					DragThreshold;
+
+			bool bIsPastThreshold =
+				Distance > Threshold;
+
+			return bHasMouse && bIsPastThreshold;
+		}
+
+		void StartDrag()
+		{
+			this->bIsDragging = true;
+
+			this->PressedTarget->
+				DragStarted(this->PressPoint);
+
+			UE_LOGFMT(LogTemp, Warning, "Drag started");
+
+			this->Drag();
+		}
+
+		void Drag()
+		{
 			FVector MouseOrigin;
 			FVector MouseDirection;
 
@@ -182,14 +248,15 @@ class THISISLOGIC_API AThisIsLogicPlayerController :
 			if (bHasMouse)
 			{
 				FVector PointerPoint =
-					FMath::RayPlaneIntersection(
-						MouseOrigin,
-						MouseDirection,
-						this->PressPlane
-					);
+					FMath::
+						RayPlaneIntersection(
+							MouseOrigin,
+							MouseDirection,
+							this->PressPlane
+						);
 
 				this->PressedTarget->
-					PointerHeld(PointerPoint);
+					Dragged(PointerPoint);
 			}
 		}
 
@@ -206,11 +273,20 @@ class THISISLOGIC_API AThisIsLogicPlayerController :
 
 		void PointerReleased()
 		{
-			this->PressedTarget->PointerReleased();
+			if (this->bIsDragging)
+			{
+				this->PressedTarget->DragEnded();
+
+				UE_LOGFMT(LogTemp, Warning, "Drag ended");
+			}
+			else
+			{
+				this->PressedTarget->Tapped();
+
+				UE_LOGFMT(LogTemp, Warning, "Tapped");
+			}
 
 			this->PressedTarget = nullptr;
-
-			UE_LOGFMT(LogTemp, Warning, "Released");
 		}
 
 		bool HasPressedTarget() const
@@ -219,6 +295,21 @@ class THISISLOGIC_API AThisIsLogicPlayerController :
 				this->PressedTarget.GetObject();
 
 			return PressedObject != nullptr;
+		}
+
+		bool GetMouseScreenPosition(
+			FVector2D& ScreenPosition
+		) const
+		{
+			float MouseX = 0.f;
+			float MouseY = 0.f;
+
+			bool bHasMouse =
+				this->GetMousePosition(MouseX, MouseY);
+
+			ScreenPosition = FVector2D(MouseX, MouseY);
+
+			return bHasMouse;
 		}
 
 		UPROPERTY(EditDefaultsOnly, Category = "Input")
@@ -230,5 +321,13 @@ class THISISLOGIC_API AThisIsLogicPlayerController :
 		UPROPERTY()
 		TScriptInterface<IPointerTarget> PressedTarget;
 
+		FVector PressPoint = FVector::ZeroVector;
+
 		FPlane PressPlane = FPlane(ForceInit);
+
+		FVector2D PressScreenPosition = FVector2D::ZeroVector;
+
+		bool bIsDragging = false;
+
+		static constexpr double DragThreshold = 10.0;
 };

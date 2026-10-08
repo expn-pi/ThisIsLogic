@@ -5,6 +5,7 @@
 #include "../Block/Block.h"
 #include "../Block/BlockFactory.h"
 #include "../../Logic/FormulaStub.h"
+#include "../../Input/BackgroundTarget.h"
 
 #include "GameFramework/Actor.h"
 #include "Logging/StructuredLog.h"
@@ -54,6 +55,11 @@ class THISISLOGIC_API AFormula : public AActor
 					this, &AFormula::OnBlockDropRequested
 				);
 
+			Block->
+				SetSelectRequestedListener(
+					this, &AFormula::OnBlockSelectRequested
+				);
+
 			this->UpdateTotalWidth();
 		}
 
@@ -63,12 +69,44 @@ class THISISLOGIC_API AFormula : public AActor
 		{
 			Super::BeginPlay();
 
+			this->CreateBackground();
+
 			this->CreateBlocks();
 
 			this->LayoutBlocks();
 		}
 
 	private:
+
+		void CreateBackground()
+		{
+			UWorld* World = this->GetWorld();
+
+			FVector Location = this->GetActorLocation();
+
+			double FormulaLocationZ = Location.Z;
+
+			Location.Z =
+				FormulaLocationZ - AFormula::BackgroundDepth;
+
+			FTransform Transform = FTransform(Location);
+
+			UClass* BackgroundClass =
+				ABackgroundTarget::StaticClass();
+
+			ABackgroundTarget* BackgroundTarget =
+				World->
+					SpawnActor<
+						ABackgroundTarget
+					>(BackgroundClass, Transform);
+
+			BackgroundTarget->SetOwner(this);
+
+			BackgroundTarget->
+				SetTappedListener(
+					this, &AFormula::OnBackgroundTapped
+				);
+		}
 
 		void CreateBlocks()
 		{
@@ -361,10 +399,49 @@ class THISISLOGIC_API AFormula : public AActor
 			this->LayoutBlocks();
 		}
 
+		void OnBlockSelectRequested(
+			ABlock* Block
+		)
+		{
+			this->SelectBlock(Block);
+		}
+
+		void OnBackgroundTapped()
+		{
+			this->ClearSelection();
+		}
+
+		void SelectBlock(ABlock* Block)
+		{
+			this->ClearSelection();
+
+			this->SelectedBlock = Block;
+
+			this->SelectedBlock->SetSelected(true);
+		}
+
+		void ClearSelection()
+		{
+			bool bHasSelection =
+				this->SelectedBlock != nullptr;
+
+			if (bHasSelection)
+			{
+				this->SelectedBlock->SetSelected(false);
+
+				this->SelectedBlock = nullptr;
+			}
+		}
+
 		UPROPERTY()
 		TArray<TObjectPtr<ABlock>> Blocks;
 
+		UPROPERTY()
+		TObjectPtr<ABlock> SelectedBlock;
+
 		double TotalWidth = 0.0;
+
+		static constexpr double BackgroundDepth = 100.0;
 
 		static constexpr double DragHeight = 10.0;
 };

@@ -20,6 +20,8 @@ DECLARE_DELEGATE_TwoParams(
 
 DECLARE_DELEGATE_OneParam(FOnBlockDropRequested, ABlock*);
 
+DECLARE_DELEGATE_OneParam(FOnBlockSelectRequested, ABlock*);
+
 UCLASS(Abstract)
 class THISISLOGIC_API ABlock :
 	public AActor, public IPointerTarget
@@ -69,6 +71,36 @@ class THISISLOGIC_API ABlock :
 				SetVerticalAlignment(EVRTA_TextCenter);
 
 			this->Label->SetWorldSize(50.f);
+
+			FName OutlineName = TEXT("Outline");
+
+			this->Outline =
+				CreateDefaultSubobject<
+					URoundedBackgroundComponent
+				>(OutlineName);
+
+			this->Outline->
+				SetupAttachment(this->Background);
+
+			FVector OutlineLocation =
+				FVector(0.f, 0.f, -1.f);
+
+			this->Outline->
+				SetRelativeLocation(OutlineLocation);
+
+			this->Outline->SetRoundness(1.f);
+
+			FLinearColor OutlineColor =
+				FLinearColor::Yellow;
+
+			this->Outline->SetColor(OutlineColor);
+
+			this->Outline->
+				SetCollisionEnabled(
+					ECollisionEnabled::NoCollision
+				);
+
+			this->Outline->SetVisibility(false);
 		}
 
 		virtual void OnConstruction(
@@ -88,6 +120,12 @@ class THISISLOGIC_API ABlock :
 				SetBaseMaterial(BlockMaterial);
 
 			this->Background->
+				Build(this->Width, this->Height);
+
+			this->Outline->
+				SetBaseMaterial(BlockMaterial);
+
+			this->Outline->
 				Build(this->Width, this->Height);
 
 			this->ApplyText();
@@ -130,17 +168,39 @@ class THISISLOGIC_API ABlock :
 				BindUObject(Listener, Callback);
 		}
 
-		virtual void PointerPressed(
-			const FVector& Point
+		template<typename UserClass>
+		void SetSelectRequestedListener(
+			UserClass* Listener,
+			void (UserClass::* Callback)(ABlock*)
+		)
+		{
+			this->OnSelectRequested.
+				BindUObject(Listener, Callback);
+		}
+
+		void SetSelected(bool bNewSelected)
+		{
+			this->Outline->SetVisibility(bNewSelected);
+		}
+
+		virtual void Tapped() override
+		{
+			this->RequestSelection();
+		}
+
+		virtual void DragStarted(
+			const FVector& PressPoint
 		)
 			override
 		{
+			this->RequestSelection();
+
 			FVector Location = this->GetActorLocation();
 
-			this->GrabOffset = Location - Point;
+			this->GrabOffset = Location - PressPoint;
 		}
 
-		virtual void PointerHeld(const FVector& Point)
+		virtual void Dragged(const FVector& Point)
 			override
 		{
 			bool bHasMoveListener =
@@ -155,7 +215,7 @@ class THISISLOGIC_API ABlock :
 				Execute(this, DesiredLocation);
 		}
 
-		virtual void PointerReleased() override
+		virtual void DragEnded() override
 		{
 			bool bHasDropListener =
 				this->OnDropRequested.IsBound();
@@ -206,6 +266,8 @@ class THISISLOGIC_API ABlock :
 
 			this->Background->
 				Resize(this->Width, this->Height);
+
+			this->ResizeOutline();
 		}
 
 		float GetWidthForText() const
@@ -224,11 +286,35 @@ class THISISLOGIC_API ABlock :
 				FMath::Max(WidthWithMargins, this->Height);
 		}
 
+		void ResizeOutline()
+		{
+			float Border = this->OutlineThickness * 2.f;
+
+			float OutlineWidth = this->Width + Border;
+
+			float OutlineHeight = this->Height + Border;
+
+			this->Outline->
+				Resize(OutlineWidth, OutlineHeight);
+		}
+
+		void RequestSelection()
+		{
+			bool bHasSelectListener =
+				this->OnSelectRequested.IsBound();
+
+			check(bHasSelectListener);
+
+			this->OnSelectRequested.Execute(this);
+		}
+
 		FOnBlockWidthChanged OnWidthChanged;
 
 		FOnBlockMoveRequested OnMoveRequested;
 
 		FOnBlockDropRequested OnDropRequested;
+
+		FOnBlockSelectRequested OnSelectRequested;
 
 		FVector GrabOffset = FVector::ZeroVector;
 
@@ -244,6 +330,14 @@ class THISISLOGIC_API ABlock :
 
 		UPROPERTY(VisibleAnywhere)
 		TObjectPtr<URoundedBackgroundComponent> Background;
+
+		// Selection
+
+		UPROPERTY(VisibleAnywhere)
+		TObjectPtr<URoundedBackgroundComponent> Outline;
+
+		UPROPERTY(EditAnywhere, Category = "Block")
+		float OutlineThickness = 8.f;
 
 		// Block
 
