@@ -21,4 +21,20 @@ class THISISLOGIC_API AOperatorBlock :
 
 			this->SetColor(BlockColor);
 		}
+
+		void SetSymbol(const FString& NewSymbol)
+		{
+			this->Symbol = NewSymbol;
+		}
+
+	protected:
+
+		virtual FString GetText() const override
+		{
+			return this->Symbol;
+		}
+
+	private:
+
+		FString Symbol;
 };

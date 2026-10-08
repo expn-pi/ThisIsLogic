@@ -62,7 +62,7 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 		{
 			this->BuildCornerOffsets(Width, Height);
 			this->PlaceOutline(Width, Height);
-			this->UpdateMeshVertices();
+			this->BuildMesh();
 		}
 
 	private:
@@ -294,23 +294,6 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 			}
 
 			return Triangles;
-		}
-
-		void UpdateMeshVertices()
-		{
-			TArray<FVector> Normals;
-			TArray<FVector2D> UVs;
-			TArray<FLinearColor> VertexColors;
-			TArray<FProcMeshTangent> Tangents;
-
-			this->UpdateMeshSection_LinearColor(
-				0,
-				this->Vertices,
-				Normals,
-				UVs,
-				VertexColors,
-				Tangents
-			);
 		}
 
 		void ApplyMaterial()

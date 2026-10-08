@@ -27,7 +27,7 @@ class THISISLOGIC_API AFormula : public AActor
 
 			USceneComponent* Root =
 				CreateDefaultSubobject<
-				USceneComponent
+					USceneComponent
 				>(RootName);
 
 			this->RootComponent = Root;

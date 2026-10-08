@@ -78,8 +78,6 @@ class THISISLOGIC_API ABlock :
 		{
 			Super::OnConstruction(Transform);
 
-			this->ApplyText();
-
 			const UThisIsLogicSettings* Settings =
 				GetDefault<UThisIsLogicSettings>();
 
@@ -91,16 +89,13 @@ class THISISLOGIC_API ABlock :
 
 			this->Background->
 				Build(this->Width, this->Height);
+
+			this->ApplyText();
 		}
 
 		float GetWidth() const
 		{
 			return this->Width;
-		}
-
-		void SetText(const FString& NewText)
-		{
-			this->Text = NewText;
 		}
 
 		template<typename UserClass>
@@ -177,16 +172,40 @@ class THISISLOGIC_API ABlock :
 			this->Background->SetColor(NewColor);
 		}
 
+		virtual FString GetText() const
+		{
+			unimplemented();
+
+			return FString();
+		}
+
+		void FitToText()
+		{
+			this->ApplyText();
+
+			bool bHasWidthListener =
+				this->OnWidthChanged.IsBound();
+
+			check(bHasWidthListener);
+
+			this->OnWidthChanged.Execute(this);
+		}
+
 	private:
 
 		void ApplyText()
 		{
+			FString BlockText = this->GetText();
+
 			FText LabelText =
-				FText::FromString(this->Text);
+				FText::FromString(BlockText);
 
 			this->Label->SetText(LabelText);
 
 			this->Width = this->GetWidthForText();
+
+			this->Background->
+				Resize(this->Width, this->Height);
 		}
 
 		float GetWidthForText() const
@@ -205,16 +224,6 @@ class THISISLOGIC_API ABlock :
 				FMath::Max(WidthWithMargins, this->Height);
 		}
 
-		void SetWidth(float NewWidth)
-		{
-			this->Width = NewWidth;
-
-			this->Background->
-				Resize(this->Width, this->Height);
-
-			this->OnWidthChanged.Execute(this);
-		}
-
 		FOnBlockWidthChanged OnWidthChanged;
 
 		FOnBlockMoveRequested OnMoveRequested;
@@ -227,9 +236,6 @@ class THISISLOGIC_API ABlock :
 
 		UPROPERTY(VisibleAnywhere)
 		TObjectPtr<UTextRenderComponent> Label;
-
-		UPROPERTY(EditAnywhere, Category = "Block")
-		FString Text = TEXT("A");
 
 		UPROPERTY(EditAnywhere, Category = "Block")
 		float TextMargin = 20.f;

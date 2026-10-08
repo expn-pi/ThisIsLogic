@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "Engine/World.h"
-#include "Templates/SubclassOf.h"
 
 #include "Block.h"
 #include "PropositionBlock.h"
@@ -19,41 +18,70 @@ class FBlockFactory
 			UWorld* World, const FToken& Token
 		)
 		{
+			bool bIsProposition =
+				Token.Kind == ETokenKind::Proposition;
+
+			if (bIsProposition)
+			{
+				return FBlockFactory::
+					CreatePropositionBlock(World, Token);
+			}
+			else
+			{
+				return FBlockFactory::
+					CreateOperatorBlock(World, Token);
+			}
+		}
+
+	private:
+
+		static APropositionBlock* CreatePropositionBlock(
+			UWorld* World, const FToken& Token
+		)
+		{
 			FTransform Transform =
 				FTransform::Identity;
 
-			TSubclassOf<ABlock> BlockClass =
-				FBlockFactory::GetBlockClass(Token);
+			UClass* BlockClass =
+				APropositionBlock::StaticClass();
 
-			ABlock* Block =
+			APropositionBlock* Block =
 				World->
-				SpawnActorDeferred<
-					ABlock
-				>(BlockClass, Transform);
+					SpawnActorDeferred<
+						APropositionBlock
+					>(BlockClass, Transform);
 
-			FString TokenText = Token.Text;
+			const FString& Sentence = Token.Text;
 
-			Block->SetText(TokenText);
+			Block->SetSentence(Sentence);
 
 			Block->FinishSpawning(Transform);
 
 			return Block;
 		}
 
-	private:
-
-		static TSubclassOf<ABlock> GetBlockClass(
-			const FToken& Token
+		static AOperatorBlock* CreateOperatorBlock(
+			UWorld* World, const FToken& Token
 		)
 		{
-			bool bIsProposition =
-				Token.Kind == ETokenKind::Proposition;
+			FTransform Transform =
+				FTransform::Identity;
 
-			if (bIsProposition)
-			{
-				return APropositionBlock::StaticClass();
-			}
+			UClass* BlockClass =
+				AOperatorBlock::StaticClass();
 
-			return AOperatorBlock::StaticClass();
+			AOperatorBlock* Block =
+				World->
+					SpawnActorDeferred<
+						AOperatorBlock
+					>(BlockClass, Transform);
+
+			const FString& Symbol = Token.Text;
+
+			Block->SetSymbol(Symbol);
+
+			Block->FinishSpawning(Transform);
+
+			return Block;
 		}
 };

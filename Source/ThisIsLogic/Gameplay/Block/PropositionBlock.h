@@ -21,4 +21,45 @@ class THISISLOGIC_API APropositionBlock :
 
 			this->SetColor(BlockColor);
 		}
+
+		void SetSentence(const FString& NewSentence)
+		{
+			this->Sentence = NewSentence;
+		}
+
+		virtual void PointerReleased() override
+		{
+			Super::PointerReleased();
+
+			this->ToggleMinimized();
+		}
+
+	protected:
+
+		virtual FString GetText() const override
+		{
+			if (this->bMinimized)
+			{
+				return this->Letter;
+			}
+			else
+			{
+				return this->Sentence;
+			}
+		}
+
+	private:
+
+		void ToggleMinimized()
+		{
+			this->bMinimized = !this->bMinimized;
+
+			this->FitToText();
+		}
+
+		FString Sentence;
+
+		FString Letter = TEXT("P");
+
+		bool bMinimized = false;
 };
