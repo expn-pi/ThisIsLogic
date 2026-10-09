@@ -131,6 +131,7 @@ Classes (summary only; read the code for details):
 - Devices, keys and combinations (the left mouse button, a touch, a keyboard shortcut) are Enhanced Input data: Input Actions, Mapping Contexts and Triggers. Add one Input Action per intention, not code per device.
 - Input that points (mouse) goes to the element under the cursor. Input that does not point (keyboard) should go to a current selection or to the game, when that is needed.
 - Empty space is an element too: `ABackgroundTarget` lies below everything, so every press has a target and the controller has no special case for a press that hits nothing.
+- UMG widgets, such as the panel, take the presses on them before the world: the engine's UI routes them, not the controller. The controller will set an input mode that serves both, so that a tap on a button never reaches the world (planned with the panel).
 - Rejected: engine click events (no capture, no drag event) and `EnableInput` on each actor (every actor would check every click); telling a tap from a drag in each element (the same rule repeated, and only the controller knows screen positions); handling a press that hits nothing in the controller (the selection would clear on the press rather than on a tap, and gameplay would have to find the controller to listen to it); the formula as the background (it would fill the screen, mixing roles and clashing with the formula's area for drops).
 
 ## Command design
@@ -144,7 +145,7 @@ Classes (summary only; read the code for details):
 - Each command exists once, as a method of the class that owns the data; buttons and drags only call it, so undo, logs and tests see a single path.
 - Planned, once the tree exists: tapping the selected block again widens the selection to the smallest sub-formula around it, then to the next one out. A selected sub-formula can become a new proposition (Define as proposition): it takes the next free letter, the legend shows its definition, and the indicators expand it before the truth table.
 - Laws: first a legend of the laws, for reference only; later, only if play calls for it, the panel lists the laws that match the selected sub-formula, each with its result. A tap on the formula never applies a law directly.
-- In Unreal, the palette and the panel are planned as actors in the world, like the blocks, implementing `IPointerTarget`, which reuses the input routing; UMG stays for menus and the HUD. Rejected for the palette and the panel: UMG (dragging from it into the world mixes two input systems in one gesture; without Blueprints it cannot use `BindWidget`; Slate's declarative syntax is method chaining).
+- In Unreal, the panel is a UMG widget (see Data design), and the palette is planned as actors in the world, like the blocks, implementing `IPointerTarget`, which reuses the input routing. Menus and the HUD are UMG too. Rejected for the palette: UMG (dragging from it into the world mixes two input systems in one gesture). Rejected for the panel: actors in the world (anchoring to the screen, layout, button states and text scaling, which UMG already has, would all have to be programmed); widgets built only in C++ (laborious, and unlike the usual way of using UMG); Slate directly (its declarative syntax is method chaining).
 - Rejected: icons or a context menu on the block (hidden commands, too small for a finger without covering the neighbors, and a context menu must repeat the main interface anyway); radial menus (no engine support, they compete with dragging on touch, and they pay off only with heavy repeated use); removing by dropping anywhere outside the row (accidental removals, as in the macOS Dock, and ambiguous with several rows); insert options only after a tap on empty space (blocks touch, so there is no empty space between them); a "+" button between each pair of blocks (many tiny targets); a Duplicate command (the palette already holds every operator and the level's propositions); confirmation dialogs (people confirm by habit); laws built into gestures, as in DragonBox (special cases, a tutorial for each gesture, and a conflict with reordering); a quick tap to minimize or maximize and a long press to select (selection underlies most commands, and a long press is hidden, slower and harder for some players).
 
 ## Exercise design
@@ -181,11 +182,12 @@ Classes (summary only; read the code for details):
 
 ## Data design
 
-- No Blueprints, not even as data; the remaining ones are removed as their data moves to code (see Pending). Values that tune a class (numbers, colors, texts) are defaults in its C++ constructor; an owner configures its components through setters, as `ABlock` does with `Label` and `Background`. Fields that only the owner sets stay out of the editor: plain fields, or `UPROPERTY()` for pointers to engine objects, which the garbage collector must see.
-- Asset references (materials, meshes, input assets, tables) live in `UThisIsLogicSettings`: soft references whose paths are saved in `Config/DefaultGame.ini`, editable with the editor closed (or in Project Settings). Classes read them through `GetDefault<UThisIsLogicSettings>()`, outside constructors, since loading an asset in a constructor is risky; one getter per asset loads it and `check`s it.
-- Gameplay classes are spawned from their C++ classes (`StaticClass()`), never from Blueprint subclasses.
+- No Blueprints, not even as data, except Widget Blueprints for the UI (below); the remaining ones are removed as their data moves to code (see Pending). Values that tune a class (numbers, colors, texts) are defaults in its C++ constructor; an owner configures its components through setters, as `ABlock` does with `Label` and `Background`. Fields that only the owner sets stay out of the editor: plain fields, or `UPROPERTY()` for pointers to engine objects, which the garbage collector must see.
+- A UI widget is a C++ class with the logic and a Widget Blueprint subclass with only the layout and look, edited in the UMG designer. The C++ class gets its widgets through `UPROPERTY(meta = (BindWidget))`, which stops the Widget Blueprint from compiling when one is missing, and binds their events itself (`OnClicked.AddDynamic`; the handlers are `UFUNCTION()` only for the reflection). Its own events to its owner use the usual single-listener delegates. The graph stays empty and no C++ method is `BlueprintCallable`, so the asset never calls the code: the code uses the asset, as with a serialized button and `AddListener` in Unity. The reasons against Blueprints barely apply here: the layout and look are meant to be edited visually, and the code sets none of those values, so nothing is silently overridden.
+- Asset references (materials, meshes, input assets, tables, Widget Blueprint classes) live in `UThisIsLogicSettings`: soft references whose paths are saved in `Config/DefaultGame.ini`, editable with the editor closed (or in Project Settings). Classes read them through `GetDefault<UThisIsLogicSettings>()`, outside constructors, since loading an asset in a constructor is risky; one getter per asset loads it and `check`s it.
+- Gameplay classes are spawned from their C++ classes (`StaticClass()`), never from Blueprint subclasses. UI widgets are created from their Widget Blueprint class, read from `UThisIsLogicSettings`.
 - Moving or renaming an asset means updating its path in `DefaultGame.ini` by hand; Copy Reference in the Content Browser gives the path, between the single quotes.
-- Rejected: Blueprint subclasses as data (edited only in the editor, their saved values silently win over the code, and each class needs its own asset); asset paths written in C++ (unusual in Unreal, and every change needs a rebuild); a central Data Asset (edited only with the editor open, and still found through a path); a hand-made singleton holding engine objects (the garbage collector does not see it).
+- Rejected: Blueprint subclasses as data (edited only in the editor, their saved values silently win over the code, and each class needs its own asset); asset paths written in C++ (unusual in Unreal, and every change needs a rebuild); a central Data Asset (edited only with the editor open, and still found through a path); a hand-made singleton holding engine objects (the garbage collector does not see it); logic in a Widget Blueprint's graph, or C++ methods exposed to it with `BlueprintCallable` (the asset would call the code, like an OnClick wired in Unity's Inspector).
 
 ## Roadmap
 
@@ -202,7 +204,7 @@ Items are numbered in order. A new item takes its place in the sequence, and the
 - [x] 1.8 Minimize and maximize proposition blocks: the block switches between sentence and letter, and the row follows (temporary trigger: every release toggles; letter stub: "P").
 - [x] 1.9 Select a block with a tap or a drag, telling a tap from a drag; a tap on the background clears the selection (see Command design).
 - [x] 1.10 `AExercise`, a class above `AFormula` that creates the background target and the formula's blocks, taking those tasks out of `AFormula` (see Exercise design).
-- [~] 1.11 The panel, with buttons that follow the selection: Minimize/Maximize for a proposition, Minimize all and Maximize all with nothing selected. It replaces the temporary trigger.
+- [~] 1.11 The panel, a UMG widget, with buttons that follow the selection: Minimize/Maximize for a proposition, Minimize all and Maximize all with nothing selected. It replaces the temporary trigger.
 - [ ] 1.12 A long press on a proposition minimizes or maximizes it, as a shortcut for the panel button (see Command design).
 - [ ] 1.13 Letters from a level-wide table (sentence → letter, in order of first appearance), replacing the stub "P".
 - [ ] 1.14 Levels in a DataTable imported from CSV, starting with stubs.
@@ -231,7 +233,7 @@ Items are numbered in order. A new item takes its place in the sequence, and the
 - [ ] 3.5 Progression between levels.
 
 **4 Interface and polish**
-- [ ] 4.1 Menu, level select and HUD (in C++).
+- [ ] 4.1 Menu, level select and HUD (UMG, like the panel).
 - [ ] 4.2 Visual feedback (simple animations).
 - [ ] 4.3 Save progress.
 
