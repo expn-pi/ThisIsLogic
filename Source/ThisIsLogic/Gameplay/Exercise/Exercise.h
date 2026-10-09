@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Logging/StructuredLog.h"
 #include "Components/SceneComponent.h"
 
 #include "../Block/Block.h"
@@ -98,6 +99,13 @@ class THISISLOGIC_API AExercise : public AActor
 					);
 
 			this->Formula->SetOwner(this);
+
+			this->Formula->
+				SetSelectionChangedListener(
+					this,
+					&AExercise::
+						OnFormulaSelectionChanged
+				);
 		}
 
 		void CreateBlocks()
@@ -126,6 +134,14 @@ class THISISLOGIC_API AExercise : public AActor
 		void OnBackgroundTapped()
 		{
 			this->Formula->ClearSelection();
+		}
+
+		void OnFormulaSelectionChanged()
+		{
+			UE_LOGFMT(
+				LogTemp, Warning,
+				"Selection changed"
+			);
 		}
 
 		UPROPERTY()

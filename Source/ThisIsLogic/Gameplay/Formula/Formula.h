@@ -10,6 +10,8 @@
 
 #include "Formula.generated.h"
 
+DECLARE_DELEGATE(FOnFormulaSelectionChanged);
+
 UCLASS()
 class THISISLOGIC_API AFormula : public AActor
 {
@@ -49,18 +51,22 @@ class THISISLOGIC_API AFormula : public AActor
 
 			this->UpdateRow();
 		}
+	
+		template<typename UserClass>
+		void SetSelectionChangedListener(
+			UserClass* Listener,
+			void (UserClass::* Callback)()
+		)
+		{
+			this->OnSelectionChanged.
+				BindUObject(Listener, Callback);
+		}
 
 		void ClearSelection()
 		{
-			bool bHasSelection =
-				this->SelectedBlock != nullptr;
+			this->DeselectBlock();
 
-			if (bHasSelection)
-			{
-				this->SelectedBlock->SetSelected(false);
-
-				this->SelectedBlock = nullptr;
-			}
+			this->NotifySelectionChanged();
 		}
 
 	private:
@@ -378,11 +384,36 @@ class THISISLOGIC_API AFormula : public AActor
 
 		void SelectBlock(ABlock* Block)
 		{
-			this->ClearSelection();
+			this->DeselectBlock();
 
 			this->SelectedBlock = Block;
 
 			this->SelectedBlock->SetSelected(true);
+
+			this->NotifySelectionChanged();
+		}
+
+		void DeselectBlock()
+		{
+			bool bHasSelection =
+				this->SelectedBlock != nullptr;
+
+			if (bHasSelection)
+			{
+				this->SelectedBlock->SetSelected(false);
+
+				this->SelectedBlock = nullptr;
+			}
+		}
+
+		void NotifySelectionChanged()
+		{
+			bool bHasSelectionListener =
+				this->OnSelectionChanged.IsBound();
+
+			check(bHasSelectionListener);
+
+			this->OnSelectionChanged.Execute();
 		}
 
 		UPROPERTY()
@@ -390,6 +421,8 @@ class THISISLOGIC_API AFormula : public AActor
 
 		UPROPERTY()
 		TObjectPtr<ABlock> SelectedBlock;
+
+		FOnFormulaSelectionChanged OnSelectionChanged;
 
 		double TotalWidth = 0.0;
 
