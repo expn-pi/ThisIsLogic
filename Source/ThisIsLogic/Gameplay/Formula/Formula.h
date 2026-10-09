@@ -3,9 +3,6 @@
 #include "CoreMinimal.h"
 
 #include "../Block/Block.h"
-#include "../Block/BlockFactory.h"
-#include "../../Logic/FormulaStub.h"
-#include "../../Input/BackgroundTarget.h"
 
 #include "GameFramework/Actor.h"
 #include "Logging/StructuredLog.h"
@@ -34,7 +31,41 @@ class THISISLOGIC_API AFormula : public AActor
 			this->RootComponent = Root;
 		}
 
+		void AddBlocks(
+			const TArray<ABlock*>& NewBlocks
+		)
+		{
+			for (ABlock* Block : NewBlocks)
+			{
+				this->RegisterBlock(Block);
+			}
+
+			this->UpdateRow();
+		}
+
 		void AddBlock(ABlock* Block)
+		{
+			this->RegisterBlock(Block);
+
+			this->UpdateRow();
+		}
+
+		void ClearSelection()
+		{
+			bool bHasSelection =
+				this->SelectedBlock != nullptr;
+
+			if (bHasSelection)
+			{
+				this->SelectedBlock->SetSelected(false);
+
+				this->SelectedBlock = nullptr;
+			}
+		}
+
+	private:
+
+		void RegisterBlock(ABlock* Block)
 		{
 			this->Blocks.Add(Block);
 
@@ -59,72 +90,13 @@ class THISISLOGIC_API AFormula : public AActor
 				SetSelectRequestedListener(
 					this, &AFormula::OnBlockSelectRequested
 				);
-
-			this->UpdateTotalWidth();
 		}
 
-	protected:
-
-		virtual void BeginPlay() override
+		void UpdateRow()
 		{
-			Super::BeginPlay();
-
-			this->CreateBackground();
-
-			this->CreateBlocks();
+			this->UpdateTotalWidth();
 
 			this->LayoutBlocks();
-		}
-
-	private:
-
-		void CreateBackground()
-		{
-			UWorld* World = this->GetWorld();
-
-			FVector Location = this->GetActorLocation();
-
-			double FormulaLocationZ = Location.Z;
-
-			Location.Z =
-				FormulaLocationZ - AFormula::BackgroundDepth;
-
-			FTransform Transform = FTransform(Location);
-
-			UClass* BackgroundClass =
-				ABackgroundTarget::StaticClass();
-
-			ABackgroundTarget* BackgroundTarget =
-				World->
-					SpawnActor<
-						ABackgroundTarget
-					>(BackgroundClass, Transform);
-
-			BackgroundTarget->SetOwner(this);
-
-			BackgroundTarget->
-				SetTappedListener(
-					this, &AFormula::OnBackgroundTapped
-				);
-		}
-
-		void CreateBlocks()
-		{
-			UWorld* World = this->GetWorld();
-
-			FFormulaStub FormulaStub;
-
-			TArray<FToken> Tokens =
-				FormulaStub.GetTokens();
-
-			for (const FToken& Token : Tokens)
-			{
-				ABlock* Block =
-					FBlockFactory::
-						CreateBlock(World, Token);
-
-				this->AddBlock(Block);
-			}
 		}
 
 		void UpdateTotalWidth()
@@ -394,9 +366,7 @@ class THISISLOGIC_API AFormula : public AActor
 			ABlock* Block
 		)
 		{
-			this->UpdateTotalWidth();
-
-			this->LayoutBlocks();
+			this->UpdateRow();
 		}
 
 		void OnBlockSelectRequested(
@@ -404,11 +374,6 @@ class THISISLOGIC_API AFormula : public AActor
 		)
 		{
 			this->SelectBlock(Block);
-		}
-
-		void OnBackgroundTapped()
-		{
-			this->ClearSelection();
 		}
 
 		void SelectBlock(ABlock* Block)
@@ -420,19 +385,6 @@ class THISISLOGIC_API AFormula : public AActor
 			this->SelectedBlock->SetSelected(true);
 		}
 
-		void ClearSelection()
-		{
-			bool bHasSelection =
-				this->SelectedBlock != nullptr;
-
-			if (bHasSelection)
-			{
-				this->SelectedBlock->SetSelected(false);
-
-				this->SelectedBlock = nullptr;
-			}
-		}
-
 		UPROPERTY()
 		TArray<TObjectPtr<ABlock>> Blocks;
 
@@ -440,8 +392,6 @@ class THISISLOGIC_API AFormula : public AActor
 		TObjectPtr<ABlock> SelectedBlock;
 
 		double TotalWidth = 0.0;
-
-		static constexpr double BackgroundDepth = 100.0;
 
 		static constexpr double DragHeight = 10.0;
 };
