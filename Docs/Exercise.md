@@ -1,0 +1,7 @@
+# Exercise design
+
+- `AExercise` is the top of the gameplay classes: it creates and owns the background target and the formula, and drives the creation of the blocks (see `Docs/BlockCreation.md`). Later it will create the formula from the level data, own the panel and the palette, and decide the result of the exercise. The selection stays in `AFormula`, which owns the blocks (and later the tree); the exercise learns about its changes through an event.
+- The selection event carries no data: whoever needs the selection asks the formula, so no copy of it has to be kept in sync. Each change sends one notification, once the state is final (`SelectBlock` unmarks the previous block through `DeselectBlock`, which does not notify). It may also come when nothing changed (tapping the selected block, or the background with nothing selected), which is harmless, since listeners only ask the formula.
+- The name comes from the exercises of a logic course, which the game imitates: each has a statement, a formula to simplify, tools to work on it and a result.
+- Rejected names: `AAdministrator` and `ATeacher` (role names, like `Manager`, fit any task and attract unrelated ones; `Administrator` also reads as system administration); `APuzzle` (generic).
+- Rejected: the selection event carrying the selected block (the exercise would keep a copy of the selection); `SelectBlock` calling a notifying `ClearSelection` (switching blocks would send two notifications, the first with nothing selected).

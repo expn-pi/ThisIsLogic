@@ -1,0 +1,10 @@
+# Input design
+
+- The player controller is a thin router (Mediator). It tells a tap from a drag and speaks only in those terms (tapped; drag started, dragged, ended); each element decides what they mean (select, move, insert, ...). The rule is the same for every element, and its distance is measured in screen pixels, which only the controller knows, as in Unity's EventSystem.
+- It remembers which element was under the cursor at the press (capture), so the whole gesture reaches it even after the cursor has left it.
+- `IPointerTarget` carries the gesture to the element: a tap sends only `Tapped`; a drag sends `DragStarted` (with the press point), then `Dragged` every frame, then `DragEnded`. Points are in world space, on the horizontal plane through the press point.
+- Devices, keys and combinations (the left mouse button, a touch, a keyboard shortcut) are Enhanced Input data: Input Actions, Mapping Contexts and Triggers. Add one Input Action per intention, not code per device.
+- Input that points (mouse) goes to the element under the cursor. Input that does not point (keyboard) should go to a current selection or to the game, when that is needed.
+- Empty space is an element too: `ABackgroundTarget` lies below everything, so every press has a target and the controller has no special case for a press that hits nothing.
+- UMG widgets, such as the panel, take the presses on them before the world: the engine's UI routes them, not the controller. The controller will set an input mode that serves both, so that a tap on a button never reaches the world (planned with the panel).
+- Rejected: engine click events (no capture, no drag event) and `EnableInput` on each actor (every actor would check every click); telling a tap from a drag in each element (the same rule repeated, and only the controller knows screen positions); handling a press that hits nothing in the controller (the selection would clear on the press rather than on a tap, and gameplay would have to find the controller to listen to it); the formula as the background (it would fill the screen, mixing roles and clashing with the formula's area for drops).

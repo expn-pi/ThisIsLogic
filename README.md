@@ -28,7 +28,7 @@ Proposition blocks hold a sentence and a letter, and can be minimized (letter) o
 - [x] Drag and drop blocks with the mouse
 - [x] Blocks laid out as a row, reordered by dragging
 - [x] Block width fitted to its text
-- [ ] Proposition and operator blocks
+- [x] Proposition and operator blocks
 - [ ] Levels loaded from a data table
 - [ ] Validity and equivalence indicators
 - [ ] Logic core: parser, evaluation and equivalence by truth table
@@ -38,7 +38,7 @@ Proposition blocks hold a sentence and a letter, and can be minimized (letter) o
 ## Built with
 
 - Unreal Engine 5.8
-- C++ for all game logic; Blueprints are used only as data, with no visual scripting
+- C++ for all game logic, with no visual scripting; Blueprints only where the editor does the job better than code, such as the UI layout
 - Enhanced Input and Procedural Mesh Component
 
 ## Building
