@@ -122,12 +122,14 @@ Source/ThisIsLogic/
   Gameplay/Formula/  the formula, a row of blocks
   Input/             pointer interface and background target
   Logic/             logic core (no engine dependencies)
+  UI/                UMG widgets (C++ classes)
   Visuals/           reusable visual components
 Content/             folders by feature
   Levels/            Main (startup map)
   Gameplay/Block/    M_Block (Unlit, Color parameter)
   Input/             IA_Click, IMC_Gameplay
   Core/              BP_ThisIsLogicGameMode (default GameMode), BP_ThisIsLogicPlayerController
+  UI/                WBP_CommandPanel (layout of UCommandPanel)
 ```
 
 Read the code for the classes in each folder.
@@ -137,8 +139,7 @@ Read the code for the classes in each folder.
 Items are numbered in order. A new item takes its place in the sequence, and the items after it are renumbered. `[x]` done, `[~]` in progress, `[ ]` to do.
 
 **1 Blocks**
-- [x] 1.1 to 1.10, summarized (the git history has the details): drag and drop, input routing, the row and its reordering, text and width, blocks from tokens through a factory, rounded corners, proposition and operator blocks, minimize and maximize, selection, and `AExercise`.
-- [~] 1.11 The panel, a UMG widget, with buttons that follow the selection: Minimize/Maximize for a proposition, Minimize all and Maximize all with nothing selected. It replaces the temporary trigger (see `Docs/Commands.md`, `Docs/Input.md`, `Docs/Exercise.md` and `Docs/Data.md`).
+- [x] 1.1 to 1.11, summarized (the git history has the details): drag and drop, input routing, the row and its reordering, text and width, blocks from tokens through a factory, rounded corners, proposition and operator blocks, minimize and maximize, selection, `AExercise`, and the panel (a UMG widget with Minimize all and Maximize all, always visible, and Minimize/Maximize for a selected proposition, replacing the temporary trigger).
 - [ ] 1.12 A long press on a proposition minimizes or maximizes it, as a shortcut for the panel button (see `Docs/Commands.md`).
 - [ ] 1.13 Letters from a level-wide table (sentence → letter, in order of first appearance), replacing the stub "P".
 - [ ] 1.14 Levels in a DataTable imported from CSV, starting with stubs.

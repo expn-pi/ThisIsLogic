@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 
 #include "../Block/Block.h"
+#include "../Block/PropositionBlock.h"
 
 #include "GameFramework/Actor.h"
 #include "Logging/StructuredLog.h"
@@ -67,6 +68,38 @@ class THISISLOGIC_API AFormula : public AActor
 			this->DeselectBlock();
 
 			this->NotifySelectionChanged();
+		}
+
+		void SetAllMinimized(bool bMinimized)
+		{
+			for (ABlock* Block : this->Blocks)
+			{
+				APropositionBlock* Proposition =
+					Cast<APropositionBlock>(Block);
+
+				bool bIsProposition =
+					Proposition != nullptr;
+
+				if (bIsProposition)
+				{
+					Proposition->SetMinimized(bMinimized);
+				}
+			}
+		}
+
+		void ToggleSelectedMinimized()
+		{
+			APropositionBlock* Proposition =
+				CastChecked<APropositionBlock>(
+					this->SelectedBlock
+				);
+
+			Proposition->ToggleMinimized();
+		}
+
+		bool IsPropositionSelected() const
+		{
+			return this->bIsPropositionSelected;
 		}
 
 	private:
@@ -190,9 +223,7 @@ class THISISLOGIC_API AFormula : public AActor
 			return FMath::Clamp(DesiredY, MinY, MaxY);
 		}
 
-		double GetMinY(
-			const ABlock* Block
-		) const
+		double GetMinY(const ABlock* Block) const
 		{
 			double LeftEdgeY = this->GetLeftEdgeY();
 
@@ -203,9 +234,7 @@ class THISISLOGIC_API AFormula : public AActor
 			return LeftEdgeY + HalfWidth;
 		}
 
-		double GetMaxY(
-			const ABlock* Block
-		) const
+		double GetMaxY(const ABlock* Block) const
 		{
 			double RightEdgeY = this->GetRightEdgeY();
 
@@ -249,7 +278,11 @@ class THISISLOGIC_API AFormula : public AActor
 			{
 				int32 NextIndex = Index + 1;
 
-				this->Blocks.Swap(Index, NextIndex);
+				this->Blocks.
+					Swap(
+						Index,
+						NextIndex
+					);
 
 				this->LayoutBlocks();
 
@@ -277,7 +310,11 @@ class THISISLOGIC_API AFormula : public AActor
 			{
 				int32 PreviousIndex = Index - 1;
 
-				this->Blocks.Swap(Index, PreviousIndex);
+				this->Blocks.
+					Swap(
+						Index,
+						PreviousIndex
+					);
 
 				this->LayoutBlocks();
 
@@ -390,6 +427,12 @@ class THISISLOGIC_API AFormula : public AActor
 
 			this->SelectedBlock->SetSelected(true);
 
+			APropositionBlock* Proposition =
+				Cast<APropositionBlock>(Block);
+
+			this->bIsPropositionSelected =
+				Proposition != nullptr;
+
 			this->NotifySelectionChanged();
 		}
 
@@ -403,6 +446,8 @@ class THISISLOGIC_API AFormula : public AActor
 				this->SelectedBlock->SetSelected(false);
 
 				this->SelectedBlock = nullptr;
+				
+				this->bIsPropositionSelected = false;
 			}
 		}
 
@@ -425,6 +470,8 @@ class THISISLOGIC_API AFormula : public AActor
 		FOnFormulaSelectionChanged OnSelectionChanged;
 
 		double TotalWidth = 0.0;
+
+		bool bIsPropositionSelected = false;
 
 		static constexpr double DragHeight = 10.0;
 };

@@ -26,12 +26,19 @@ class THISISLOGIC_API APropositionBlock :
 		{
 			this->Sentence = NewSentence;
 		}
-
-		virtual void Tapped() override
+	
+		void SetMinimized(bool bNewMinimized)
 		{
-			Super::Tapped();
+			this->bMinimized = bNewMinimized;
 
-			this->ToggleMinimized();
+			this->FitToText();
+		}
+	
+		void ToggleMinimized()
+		{
+			bool bNewMinimized = !this->bMinimized;
+
+			this->SetMinimized(bNewMinimized);
 		}
 
 	protected:
@@ -49,14 +56,7 @@ class THISISLOGIC_API APropositionBlock :
 		}
 
 	private:
-
-		void ToggleMinimized()
-		{
-			this->bMinimized = !this->bMinimized;
-
-			this->FitToText();
-		}
-
+	
 		FString Sentence;
 
 		FString Letter = TEXT("P");

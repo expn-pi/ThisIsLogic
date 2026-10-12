@@ -5,6 +5,8 @@
 #include "UObject/SoftObjectPtr.h"
 #include "Materials/MaterialInterface.h"
 
+#include "../UI/CommandPanel.h"
+
 #include "ThisIsLogicSettings.generated.h"
 
 UCLASS(Config = Game, DefaultConfig)
@@ -29,6 +31,20 @@ class THISISLOGIC_API UThisIsLogicSettings :
 			return Material;
 		}
 
+		TSubclassOf<UCommandPanel>
+			GetCommandPanelClass() const
+		{
+			TSubclassOf<UCommandPanel> PanelClass =
+				this->CommandPanelClass.
+				LoadSynchronous();
+
+			bool bHasPanelClass = PanelClass != nullptr;
+
+			check(bHasPanelClass);
+
+			return PanelClass;
+		}
+
 	private:
 
 		UPROPERTY(
@@ -36,4 +52,10 @@ class THISISLOGIC_API UThisIsLogicSettings :
 		)
 		TSoftObjectPtr<UMaterialInterface>
 			BlockMaterial;
+
+		UPROPERTY(
+			Config, EditAnywhere, Category = "UI"
+		)
+		TSoftClassPtr<UCommandPanel>
+			CommandPanelClass;
 };

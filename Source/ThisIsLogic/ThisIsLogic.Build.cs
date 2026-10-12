@@ -14,7 +14,8 @@ public class ThisIsLogic : ModuleRules
 				"Core", "CoreUObject", "Engine",
 				"InputCore", "EnhancedInput",
 				"ProceduralMeshComponent",
-				"DeveloperSettings"
+				"DeveloperSettings",
+				"UMG"
 			};
 
 		PublicDependencyModuleNames.AddRange(Modules);

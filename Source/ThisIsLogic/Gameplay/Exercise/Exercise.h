@@ -2,14 +2,18 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Blueprint/UserWidget.h"
 #include "Logging/StructuredLog.h"
 #include "Components/SceneComponent.h"
+#include "GameFramework/PlayerController.h"
 
 #include "../Block/Block.h"
 #include "../Formula/Formula.h"
 #include "../Block/BlockFactory.h"
+#include "../../UI/CommandPanel.h"
 #include "../../Logic/FormulaStub.h"
 #include "../../Input/BackgroundTarget.h"
+#include "../../BasicComponents/ThisIsLogicSettings.h"
 
 #include "Exercise.generated.h"
 
@@ -45,6 +49,8 @@ class THISISLOGIC_API AExercise : public AActor
 			this->CreateFormula();
 
 			this->CreateBlocks();
+			
+			this->CreatePanel();
 		}
 
 	private:
@@ -130,6 +136,52 @@ class THISISLOGIC_API AExercise : public AActor
 
 			this->Formula->AddBlocks(Blocks);
 		}
+	
+		void CreatePanel()
+		{
+			UWorld* World = this->GetWorld();
+
+			APlayerController* PlayerController =
+				World->GetFirstPlayerController();
+
+			const UThisIsLogicSettings* Settings =
+				GetDefault<UThisIsLogicSettings>();
+
+			TSubclassOf<UCommandPanel> PanelClass =
+				Settings->GetCommandPanelClass();
+
+			this->CommandPanel =
+				CreateWidget<
+					UCommandPanel
+				>(PlayerController, PanelClass);
+			
+			this->CommandPanel->
+				SetAllMinimizedRequestedListener(
+					this,
+					&AExercise::OnAllMinimizedRequested
+				);
+			
+			this->CommandPanel->
+				SetToggleMinimizedRequestedListener(
+					this,
+					&AExercise::OnToggleMinimizedRequested
+				);
+			
+			this->UpdatePanel();
+
+			this->CommandPanel->AddToViewport();
+		}
+	
+		void UpdatePanel()
+		{
+			bool bIsPropositionSelected =
+				this->Formula->IsPropositionSelected();
+
+			this->CommandPanel->
+				SetToggleMinimizedVisible(
+					bIsPropositionSelected
+				);
+		}
 
 		void OnBackgroundTapped()
 		{
@@ -138,14 +190,24 @@ class THISISLOGIC_API AExercise : public AActor
 
 		void OnFormulaSelectionChanged()
 		{
-			UE_LOGFMT(
-				LogTemp, Warning,
-				"Selection changed"
-			);
+			this->UpdatePanel();
+		}
+	
+		void OnAllMinimizedRequested(bool bMinimized)
+		{
+			this->Formula->SetAllMinimized(bMinimized);
+		}
+	
+		void OnToggleMinimizedRequested()
+		{
+			this->Formula->ToggleSelectedMinimized();
 		}
 
 		UPROPERTY()
 		TObjectPtr<AFormula> Formula;
+	
+		UPROPERTY()
+		TObjectPtr<UCommandPanel> CommandPanel;
 
 		static constexpr double BackgroundDepth = 100.0;
 };
