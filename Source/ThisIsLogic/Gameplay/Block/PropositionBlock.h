@@ -1,10 +1,15 @@
 #pragma once
 
-#include "CoreMinimal.h"
-
 #include "Block.h"
-
+#include "CoreMinimal.h"
 #include "PropositionBlock.generated.h"
+
+class APropositionBlock;
+
+DECLARE_DELEGATE_OneParam(
+	FOnPropositionToggleMinimizedRequested,
+	APropositionBlock*
+);
 
 UCLASS()
 class THISISLOGIC_API APropositionBlock :
@@ -26,19 +31,36 @@ class THISISLOGIC_API APropositionBlock :
 		{
 			this->Sentence = NewSentence;
 		}
-	
+
 		void SetMinimized(bool bNewMinimized)
 		{
 			this->bMinimized = bNewMinimized;
 
 			this->FitToText();
 		}
-	
+
 		void ToggleMinimized()
 		{
 			bool bNewMinimized = !this->bMinimized;
 
 			this->SetMinimized(bNewMinimized);
+		}
+
+		template<typename UserClass>
+		void SetToggleMinimizedRequestedListener(
+			UserClass* Listener,
+			void (UserClass::* Callback)(APropositionBlock*)
+		)
+		{
+			this->OnToggleMinimizedRequested.
+				BindUObject(Listener, Callback);
+		}
+
+		virtual void LongPressed() override
+		{
+			Super::LongPressed();
+
+			this->RequestToggleMinimized();
 		}
 
 	protected:
@@ -56,7 +78,20 @@ class THISISLOGIC_API APropositionBlock :
 		}
 
 	private:
-	
+
+		void RequestToggleMinimized()
+		{
+			bool bHasToggleMinimizedListener =
+				this->OnToggleMinimizedRequested.IsBound();
+
+			check(bHasToggleMinimizedListener);
+
+			this->OnToggleMinimizedRequested.Execute(this);
+		}
+
+		FOnPropositionToggleMinimizedRequested
+			OnToggleMinimizedRequested;
+
 		FString Sentence;
 
 		FString Letter = TEXT("P");

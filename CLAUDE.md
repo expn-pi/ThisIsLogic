@@ -99,7 +99,7 @@ Boolean logic puzzle game in Unreal Engine 5.8.3, built as a public portfolio pr
 
 Each area's decisions, with their reasons and the alternatives already rejected, live in `Docs/`. Before proposing a change in an area, read its file, and do not propose a rejected alternative again without a new reason.
 
-- `Docs/Input.md`: how presses reach the elements (the controller as a router, tap or drag, the background target, UMG and the world).
+- `Docs/Input.md`: how presses reach the elements (the controller as a router, tap, drag or long press, the background target, UMG and the world).
 - `Docs/Commands.md`: what the player can do and how (single pointer, selection, panel, palette, inserting, removing, undo, laws).
 - `Docs/Exercise.md`: `AExercise`, the top of the gameplay classes, and the selection event.
 - `Docs/Layout.md`: the row of blocks, its order and the swaps while dragging.
@@ -139,8 +139,7 @@ Read the code for the classes in each folder.
 Items are numbered in order. A new item takes its place in the sequence, and the items after it are renumbered. `[x]` done, `[~]` in progress, `[ ]` to do.
 
 **1 Blocks**
-- [x] 1.1 to 1.11, summarized (the git history has the details): drag and drop, input routing, the row and its reordering, text and width, blocks from tokens through a factory, rounded corners, proposition and operator blocks, minimize and maximize, selection, `AExercise`, and the panel (a UMG widget with Minimize all and Maximize all, always visible, and Minimize/Maximize for a selected proposition, replacing the temporary trigger).
-- [ ] 1.12 A long press on a proposition minimizes or maximizes it, as a shortcut for the panel button (see `Docs/Commands.md`).
+- [x] 1.1 to 1.12, summarized (the git history has the details): drag and drop, input routing, the row and its reordering, text and width, blocks from tokens through a factory, rounded corners, proposition and operator blocks, minimize and maximize, selection, `AExercise`, the panel (a UMG widget with Minimize all and Maximize all, always visible, and Minimize/Maximize for a selected proposition, replacing the temporary trigger), and the long press (a third gesture, recognized by the controller; on a proposition, a shortcut for Minimize/Maximize).
 - [ ] 1.13 Letters from a level-wide table (sentence → letter, in order of first appearance), replacing the stub "P".
 - [ ] 1.14 Levels in a DataTable imported from CSV, starting with stubs.
 - [ ] 1.15 The analyzer: text → tokens, plain C++, checked with logs. First piece of the logic core.

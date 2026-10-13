@@ -129,6 +129,28 @@ class THISISLOGIC_API AFormula : public AActor
 				SetSelectRequestedListener(
 					this, &AFormula::OnBlockSelectRequested
 				);
+
+			APropositionBlock* Proposition =
+				Cast<APropositionBlock>(Block);
+
+			bool bIsProposition = Proposition != nullptr;
+
+			if (bIsProposition)
+			{
+				this->RegisterProposition(Proposition);
+			}
+		}
+
+		void RegisterProposition(
+			APropositionBlock* Proposition
+		)
+		{
+			Proposition->
+				SetToggleMinimizedRequestedListener(
+					this,
+					&AFormula::
+						OnPropositionToggleMinimizedRequested
+				);
 		}
 
 		void UpdateRow()
@@ -459,6 +481,19 @@ class THISISLOGIC_API AFormula : public AActor
 			check(bHasSelectionListener);
 
 			this->OnSelectionChanged.Execute();
+		}
+	
+		void OnPropositionToggleMinimizedRequested(
+			APropositionBlock* Proposition
+		)
+		{
+			ABlock* Selected = this->SelectedBlock;
+
+			bool bIsSelected = Proposition == Selected;
+
+			check(bIsSelected);
+
+			this->ToggleSelectedMinimized();
 		}
 
 		UPROPERTY()

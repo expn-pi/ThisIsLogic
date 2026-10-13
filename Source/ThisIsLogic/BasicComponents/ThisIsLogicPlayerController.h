@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "InputAction.h"
+#include "Engine/World.h"
 #include "Engine/LocalPlayer.h"
 #include "InputMappingContext.h"
 #include "EnhancedInputComponent.h"
@@ -14,6 +15,12 @@
 #include "GameFramework/PlayerController.h"
 #include "ThisIsLogicPlayerController.generated.h"
 
+enum class EPointerGesture : uint8
+{
+	Undecided,
+	Drag,
+	LongPress
+};
 
 UCLASS()
 class THISISLOGIC_API AThisIsLogicPlayerController :
@@ -156,8 +163,10 @@ class THISISLOGIC_API AThisIsLogicPlayerController :
 			this->GetMouseScreenPosition(ScreenPosition);
 
 			this->PressScreenPosition = ScreenPosition;
+			
+			this->PressTime = this->GetRealTime();
 
-			this->bIsDragging = false;
+			this->Gesture = EPointerGesture::Undecided;
 
 			FString TargetName = Target->GetName();
 
@@ -180,18 +189,43 @@ class THISISLOGIC_API AThisIsLogicPlayerController :
 
 		void PointerHeld()
 		{
-			if (this->bIsDragging)
+			switch (this->Gesture)
 			{
-				this->Drag();
+				case EPointerGesture::Undecided:
+				
+					this->DecideGesture();
+
+					break;
+
+				case EPointerGesture::Drag:
+				
+					this->Drag();
+
+					break;
+
+				case EPointerGesture::LongPress:
+				
+					break;
+			}
+		}
+
+		void DecideGesture()
+		{
+			bool bIsPastThreshold =
+				this->IsPastDragThreshold();
+
+			if (bIsPastThreshold)
+			{
+				this->StartDrag();
 			}
 			else
 			{
-				bool bIsPastThreshold =
-					this->IsPastDragThreshold();
-
-				if (bIsPastThreshold)
+				bool bIsPastDuration =
+					this->IsPastLongPressDuration();
+				
+				if (bIsPastDuration)
 				{
-					this->StartDrag();
+					this->LongPress();
 				}
 			}
 		}
@@ -221,10 +255,23 @@ class THISISLOGIC_API AThisIsLogicPlayerController :
 
 			return bHasMouse && bIsPastThreshold;
 		}
+		
+		bool IsPastLongPressDuration() const
+		{
+			double CurrentTime = this->GetRealTime();
 
+			double HeldTime = CurrentTime - this->PressTime;
+
+			double Duration =
+				AThisIsLogicPlayerController::
+					LongPressDuration;
+
+			return HeldTime > Duration;
+		}
+	
 		void StartDrag()
 		{
-			this->bIsDragging = true;
+			this->Gesture = EPointerGesture::Drag;
 
 			this->PressedTarget->
 				DragStarted(this->PressPoint);
@@ -259,6 +306,15 @@ class THISISLOGIC_API AThisIsLogicPlayerController :
 					Dragged(PointerPoint);
 			}
 		}
+	
+		void LongPress()
+		{
+			this->Gesture = EPointerGesture::LongPress;
+			
+			this->PressedTarget->LongPressed();
+
+			UE_LOGFMT(LogTemp, Warning, "Long pressed");
+		}
 
 		void OnClickCompleted()
 		{
@@ -273,17 +329,27 @@ class THISISLOGIC_API AThisIsLogicPlayerController :
 
 		void PointerReleased()
 		{
-			if (this->bIsDragging)
+			switch (this->Gesture)
 			{
-				this->PressedTarget->DragEnded();
+				case EPointerGesture::Undecided:
+				
+					this->PressedTarget->Tapped();
 
-				UE_LOGFMT(LogTemp, Warning, "Drag ended");
-			}
-			else
-			{
-				this->PressedTarget->Tapped();
+					UE_LOGFMT(LogTemp, Warning, "Tapped");
 
-				UE_LOGFMT(LogTemp, Warning, "Tapped");
+					break;
+
+				case EPointerGesture::Drag:
+				
+					this->PressedTarget->DragEnded();
+
+					UE_LOGFMT(LogTemp, Warning, "Drag ended");
+
+					break;
+
+				case EPointerGesture::LongPress:
+				
+					break;
 			}
 
 			this->PressedTarget = nullptr;
@@ -311,6 +377,13 @@ class THISISLOGIC_API AThisIsLogicPlayerController :
 
 			return bHasMouse;
 		}
+	
+		double GetRealTime() const
+		{
+			UWorld* World = this->GetWorld();
+
+			return World->GetRealTimeSeconds();
+		}
 
 		UPROPERTY(EditDefaultsOnly, Category = "Input")
 		TObjectPtr<UInputMappingContext> MappingContext;
@@ -326,8 +399,12 @@ class THISISLOGIC_API AThisIsLogicPlayerController :
 		FPlane PressPlane = FPlane(ForceInit);
 
 		FVector2D PressScreenPosition = FVector2D::ZeroVector;
+	
+		double PressTime = 0.0;
 
-		bool bIsDragging = false;
+		EPointerGesture Gesture = EPointerGesture::Undecided;
 
 		static constexpr double DragThreshold = 10.0;
+	
+		static constexpr double LongPressDuration = 0.5;
 };

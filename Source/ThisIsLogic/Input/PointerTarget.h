@@ -24,6 +24,8 @@ class THISISLOGIC_API IPointerTarget
 
 		virtual void Tapped() = 0;
 
+		virtual void LongPressed() = 0;
+	
 		virtual void
 			DragStarted(
 				const FVector& PressPoint

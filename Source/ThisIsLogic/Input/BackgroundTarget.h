@@ -71,6 +71,11 @@ class THISISLOGIC_API ABackgroundTarget :
 
 			this->OnTapped.Execute();
 		}
+	
+		virtual void LongPressed() override
+		{
+			this->Tapped();
+		}
 
 		virtual void DragStarted(
 			const FVector& PressPoint

@@ -187,6 +187,11 @@ class THISISLOGIC_API ABlock :
 		{
 			this->RequestSelection();
 		}
+	
+		virtual void LongPressed() override
+		{
+			this->Tapped();
+		}
 
 		virtual void DragStarted(
 			const FVector& PressPoint
