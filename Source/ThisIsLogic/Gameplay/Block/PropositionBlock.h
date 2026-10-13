@@ -27,8 +27,13 @@ class THISISLOGIC_API APropositionBlock :
 			this->SetColor(BlockColor);
 		}
 
-		void SetSentence(const FString& NewSentence)
+		void SetProposition(
+			const FString& NewLetter,
+			const FString& NewSentence
+		)
 		{
+			this->Letter = NewLetter;
+			
 			this->Sentence = NewSentence;
 		}
 
@@ -94,7 +99,7 @@ class THISISLOGIC_API APropositionBlock :
 
 		FString Sentence;
 
-		FString Letter = TEXT("P");
+		FString Letter;
 
 		bool bMinimized = false;
 };

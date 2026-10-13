@@ -11,25 +11,59 @@ class FFormulaStub
 		TArray<FToken> GetTokens() const
 		{
 			TArray<ETokenKind> Kinds = {
+				ETokenKind::Proposition,
+				ETokenKind::Iff,
 				ETokenKind::OpenParenthesis,
+				ETokenKind::Proposition,
+				ETokenKind::And,
+				ETokenKind::Proposition,
+				ETokenKind::And,
+				ETokenKind::Proposition,
+				ETokenKind::CloseParenthesis,
+				ETokenKind::Or,
+				ETokenKind::OpenParenthesis,
+				ETokenKind::Proposition,
+				ETokenKind::And,
 				ETokenKind::Proposition,
 				ETokenKind::And,
 				ETokenKind::Not,
 				ETokenKind::Proposition,
 				ETokenKind::CloseParenthesis,
-				ETokenKind::Implies,
-				ETokenKind::Proposition
+				ETokenKind::Or,
+				ETokenKind::OpenParenthesis,
+				ETokenKind::Proposition,
+				ETokenKind::And,
+				ETokenKind::Not,
+				ETokenKind::Proposition,
+				ETokenKind::CloseParenthesis
 			};
 
 			TArray<FString> Texts = {
+				"1",
+				"=",
 				"(",
-				"costume",
+				"2",
+				"&",
+				"3",
+				"&",
+				"4",
+				")",
+				"|",
+				"(",
+				"2",
+				"&",
+				"3",
 				"&",
 				"~",
-				"loud music",
+				"4",
 				")",
-				"->",
-				"party"
+				"|",
+				"(",
+				"2",
+				"&",
+				"~",
+				"3",
+				")"
 			};
 
 			int32 KindsNum = Kinds.Num();
@@ -53,5 +87,17 @@ class FFormulaStub
 			}
 
 			return Tokens;
+		}
+
+		TArray<FString> GetSentences() const
+		{
+			TArray<FString> Sentences = {
+				"Alarm on",
+				"Motion sensor on",
+				"Window sensor on",
+				"Door sensor on"
+			};
+
+			return Sentences;
 		}
 };

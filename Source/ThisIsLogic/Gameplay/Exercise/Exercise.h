@@ -123,13 +123,16 @@ class THISISLOGIC_API AExercise : public AActor
 			TArray<FToken> Tokens =
 				FormulaStub.GetTokens();
 
+			TArray<FString> Sentences =
+				FormulaStub.GetSentences();
+
 			TArray<ABlock*> Blocks;
 
 			for (const FToken& Token : Tokens)
 			{
 				ABlock* Block =
-					FBlockFactory::
-						CreateBlock(World, Token);
+					this->BlockFactory.
+						CreateBlock(World, Token, Sentences);
 
 				Blocks.Add(Block);
 			}
@@ -205,9 +208,11 @@ class THISISLOGIC_API AExercise : public AActor
 
 		UPROPERTY()
 		TObjectPtr<AFormula> Formula;
-	
+
 		UPROPERTY()
 		TObjectPtr<UCommandPanel> CommandPanel;
+
+		FBlockFactory BlockFactory = FBlockFactory('P');
 
 		static constexpr double BackgroundDepth = 100.0;
 };

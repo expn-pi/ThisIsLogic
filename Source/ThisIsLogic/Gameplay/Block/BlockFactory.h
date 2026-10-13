@@ -4,40 +4,50 @@
 #include "Engine/World.h"
 
 #include "Block.h"
-#include "PropositionBlock.h"
 #include "OperatorBlock.h"
+#include "PropositionBlock.h"
+#include "../Notation/Notation.h"
 #include "../../Logic/LogicTypes.h"
 
 class FBlockFactory
 {
 	public:
 
-		FBlockFactory() = delete;
+		explicit FBlockFactory(TCHAR InFirstLetter) :
+			Notation(InFirstLetter)
+		{
+		}
 
-		static ABlock* CreateBlock(
-			UWorld* World, const FToken& Token
-		)
+		ABlock* CreateBlock(
+			UWorld* World,
+			const FToken& Token,
+			const TArray<FString>& Sentences
+		) const
 		{
 			bool bIsProposition =
 				Token.Kind == ETokenKind::Proposition;
 
 			if (bIsProposition)
 			{
-				return FBlockFactory::
-					CreatePropositionBlock(World, Token);
+				return this->CreatePropositionBlock(
+					World, Token, Sentences
+				);
 			}
 			else
 			{
-				return FBlockFactory::
-					CreateOperatorBlock(World, Token);
+				return this->CreateOperatorBlock(
+					World, Token
+				);
 			}
 		}
 
 	private:
 
-		static APropositionBlock* CreatePropositionBlock(
-			UWorld* World, const FToken& Token
-		)
+		APropositionBlock* CreatePropositionBlock(
+			UWorld* World,
+			const FToken& Token,
+			const TArray<FString>& Sentences
+		) const
 		{
 			FTransform Transform =
 				FTransform::Identity;
@@ -51,18 +61,27 @@ class FBlockFactory
 						APropositionBlock
 					>(BlockClass, Transform);
 
-			const FString& Sentence = Token.Text;
+			int32 PropositionNumber =
+				Token.PropositionNumber;
 
-			Block->SetSentence(Sentence);
+			FString Letter =
+				this->Notation.GetLetter(PropositionNumber);
+
+			int32 SentenceIndex = PropositionNumber - 1;
+
+			const FString& Sentence =
+				Sentences[SentenceIndex];
+
+			Block->SetProposition(Letter, Sentence);
 
 			Block->FinishSpawning(Transform);
 
 			return Block;
 		}
 
-		static AOperatorBlock* CreateOperatorBlock(
+		AOperatorBlock* CreateOperatorBlock(
 			UWorld* World, const FToken& Token
-		)
+		) const
 		{
 			FTransform Transform =
 				FTransform::Identity;
@@ -76,7 +95,10 @@ class FBlockFactory
 						AOperatorBlock
 					>(BlockClass, Transform);
 
-			const FString& Symbol = Token.Text;
+			ETokenKind Kind = Token.Kind;
+
+			FString Symbol =
+				this->Notation.GetSymbol(Kind);
 
 			Block->SetSymbol(Symbol);
 
@@ -84,4 +106,6 @@ class FBlockFactory
 
 			return Block;
 		}
+
+		FNotation Notation;
 };

@@ -29,9 +29,22 @@ struct FToken
 	{
 		this->Kind = InKind;
 		this->Text = InText;
+
+		bool bIsProposition =
+			this->Kind == ETokenKind::Proposition;
+
+		if (bIsProposition)
+		{
+			const TCHAR* NumberText = *this->Text;
+
+			this->PropositionNumber =
+				FCString::Atoi(NumberText);
+		}
 	}
 
 	ETokenKind Kind;
 
 	FString Text;
+
+	int32 PropositionNumber = 0;
 };
