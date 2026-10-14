@@ -17,8 +17,6 @@ Proposition blocks hold a sentence and a letter, and can be minimized (letter) o
 
 ### Example
 
-### Example
-
 | | |
 |---|---|
 | **Statement** | The alarm goes off if the motion, window and door sensors are all on; or if the motion and window sensors are on but the door sensor is off; or if the motion sensor is on but the window sensor is off. |
@@ -58,12 +56,12 @@ Requirements: Windows, Unreal Engine 5.8 and Visual Studio 2022 with the "Game d
 
 ```
 Source/ThisIsLogic/
-BasicComponents/   camera, game mode and player controller
-Gameplay/          blocks, formulas and levels
-Input/             mouse routing interface
-Logic/             logic core, plain C++ with no engine dependencies
-UI/                UI widgets, with the logic in C++ and the layout in Widget Blueprints
-Visuals/           reusable visual components
+  BasicComponents/   camera, game mode and player controller
+  Gameplay/          blocks, formulas and levels
+  Input/             mouse routing interface
+  Logic/             logic core, plain C++ with no engine dependencies
+  UI/                UI widgets, with the logic in C++ and the layout in Widget Blueprints
+  Visuals/           reusable visual components
 Content/             assets, in folders by feature
 Data/                levels, as a CSV file imported into a data table
 Docs/                design decisions by area

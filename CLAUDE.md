@@ -51,13 +51,15 @@ Boolean logic puzzle game in Unreal Engine 5.8.3, built as a public portfolio pr
 - Epic naming conventions (A/U/F/E/I/T prefixes, `b` for bools, PascalCase), with two deliberate exceptions:
   - `public:` and `private:` are indented inside the class, with members one level deeper;
   - `this->` on every member access, methods and fields alike; static members go through the class name (`AExercise::BackgroundDepth`), since they belong to no object. A constructor's initializer list is the one exception, since its syntax does not take `this->`.
-- Vertical code: it grows downward, not sideways.
+- Vertical code: it grows downward, not sideways. Lines stay within about 60 columns, counting a tab as 4: the author splits the IDE into two panes and uses a vertical monitor, and does not want to scroll sideways.
+  - When a line must be broken, the breaks come as early in it as possible, such as after the `=` of an assignment or after a return type, rather than near its end.
   - No inline conditionals (one-line `if`, ternary operator) or several statements per line.
   - When an `if` returns and the other outcome is also a return, that return goes in an `else`, not after the `if`.
   - Object constructions and calls go into named temporaries before being passed as arguments; simple literals (e.g. `1000.f`) may go directly.
   - Simple reads used in an expression (such as `Num()` or a vector component) usually get named temporaries too.
   - `TEXT(...)` counts as a call: it may initialize a named variable (`FName MeshName = TEXT("Mesh")`) but stays out of argument lists, brace initializers included. For literal data such as a stub, prefer one typed array per field, combined in a loop, with a `check` that the sizes match. Plain string literals are fine for ASCII text; non-ASCII text needs `TEXT`.
   - Long access paths are broken across lines up to the called method.
+- Includes come in groups separated by a blank line, with the `.generated.h` last; within each group, from the shortest line to the longest.
 - A method that subclasses must override gets a normal body with `unimplemented()` and a placeholder return, since a `UCLASS` cannot have pure virtual methods (`= 0`); `PURE_VIRTUAL` is avoided because its notation is confusing.
 - Few comments.
 - Follow this style in every detail when suggesting code; when in doubt, mirror the existing files.
