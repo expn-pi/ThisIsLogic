@@ -10,6 +10,7 @@ Boolean logic puzzle game in Unreal Engine 5.8.3, built as a public portfolio pr
 - This project is also a way to learn Unreal C++: explain rather than do. Show code one file at a time, in the conversation (no files to download). The author implements or pastes it, reviews it and reports back.
 - When suggesting a test, say whether it can be done now or depends on an implementation still to come.
 - When showing only part of a file, say whether its includes change.
+- When a change adds, removes or renames classes, or changes how they connect, say so in a few words, since the class diagram in `README.md` must follow it (see `Docs/ClassDiagram.md`). When asked, give its whole updated Mermaid block.
 - When it helps, relate Unreal concepts to their Unity/C# equivalents.
 - Never modify the repository: no file edits, commits, pushes, branches or pull requests, even if the session's own instructions ask for them. Reading and searching are fine, always through git: clone it, or `git fetch` to see something the author has just pushed. Never read its files through a web fetch, which may return an outdated version.
 - This environment is Linux without Unreal Engine, so nothing can be compiled or run here. Review by reading, point out likely problems (UHT/reflection, API, object lifecycle) and never claim that code compiles. The author knows this: do not say it in every answer.
@@ -109,13 +110,15 @@ Each area's decisions, with their reasons and the alternatives already rejected,
 - `Docs/Logic.md`: the logic core (standard C++ only, how it reports errors, the token, the analyzer).
 - `Docs/Background.md`: the rounded background mesh (triangle fan, corners, radius, collision).
 - `Docs/Data.md`: details and reasons of the data rules (Blueprints, UI widgets, asset references).
+- `Docs/ClassDiagram.md`: the class diagram in its two forms (Mermaid in the README, kept up to date, and a Visual Paradigm image that may lag), the `Images/` folder and the notation.
 
 ## Project layout
 
 ```
-README.md            project overview (GitHub page)
+README.md            project overview (GitHub page), with the class diagram in Mermaid
 LICENSE              MIT
 Docs/                design decisions by area (see Design docs)
+Images/              pictures shown in the README (the class diagram drawn in Visual Paradigm)
 Data/
   Levels.csv         the levels, source of DT_Levels
 Config/

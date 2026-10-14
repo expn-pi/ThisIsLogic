@@ -23,7 +23,7 @@ class THISISLOGIC_API UThisIsLogicSettings :
 		{
 			UMaterialInterface* Material =
 				this->BlockMaterial.
-				LoadSynchronous();
+					LoadSynchronous();
 
 			bool bHasMaterial = Material != nullptr;
 
@@ -37,7 +37,7 @@ class THISISLOGIC_API UThisIsLogicSettings :
 		{
 			TSubclassOf<UCommandPanel> PanelClass =
 				this->CommandPanelClass.
-				LoadSynchronous();
+					LoadSynchronous();
 
 			bool bHasPanelClass = PanelClass != nullptr;
 
@@ -50,8 +50,7 @@ class THISISLOGIC_API UThisIsLogicSettings :
 			GetLevelTable() const
 		{
 			UDataTable* Table =
-				this->LevelTable.
-				LoadSynchronous();
+				this->LevelTable.LoadSynchronous();
 
 			bool bHasTable = Table != nullptr;
 

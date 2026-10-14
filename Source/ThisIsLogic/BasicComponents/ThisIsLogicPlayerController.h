@@ -8,11 +8,11 @@
 #include "EnhancedInputComponent.h"
 #include "Logging/StructuredLog.h"
 #include "UObject/ScriptInterface.h"
+#include "EnhancedInputSubsystems.h"
+#include "GameFramework/PlayerController.h"
 
 #include "../Input/PointerTarget.h"
 
-#include "EnhancedInputSubsystems.h"
-#include "GameFramework/PlayerController.h"
 #include "ThisIsLogicPlayerController.generated.h"
 
 enum class EPointerGesture : uint8

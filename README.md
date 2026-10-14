@@ -2,7 +2,7 @@
 
 A puzzle game about boolean logic, made with Unreal Engine 5 and C++.
 
-The player gets a sentence in natural language, written as a "complex" boolean formula, and must rewrite it into a simpler equivalent one, in the style of the exercises of an introductory logic course.
+The player gets a statement in natural language, written as a "complex" boolean formula, and must rewrite it into a simpler equivalent one, in the style of the exercises of an introductory logic course.
 
 > **Status:** early development. The game is not playable yet.
 
@@ -17,11 +17,14 @@ Proposition blocks hold a sentence and a letter, and can be minimized (letter) o
 
 ### Example
 
+### Example
+
 | | |
 |---|---|
-| **Sentence** | It is not true that John eats neither tofu nor rice. |
-| **Starting formula** | `¬(¬[John eats tofu] ∧ ¬[John eats rice])` |
-| **Solution** | `[John eats tofu] ∨ [John eats rice]` |
+| **Statement** | The alarm goes off if the motion, window and door sensors are all on; or if the motion and window sensors are on but the door sensor is off; or if the motion sensor is on but the window sensor is off. |
+| **Propositions** | P: Alarm on; Q: Motion sensor on; R: Window sensor on; S: Door sensor on |
+| **Starting formula** | `P ↔ (Q ∧ R ∧ S) ∨ (Q ∧ R ∧ ¬S) ∨ (Q ∧ ¬R)` |
+| **Solution** | `P ↔ Q` |
 
 ## Features
 
@@ -55,16 +58,66 @@ Requirements: Windows, Unreal Engine 5.8 and Visual Studio 2022 with the "Game d
 
 ```
 Source/ThisIsLogic/
-  BasicComponents/   camera, game mode and player controller
-  Gameplay/          blocks, formulas and levels
-  Input/             mouse routing interface
-  Logic/             logic core, plain C++ with no engine dependencies
-  UI/                UI widgets, with the logic in C++ and the layout in Widget Blueprints
-  Visuals/           reusable visual components
+BasicComponents/   camera, game mode and player controller
+Gameplay/          blocks, formulas and levels
+Input/             mouse routing interface
+Logic/             logic core, plain C++ with no engine dependencies
+UI/                UI widgets, with the logic in C++ and the layout in Widget Blueprints
+Visuals/           reusable visual components
 Content/             assets, in folders by feature
 Data/                levels, as a CSV file imported into a data table
 Docs/                design decisions by area
+Images/              pictures shown in this README
 ```
+
+## Class diagram
+
+How the classes connect. Solid arrows are associations (the class keeps a reference to the other), dashed arrows are dependencies (it only uses the other), and hollow triangles mark inheritance and interface implementation. This diagram is kept up to date with the code.
+
+```mermaid
+classDiagram
+    class IPointerTarget {
+        <<interface>>
+    }
+    class ABlock {
+        <<abstract>>
+    }
+
+    AExercise --> AFormula
+    AExercise --> UCommandPanel
+    AExercise --> FLevelRow
+    AExercise --> FBlockFactory
+    AExercise ..> FFormulaAnalyzer
+    AExercise ..> FFormulaStub
+    AExercise ..> ABlock
+    AExercise ..> ABackgroundTarget
+    AExercise ..> UThisIsLogicSettings
+
+    AFormula --> ABlock
+    AFormula ..> APropositionBlock
+
+    FBlockFactory --> FNotation
+    FBlockFactory ..> ABlock
+    FBlockFactory ..> AOperatorBlock
+    FBlockFactory ..> APropositionBlock
+
+    AOperatorBlock --|> ABlock
+    APropositionBlock --|> ABlock
+    ABlock ..|> IPointerTarget
+    ABlock --> URoundedBackgroundComponent
+    ABlock ..> UThisIsLogicSettings
+
+    ABackgroundTarget ..|> IPointerTarget
+    AThisIsLogicPlayerController --> IPointerTarget
+
+    UThisIsLogicSettings ..> UCommandPanel
+
+    AThisIsLogicGameMode ..> ACameraPawn
+```
+
+The same diagram drawn in Visual Paradigm, from the code at commit [08d44d7](https://github.com/expn-pi/ThisIsLogic/tree/08d44d7de868a162535b49d49d9b668392f0b044). It may lag behind the diagram above.
+
+![Class diagram drawn in Visual Paradigm](Images/ProjectClassDiagram.png)
 
 ## License
 

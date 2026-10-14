@@ -1,10 +1,10 @@
 #pragma once
 
+#include "CoreMinimal.h"
+#include "GameFramework/GameModeBase.h"
+
 #include "CameraPawn.h"
 
-#include "CoreMinimal.h"
-
-#include "GameFramework/GameModeBase.h"
 #include "ThisIsLogicGameMode.generated.h"
 
 UCLASS()
