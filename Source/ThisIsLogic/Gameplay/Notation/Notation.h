@@ -15,12 +15,10 @@ class FNotation
 			this->FillSymbols();
 		}
 
-		FString GetLetter(int32 PropositionNumber) const
+		FString GetLetter(int32 PropositionIndex) const
 		{
-			int32 LetterOffset = PropositionNumber - 1;
-
 			int32 LetterCode =
-				this->FirstLetter + LetterOffset;
+				this->FirstLetter + PropositionIndex;
 
 			TCHAR Letter = static_cast<TCHAR>(LetterCode);
 

@@ -18,6 +18,27 @@ class FBlockFactory
 		{
 		}
 
+		TArray<ABlock*> CreateBlocks(
+			UWorld* World,
+			const TArray<FToken>& Tokens,
+			const TArray<FString>& Sentences
+		) const
+		{
+			TArray<ABlock*> Blocks;
+
+			for (const FToken& Token : Tokens)
+			{
+				ABlock* Block =
+					this->CreateBlock(
+						World, Token, Sentences
+					);
+
+				Blocks.Add(Block);
+			}
+
+			return Blocks;
+		}
+
 		ABlock* CreateBlock(
 			UWorld* World,
 			const FToken& Token,
@@ -29,15 +50,17 @@ class FBlockFactory
 
 			if (bIsProposition)
 			{
-				return this->CreatePropositionBlock(
-					World, Token, Sentences
-				);
+				return
+					this->CreatePropositionBlock(
+						World, Token, Sentences
+					);
 			}
 			else
 			{
-				return this->CreateOperatorBlock(
-					World, Token
-				);
+				return
+					this->CreateOperatorBlock(
+						World, Token
+					);
 			}
 		}
 
@@ -61,16 +84,14 @@ class FBlockFactory
 						APropositionBlock
 					>(BlockClass, Transform);
 
-			int32 PropositionNumber =
-				Token.PropositionNumber;
+			int32 PropositionIndex =
+				Token.Index;
 
 			FString Letter =
-				this->Notation.GetLetter(PropositionNumber);
-
-			int32 SentenceIndex = PropositionNumber - 1;
+				this->Notation.GetLetter(PropositionIndex);
 
 			const FString& Sentence =
-				Sentences[SentenceIndex];
+				Sentences[PropositionIndex];
 
 			Block->SetProposition(Letter, Sentence);
 

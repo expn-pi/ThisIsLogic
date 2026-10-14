@@ -1,8 +1,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Engine/DeveloperSettings.h"
+#include "Engine/DataTable.h"
 #include "UObject/SoftObjectPtr.h"
+#include "Engine/DeveloperSettings.h"
 #include "Materials/MaterialInterface.h"
 
 #include "../UI/CommandPanel.h"
@@ -45,6 +46,20 @@ class THISISLOGIC_API UThisIsLogicSettings :
 			return PanelClass;
 		}
 
+		UDataTable*
+			GetLevelTable() const
+		{
+			UDataTable* Table =
+				this->LevelTable.
+				LoadSynchronous();
+
+			bool bHasTable = Table != nullptr;
+
+			check(bHasTable);
+
+			return Table;
+		}
+
 	private:
 
 		UPROPERTY(
@@ -58,4 +73,10 @@ class THISISLOGIC_API UThisIsLogicSettings :
 		)
 		TSoftClassPtr<UCommandPanel>
 			CommandPanelClass;
+
+		UPROPERTY(
+			Config, EditAnywhere, Category = "Level"
+		)
+		TSoftObjectPtr<UDataTable>
+			LevelTable;
 };

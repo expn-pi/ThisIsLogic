@@ -1,8 +1,8 @@
 #pragma once
 
-#include "CoreMinimal.h"
+#include <cstdint>
 
-enum class ETokenKind : uint8
+enum class ETokenKind : std::uint8_t
 {
 	Proposition,
 	TrueConstant,
@@ -22,29 +22,7 @@ enum class ETokenKind : uint8
 
 struct FToken
 {
-	FToken(
-		ETokenKind InKind,
-		const FString& InText
-	)
-	{
-		this->Kind = InKind;
-		this->Text = InText;
-
-		bool bIsProposition =
-			this->Kind == ETokenKind::Proposition;
-
-		if (bIsProposition)
-		{
-			const TCHAR* NumberText = *this->Text;
-
-			this->PropositionNumber =
-				FCString::Atoi(NumberText);
-		}
-	}
-
 	ETokenKind Kind;
 
-	FString Text;
-
-	int32 PropositionNumber = 0;
+	int Index = -1;
 };

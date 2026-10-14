@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 
-#include "LogicTypes.h"
+#include "../../Logic/LogicTypes.h"
 
 class FFormulaStub
 {
@@ -38,50 +38,53 @@ class FFormulaStub
 				ETokenKind::CloseParenthesis
 			};
 
-			TArray<FString> Texts = {
-				"1",
-				"=",
-				"(",
-				"2",
-				"&",
-				"3",
-				"&",
-				"4",
-				")",
-				"|",
-				"(",
-				"2",
-				"&",
-				"3",
-				"&",
-				"~",
-				"4",
-				")",
-				"|",
-				"(",
-				"2",
-				"&",
-				"~",
-				"3",
-				")"
+			TArray<int32> Indices = {
+				0,
+				-1,
+				-1,
+				1,
+				-1,
+				2,
+				-1,
+				3,
+				-1,
+				-1,
+				-1,
+				1,
+				-1,
+				2,
+				-1,
+				-1,
+				3,
+				-1,
+				-1,
+				-1,
+				1,
+				-1,
+				-1,
+				2,
+				-1
 			};
 
 			int32 KindsNum = Kinds.Num();
-			int32 TextsNum = Texts.Num();
+			int32 IndicesNum = Indices.Num();
 
-			bool bHasSameCount = KindsNum == TextsNum;
+			bool bHasSameCount = KindsNum == IndicesNum;
 
 			check(bHasSameCount);
 
 			TArray<FToken> Tokens;
 
-			for (int32 Index=0; Index<KindsNum; Index++)
+			for (int32 I=0; I<KindsNum; I++)
 			{
-				ETokenKind Kind = Kinds[Index];
+				ETokenKind Kind = Kinds[I];
 
-				const FString& Text = Texts[Index];
+				int32 Index = Indices[I];
 
-				FToken Token = FToken(Kind, Text);
+				FToken Token = {
+					.Kind = Kind,
+					.Index = Index
+				};
 
 				Tokens.Add(Token);
 			}

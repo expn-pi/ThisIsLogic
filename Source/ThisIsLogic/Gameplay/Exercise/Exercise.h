@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Engine/DataTable.h"
 #include "GameFramework/Actor.h"
 #include "Blueprint/UserWidget.h"
 #include "Logging/StructuredLog.h"
@@ -8,10 +9,12 @@
 #include "GameFramework/PlayerController.h"
 
 #include "../Block/Block.h"
+#include "../Level/LevelRow.h"
 #include "../Formula/Formula.h"
+// #include "../Level/FormulaStub.h"
 #include "../Block/BlockFactory.h"
 #include "../../UI/CommandPanel.h"
-#include "../../Logic/FormulaStub.h"
+#include "../../Logic/FormulaAnalyzer.h"
 #include "../../Input/BackgroundTarget.h"
 #include "../../BasicComponents/ThisIsLogicSettings.h"
 
@@ -44,16 +47,46 @@ class THISISLOGIC_API AExercise : public AActor
 		{
 			Super::BeginPlay();
 
+			this->LoadLevel();
+
 			this->CreateBackground();
 
 			this->CreateFormula();
 
 			this->CreateBlocks();
-			
+
 			this->CreatePanel();
 		}
 
 	private:
+
+		void LoadLevel()
+		{
+			const UThisIsLogicSettings* Settings =
+				GetDefault<UThisIsLogicSettings>();
+
+			UDataTable* LevelTable =
+				Settings->GetLevelTable();
+
+			TArray<FName> RowNames =
+				LevelTable->GetRowNames();
+
+			FName FirstRowName = RowNames[0];
+
+			const TCHAR* ContextString = TEXT("AExercise");
+
+			const FLevelRow* Row =
+				LevelTable->
+					FindRow<
+						FLevelRow
+					>(FirstRowName, ContextString);
+
+			bool bHasRow = Row != nullptr;
+
+			check(bHasRow);
+
+			this->LevelRow = *Row;
+		}
 
 		void CreateBackground()
 		{
@@ -117,29 +150,57 @@ class THISISLOGIC_API AExercise : public AActor
 		void CreateBlocks()
 		{
 			UWorld* World = this->GetWorld();
-
-			FFormulaStub FormulaStub;
-
+			
+			// For quick tests, change below:
+			//		AnalyzeFormula with
+			//		FormulaStub.GetTokens		
+			
+			//FFormulaStub FormulaStub;
+			
 			TArray<FToken> Tokens =
-				FormulaStub.GetTokens();
+				this->AnalyzeFormula();
+				//FormulaStub.GetTokens();
 
-			TArray<FString> Sentences =
-				FormulaStub.GetSentences();
+			const TArray<FString>& Sentences =
+				this->LevelRow.Sentences;
 
-			TArray<ABlock*> Blocks;
-
-			for (const FToken& Token : Tokens)
-			{
-				ABlock* Block =
-					this->BlockFactory.
-						CreateBlock(World, Token, Sentences);
-
-				Blocks.Add(Block);
-			}
+			TArray<ABlock*> Blocks =
+				this->BlockFactory.
+					CreateBlocks(World, Tokens, Sentences);
 
 			this->Formula->AddBlocks(Blocks);
 		}
-	
+
+		TArray<FToken> AnalyzeFormula() const
+		{
+			const TCHAR* FormulaChars =
+				*this->LevelRow.Formula;
+
+			std::string FormulaText =
+				TCHAR_TO_UTF8(FormulaChars);
+
+			std::optional<std::vector<FToken>> AnalyzedTokens =
+				FFormulaAnalyzer::Analyze(FormulaText);
+
+			bool bIsValid = AnalyzedTokens.has_value();
+
+			check(bIsValid);
+
+			const std::vector<FToken>& ValidTokens =
+				AnalyzedTokens.value();
+
+			const FToken* TokenData = ValidTokens.data();
+
+			std::size_t TokenCount = ValidTokens.size();
+
+			int32 TokenNum = static_cast<int32>(TokenCount);
+
+			TArray<FToken> Tokens =
+				TArray<FToken>(TokenData, TokenNum);
+
+			return Tokens;
+		}
+
 		void CreatePanel()
 		{
 			UWorld* World = this->GetWorld();
@@ -157,24 +218,24 @@ class THISISLOGIC_API AExercise : public AActor
 				CreateWidget<
 					UCommandPanel
 				>(PlayerController, PanelClass);
-			
+
 			this->CommandPanel->
 				SetAllMinimizedRequestedListener(
 					this,
 					&AExercise::OnAllMinimizedRequested
 				);
-			
+
 			this->CommandPanel->
 				SetToggleMinimizedRequestedListener(
 					this,
 					&AExercise::OnToggleMinimizedRequested
 				);
-			
+
 			this->UpdatePanel();
 
 			this->CommandPanel->AddToViewport();
 		}
-	
+
 		void UpdatePanel()
 		{
 			bool bIsPropositionSelected =
@@ -195,12 +256,12 @@ class THISISLOGIC_API AExercise : public AActor
 		{
 			this->UpdatePanel();
 		}
-	
+
 		void OnAllMinimizedRequested(bool bMinimized)
 		{
 			this->Formula->SetAllMinimized(bMinimized);
 		}
-	
+
 		void OnToggleMinimizedRequested()
 		{
 			this->Formula->ToggleSelectedMinimized();
@@ -211,6 +272,8 @@ class THISISLOGIC_API AExercise : public AActor
 
 		UPROPERTY()
 		TObjectPtr<UCommandPanel> CommandPanel;
+
+		FLevelRow LevelRow;
 
 		FBlockFactory BlockFactory = FBlockFactory('P');
 

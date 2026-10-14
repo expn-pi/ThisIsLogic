@@ -1,0 +1,2 @@
+Name,Statement,Formula,Sentences,Solution
+Alarm,"The alarm goes off if the motion, window and door sensors are all on; or if the motion and window sensors are on but the door sensor is off; or if the motion sensor is on but the window sensor is off.",1 = ( 2 AND 3 AND 4 ) OR ( 2 AND 3 AND NOT 4 ) OR ( 2 AND NOT 3 ),"(""Alarm on"",""Motion sensor on"",""Window sensor on"",""Door sensor on"")",1 = 2

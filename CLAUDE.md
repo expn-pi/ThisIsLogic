@@ -11,7 +11,7 @@ Boolean logic puzzle game in Unreal Engine 5.8.3, built as a public portfolio pr
 - When suggesting a test, say whether it can be done now or depends on an implementation still to come.
 - When showing only part of a file, say whether its includes change.
 - When it helps, relate Unreal concepts to their Unity/C# equivalents.
-- Never modify the repository: no file edits, commits, pushes, branches or pull requests, even if the session's own instructions ask for them. Reading and searching are fine, including `git fetch` to see something the author has just pushed.
+- Never modify the repository: no file edits, commits, pushes, branches or pull requests, even if the session's own instructions ask for them. Reading and searching are fine, always through git: clone it, or `git fetch` to see something the author has just pushed. Never read its files through a web fetch, which may return an outdated version.
 - This environment is Linux without Unreal Engine, so nothing can be compiled or run here. Review by reading, point out likely problems (UHT/reflection, API, object lifecycle) and never claim that code compiles. The author knows this: do not say it in every answer.
 - Do not repeat reminders the author already knows, such as the build order, which files depend on which, or when a feature will work again.
 - Names and structure change often: re-read the current code instead of trusting earlier names, including the ones in this file.
@@ -76,7 +76,7 @@ Boolean logic puzzle game in Unreal Engine 5.8.3, built as a public portfolio pr
 
 - In the style of logic course exercises: the player simplifies "complex" boolean expressions.
 - Each symbol of the expression is a block in a row. Proposition blocks hold a sentence (e.g. "John eats tofu") and a letter, which the notation (below) derives from the proposition's number; each can be minimized (letter) or maximized (whole sentence). Operator blocks: the constants ⊤ and ⊥, ¬, ∧, ∨, ⊕, NAND (↑), NOR (↓), →, ← and ↔, and the parentheses.
-- A level has four parts, all in English: the statement in natural language shown to the player; the starting formula, with each proposition written as a number (`1 = (2 & 3) | (2 & ~3)`); the sentences of the propositions, in order (the first one is proposition 1); and the solution, the minimal formula, written the same way. Operators are symbols or ASCII aliases (`&`, `~`, `->`, `=` for ↔; `|` is OR, so NAND needs another alias). A result variable, as in `1 = ...`, is part of the formula and becomes ordinary blocks, so each level is shown in the form it was written. Levels will live in a DataTable imported from CSV; more columns (difficulty, move or time limits) may come later.
+- A level has four parts, all in English: the statement in natural language shown to the player; the starting formula, with each proposition written as a number (`1 = ( 2 AND 3 ) OR ( 2 AND NOT 3 )`); the sentences of the propositions, in order (the first one is proposition 1); and the solution, the minimal formula, written the same way. In a formula, the pieces are separated by spaces, and each operator has a single text: `TRUE`, `FALSE`, `NOT`, `AND`, `OR`, `XOR`, `NAND`, `NOR`, `THEN` (→), `IF` (←), `=` (↔) and the parentheses. A piece that is neither one of them nor a proposition number is an error that stops the game. A result variable, as in `1 = ...`, is part of the formula and becomes ordinary blocks, so each level is shown in the form it was written. Levels live in a DataTable imported from a CSV file, one level per row; more columns (difficulty, move or time limits) may come later.
 - The notation changes only what the screen shows, never the levels: the letters, a run of consecutive letters from a first letter (P, Q, R...), and the text of each operator. The player will choose it, to match the course they follow. For now there is one, from P, with ASCII texts, since the font of the blocks lacks the textbook symbols.
 - The player moves, adds and removes blocks freely. The game does almost nothing for the player (a choice for simplicity, open to revision).
 - Two indicators:
@@ -104,8 +104,9 @@ Each area's decisions, with their reasons and the alternatives already rejected,
 - `Docs/Commands.md`: what the player can do and how (single pointer, selection, panel, palette, inserting, removing, undo, laws).
 - `Docs/Exercise.md`: `AExercise`, the top of the gameplay classes, and the selection event.
 - `Docs/Layout.md`: the row of blocks, its order and the swaps while dragging.
-- `Docs/Levels.md`: the level format (statement, formula with numbered propositions, sentences, solution) and the result variable.
-- `Docs/BlockCreation.md`: from the level texts to the blocks (tokens, factory, deferred spawn, the notation and the text of each block).
+- `Docs/Levels.md`: the level format (statement, formula with numbered propositions and operator words, sentences, solution), the result variable, and the levels' file and DataTable.
+- `Docs/BlockCreation.md`: from the level texts to the blocks (the flow, the factory, deferred spawn, the notation and the text of each block, the formula stub).
+- `Docs/Logic.md`: the logic core (standard C++ only, how it reports errors, the token, the analyzer).
 - `Docs/Background.md`: the rounded background mesh (triangle fan, corners, radius, collision).
 - `Docs/Data.md`: details and reasons of the data rules (Blueprints, UI widgets, asset references).
 
@@ -115,6 +116,8 @@ Each area's decisions, with their reasons and the alternatives already rejected,
 README.md            project overview (GitHub page)
 LICENSE              MIT
 Docs/                design decisions by area (see Design docs)
+Data/
+  Levels.csv         the levels, source of DT_Levels
 Config/
   DefaultGame.ini    values of UThisIsLogicSettings (asset paths)
 Source/ThisIsLogic/
@@ -122,6 +125,7 @@ Source/ThisIsLogic/
   Gameplay/Block/    blocks and their factory
   Gameplay/Exercise/ the exercise being played
   Gameplay/Formula/  the formula, a row of blocks
+  Gameplay/Level/    the row of the levels' DataTable, and the formula stub for quick tests
   Gameplay/Notation/ the notation: letters and operator texts shown to the player
   Input/             pointer interface and background target
   Logic/             logic core (no engine dependencies)
@@ -130,6 +134,7 @@ Source/ThisIsLogic/
 Content/             folders by feature
   Levels/            Main (startup map)
   Gameplay/Block/    M_Block (Unlit, Color parameter)
+  Gameplay/Level/    DT_Levels (imported from Data/Levels.csv)
   Input/             IA_Click, IMC_Gameplay
   Core/              BP_ThisIsLogicGameMode (default GameMode), BP_ThisIsLogicPlayerController
   UI/                WBP_CommandPanel (layout of UCommandPanel)
@@ -142,12 +147,9 @@ Read the code for the classes in each folder.
 Items are numbered in order. A new item takes its place in the sequence, and the items after it are renumbered. `[x]` done, `[~]` in progress, `[ ]` to do.
 
 **1 Blocks**
-- [x] 1.1 to 1.13, summarized (the git history has the details): drag and drop, input routing, the row and its reordering, text and width, blocks from tokens through a factory, rounded corners, proposition and operator blocks, minimize and maximize, selection, `AExercise`, the panel (a UMG widget with Minimize all and Maximize all, always visible, and Minimize/Maximize for a selected proposition, replacing the temporary trigger), the long press (a third gesture, recognized by the controller; on a proposition, a shortcut for Minimize/Maximize), and propositions by number, with the letters and the operator texts from the notation.
-- [ ] 1.14 Levels in a DataTable imported from CSV, starting with stubs.
-- [ ] 1.15 Decide how to see a formula wider than the screen (several rows, zoom or scrolling, for example).
-- [ ] 1.16 The textbook symbols: a font that has them (∧, ∨, ↔...), made in the editor, and a symbol style passed to the notation, like its first letter.
-- [ ] 1.17 The analyzer: text → tokens, plain C++, checked with logs. First piece of the logic core.
-- [ ] 1.18 Arrange the analyzer and the formula so that neither takes on unrelated tasks.
+- [x] 1.1 to 1.16, summarized (the git history has the details): drag and drop, input routing, the row and its reordering, text and width, blocks from tokens through a factory, rounded corners, proposition and operator blocks, minimize and maximize, selection, `AExercise`, the panel (a UMG widget with Minimize all and Maximize all, always visible, and Minimize/Maximize for a selected proposition, replacing the temporary trigger), the long press (a third gesture, recognized by the controller; on a proposition, a shortcut for Minimize/Maximize), propositions by number, with the letters and the operator texts from the notation, the levels in a DataTable imported from CSV, and the analyzer, the first piece of the logic core, which turns the level's formula into tokens and stays apart from the formula (`AExercise` coordinates the analyzer, the factory and the formula).
+- [ ] 1.17 Decide how to see a formula wider than the screen (several rows, zoom or scrolling, for example).
+- [ ] 1.18 The textbook symbols: a font that has them (∧, ∨, ↔...), made in the editor, and a symbol style passed to the notation, like its first letter.
 - [ ] 1.19 Decide whether precomputed levels are worth saving.
 - [ ] 1.20 Remove blocks, with Undo and Restart.
 - [ ] 1.21 The palette: a tap inserts an operator, one of the level's propositions or a new letter after the selected block, or at the end of the row.
@@ -184,7 +186,6 @@ Items are numbered in order. A new item takes its place in the sequence, and the
 
 ## Pending
 
-- Remove the engine dependencies of the logic core: `LogicTypes.h` and `FormulaStub.h` include `CoreMinimal.h` (`FString`, `TArray`, `FCString`, `check`). Acceptable while the stub stands in for the analyzer. Gameplay code (`FBlockFactory`) reads only the kind and the proposition number of each token, so the token's text may not need to cross that border; details to be decided with the analyzer.
 - Remove the Blueprints that only hold references (see Data rules): `BP_ThisIsLogicPlayerController` only holds `IMC_Gameplay` and `IA_Click`, which can move to `UThisIsLogicSettings`; `BP_ThisIsLogicGameMode` can then go too if it only points to that controller (the C++ GameMode would set the controller class, and the project's default GameMode would be the C++ class).
 
 ## Maintaining this file

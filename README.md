@@ -29,7 +29,7 @@ Proposition blocks hold a sentence and a letter, and can be minimized (letter) o
 - [x] Blocks laid out as a row, reordered by dragging
 - [x] Block width fitted to its text
 - [x] Proposition and operator blocks
-- [ ] Levels loaded from a data table
+- [x] Levels loaded from a data table
 - [ ] Validity and equivalence indicators
 - [ ] Logic core: parser, evaluation and equivalence by truth table
 - [ ] Win condition and progression between levels
@@ -56,10 +56,14 @@ Requirements: Windows, Unreal Engine 5.8 and Visual Studio 2022 with the "Game d
 ```
 Source/ThisIsLogic/
   BasicComponents/   camera, game mode and player controller
-  Gameplay/          blocks and formulas
+  Gameplay/          blocks, formulas and levels
   Input/             mouse routing interface
   Logic/             logic core, plain C++ with no engine dependencies
+  UI/                UI widgets, with the logic in C++ and the layout in Widget Blueprints
+  Visuals/           reusable visual components
 Content/             assets, in folders by feature
+Data/                levels, as a CSV file imported into a data table
+Docs/                design decisions by area
 ```
 
 ## License
