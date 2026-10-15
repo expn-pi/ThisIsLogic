@@ -58,6 +58,7 @@ class THISISLOGIC_API AExercise : public AActor
 			this->CreatePanel();
 		}
 
+	#pragma region PrivateMethods
 	private:
 
 		void LoadLevel()
@@ -138,6 +139,9 @@ class THISISLOGIC_API AExercise : public AActor
 					);
 
 			this->Formula->SetOwner(this);
+			
+			this->Formula->
+				SetBlockHeight(AExercise::BlockHeight);
 
 			this->Formula->
 				SetSelectionChangedListener(
@@ -153,7 +157,9 @@ class THISISLOGIC_API AExercise : public AActor
 			
 			// For quick tests, change below:
 			//		AnalyzeFormula with
-			//		FormulaStub.GetTokens		
+			//			FormulaStub.GetTokens	
+			//		And this->LevelRow.Sentences with
+			//			FormulaStub.GetSentences();
 			
 			//FFormulaStub FormulaStub;
 			
@@ -163,6 +169,7 @@ class THISISLOGIC_API AExercise : public AActor
 
 			const TArray<FString>& Sentences =
 				this->LevelRow.Sentences;
+				//FormulaStub.GetSentences();
 
 			TArray<ABlock*> Blocks =
 				this->BlockFactory.
@@ -267,6 +274,10 @@ class THISISLOGIC_API AExercise : public AActor
 			this->Formula->ToggleSelectedMinimized();
 		}
 
+	#pragma endregion
+	
+	#pragma region Attributes
+	
 		UPROPERTY()
 		TObjectPtr<AFormula> Formula;
 
@@ -275,7 +286,12 @@ class THISISLOGIC_API AExercise : public AActor
 
 		FLevelRow LevelRow;
 
-		FBlockFactory BlockFactory = FBlockFactory('P');
+		FBlockFactory BlockFactory = 
+			FBlockFactory('P', AExercise::BlockHeight);
 
-		static constexpr double BackgroundDepth = 100.0;
+		static constexpr float BlockHeight = 2.f;
+
+		static constexpr double BackgroundDepth = 5.0;
+	
+	#pragma endregion
 };

@@ -32,7 +32,7 @@ class THISISLOGIC_API ABackgroundTarget :
 			this->RootComponent = this->Area;
 
 			FVector AreaExtent =
-				FVector(10000.f, 10000.f, 1.f);
+				FVector(100.f, 100.f, 0.1f);
 
 			this->Area->InitBoxExtent(AreaExtent);
 

@@ -28,79 +28,18 @@ class THISISLOGIC_API ABlock :
 {
 	GENERATED_BODY()
 
+	#pragma region PublicMethods
 	public:
 
 		ABlock()
 		{
 			this->PrimaryActorTick.bCanEverTick = false;
 
-			FName BackgroundName = TEXT("Background");
+			this->CreateBackground();
 
-			this->Background =
-				CreateDefaultSubobject<
-					URoundedBackgroundComponent
-				>(BackgroundName);
+			this->CreateLabel();
 
-			this->RootComponent = this->Background;
-
-			this->Background->SetRoundness(1.f);
-
-			FName LabelName = TEXT("Label");
-
-			this->Label =
-				CreateDefaultSubobject<
-					UTextRenderComponent
-				>(LabelName);
-
-			this->Label->SetupAttachment(this->Background);
-
-			FVector LabelLocation = FVector(0.f, 0.f, 1.f);
-
-			FRotator LabelRotation =
-				FRotator(90.f, 180.f, 0.f);
-
-			this->Label->
-				SetRelativeLocationAndRotation(
-					LabelLocation, LabelRotation
-				);
-
-			this->Label->
-				SetHorizontalAlignment(EHTA_Center);
-
-			this->Label->
-				SetVerticalAlignment(EVRTA_TextCenter);
-
-			this->Label->SetWorldSize(50.f);
-
-			FName OutlineName = TEXT("Outline");
-
-			this->Outline =
-				CreateDefaultSubobject<
-					URoundedBackgroundComponent
-				>(OutlineName);
-
-			this->Outline->
-				SetupAttachment(this->Background);
-
-			FVector OutlineLocation =
-				FVector(0.f, 0.f, -1.f);
-
-			this->Outline->
-				SetRelativeLocation(OutlineLocation);
-
-			this->Outline->SetRoundness(1.f);
-
-			FLinearColor OutlineColor =
-				FLinearColor::Yellow;
-
-			this->Outline->SetColor(OutlineColor);
-
-			this->Outline->
-				SetCollisionEnabled(
-					ECollisionEnabled::NoCollision
-				);
-
-			this->Outline->SetVisibility(false);
+			this->CreateOutline();
 		}
 
 		virtual void OnConstruction(
@@ -109,6 +48,8 @@ class THISISLOGIC_API ABlock :
 			override
 		{
 			Super::OnConstruction(Transform);
+			
+			this->ApplyHeight();
 
 			const UThisIsLogicSettings* Settings =
 				GetDefault<UThisIsLogicSettings>();
@@ -131,6 +72,11 @@ class THISISLOGIC_API ABlock :
 			this->ApplyText();
 		}
 
+		void SetHeight(float NewHeight)
+		{
+			this->Height = NewHeight;
+		}
+	
 		float GetWidth() const
 		{
 			return this->Width;
@@ -229,7 +175,10 @@ class THISISLOGIC_API ABlock :
 
 			this->OnDropRequested.Execute(this);
 		}
-
+	
+	#pragma endregion
+	
+	#pragma region ProtectedMethods
 	protected:
 
 		void SetColor(const FLinearColor& NewColor)
@@ -256,8 +205,116 @@ class THISISLOGIC_API ABlock :
 			this->OnWidthChanged.Execute(this);
 		}
 
+	#pragma endregion
+	
+	#pragma region PrivateMethods
 	private:
+		
+		// Initialization
+	
+		void CreateBackground()
+		{
+			FName BackgroundName = TEXT("Background");
 
+			this->Background =
+				CreateDefaultSubobject<
+					URoundedBackgroundComponent
+				>(BackgroundName);
+
+			this->RootComponent = this->Background;
+
+			this->Background->SetRoundness(1.f);
+		}
+
+		void CreateLabel()
+		{
+			FName LabelName = TEXT("Label");
+
+			this->Label =
+				CreateDefaultSubobject<
+					UTextRenderComponent
+				>(LabelName);
+
+			this->Label->SetupAttachment(this->Background);
+
+			FRotator LabelRotation =
+				FRotator(90.f, 180.f, 0.f);
+
+			this->Label->
+				SetRelativeRotation(LabelRotation);
+
+			this->Label->
+				SetHorizontalAlignment(EHTA_Center);
+
+			this->Label->
+				SetVerticalAlignment(EVRTA_TextCenter);
+		}
+
+		void CreateOutline()
+		{
+			FName OutlineName = TEXT("Outline");
+
+			this->Outline =
+				CreateDefaultSubobject<
+					URoundedBackgroundComponent
+				>(OutlineName);
+
+			this->Outline->
+				SetupAttachment(this->Background);
+
+			this->Outline->SetRoundness(1.f);
+
+			FLinearColor OutlineColor =
+				FLinearColor::Yellow;
+
+			this->Outline->SetColor(OutlineColor);
+
+			this->Outline->
+				SetCollisionEnabled(
+					ECollisionEnabled::NoCollision
+				);
+
+			this->Outline->SetVisibility(false);
+		}
+
+		// To use any time
+	
+		void ApplyHeight()
+		{
+			bool bHasHeight = this->Height > 0.f;
+
+			check(bHasHeight);
+			
+			float LayerOffset =
+				this->Height * ABlock::LayerOffsetRatio;
+
+			FVector LabelLocation =
+				FVector(0.f, 0.f, LayerOffset);
+
+			this->Label->
+				SetRelativeLocation(LabelLocation);
+
+			float LabelSize =
+				this->Height * ABlock::LabelSizeRatio;
+
+			this->Label->SetWorldSize(LabelSize);
+
+			FVector OutlineLocation =
+				FVector(0.f, 0.f, -LayerOffset);
+
+			this->Outline->
+				SetRelativeLocation(OutlineLocation);
+
+			this->TextMargin =
+				this->Height * ABlock::TextMarginRatio;
+
+			this->OutlineThickness =
+				this->Height *
+				ABlock::OutlineThicknessRatio;
+
+			this->Width = this->Height;
+		}
+	
 		void ApplyText()
 		{
 			FString BlockText = this->GetText();
@@ -312,7 +369,11 @@ class THISISLOGIC_API ABlock :
 
 			this->OnSelectRequested.Execute(this);
 		}
+	
+	#pragma endregion
 
+	#pragma region Attributes
+	
 		FOnBlockWidthChanged OnWidthChanged;
 
 		FOnBlockMoveRequested OnMoveRequested;
@@ -327,9 +388,8 @@ class THISISLOGIC_API ABlock :
 
 		UPROPERTY(VisibleAnywhere)
 		TObjectPtr<UTextRenderComponent> Label;
-
-		UPROPERTY(EditAnywhere, Category = "Block")
-		float TextMargin = 20.f;
+	
+		float TextMargin = 0.f;
 
 		// Background
 
@@ -340,15 +400,23 @@ class THISISLOGIC_API ABlock :
 
 		UPROPERTY(VisibleAnywhere)
 		TObjectPtr<URoundedBackgroundComponent> Outline;
-
-		UPROPERTY(EditAnywhere, Category = "Block")
-		float OutlineThickness = 8.f;
+	
+		float OutlineThickness = 0.f;
 
 		// Block
+	
+		float Width = 0.f;
+	
+		float Height = 0.f;
+	
+		static constexpr float LabelSizeRatio = 0.5f;
 
-		UPROPERTY(VisibleAnywhere, Category = "Block")
-		float Width = 100.f;
+		static constexpr float TextMarginRatio = 0.2f;
 
-		UPROPERTY(EditAnywhere, Category = "Block")
-		float Height = 100.f;
+		static constexpr float
+			OutlineThicknessRatio = 0.08f;
+
+		static constexpr float LayerOffsetRatio = 0.05f;
+	
+	#pragma endregion
 };

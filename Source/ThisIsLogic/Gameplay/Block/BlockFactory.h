@@ -13,8 +13,11 @@ class FBlockFactory
 {
 	public:
 
-		explicit FBlockFactory(TCHAR InFirstLetter) :
-			Notation(InFirstLetter)
+		explicit FBlockFactory(
+			TCHAR InFirstLetter, float InBlockHeight
+		) :
+			Notation(InFirstLetter),
+			BlockHeight(InBlockHeight)
 		{
 		}
 
@@ -84,6 +87,8 @@ class FBlockFactory
 						APropositionBlock
 					>(BlockClass, Transform);
 
+			Block->SetHeight(this->BlockHeight);
+			
 			int32 PropositionIndex =
 				Token.Index;
 
@@ -115,6 +120,8 @@ class FBlockFactory
 					SpawnActorDeferred<
 						AOperatorBlock
 					>(BlockClass, Transform);
+			
+			Block->SetHeight(this->BlockHeight);
 
 			ETokenKind Kind = Token.Kind;
 
@@ -129,4 +136,6 @@ class FBlockFactory
 		}
 
 		FNotation Notation;
+	
+		float BlockHeight = 0.f;
 };

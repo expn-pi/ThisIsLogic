@@ -15,16 +15,23 @@ class THISISLOGIC_API ACameraPawn : public APawn
 
 		ACameraPawn()
 		{
-			PrimaryActorTick.bCanEverTick = false;
+			this->PrimaryActorTick.bCanEverTick = false;
 
 			FName CameraName = TEXT("Camera");
 
-			Camera =
+			this->Camera =
 				CreateDefaultSubobject<
 					UCameraComponent
 				>(CameraName);
 
-			RootComponent = Camera;
+			this->RootComponent = this->Camera;
+
+			ECameraProjectionMode::Type ProjectionMode =
+				ECameraProjectionMode::Orthographic;
+
+			this->Camera->SetProjectionMode(ProjectionMode);
+
+			this->Camera->SetOrthoWidth(50.f);
 		}
 
 	protected:
@@ -34,25 +41,18 @@ class THISISLOGIC_API ACameraPawn : public APawn
 			Super::BeginPlay();
 
 			FVector OverheadLocation =
-				FVector(0.f, 0.f, 100.f);
+				FVector(0.f, 0.f, 50.f);
 
 			FRotator LookDownRotation =
 				FRotator(-90.f, 0.f, 0.f);
 
-			SetActorLocationAndRotation(
+			this->SetActorLocationAndRotation(
 				OverheadLocation, LookDownRotation
 			);
-
-			ECameraProjectionMode::Type ProjectionMode =
-				ECameraProjectionMode::Orthographic;
-
-			Camera->SetProjectionMode(ProjectionMode);
-			Camera->SetOrthoWidth(1000.f);
 		}
 
 	private:
 
 		UPROPERTY(VisibleAnywhere)
 		TObjectPtr<UCameraComponent> Camera;
-
 };

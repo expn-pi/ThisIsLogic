@@ -60,6 +60,7 @@ Boolean logic puzzle game in Unreal Engine 5.8.3, built as a public portfolio pr
   - `TEXT(...)` counts as a call: it may initialize a named variable (`FName MeshName = TEXT("Mesh")`) but stays out of argument lists, brace initializers included. For literal data such as a stub, prefer one typed array per field, combined in a loop, with a `check` that the sizes match. Plain string literals are fine for ASCII text; non-ASCII text needs `TEXT`.
   - Long access paths are broken across lines up to the called method.
 - Includes come in groups separated by a blank line, with the `.generated.h` last; within each group, from the shortest line to the longest.
+- Large classes may group their members in `#pragma region` blocks, as a navigation aid in the IDE: `PublicMethods`, `ProtectedMethods`, `PrivateMethods` and `Attributes`, in this order, each holding its access specifier (`Attributes` has none, so its fields follow the last one). Like `public:` and `private:`, they are indented one level inside the class. Only sections big enough to be worth folding get one; small classes and small sections have none. Follow them in classes that have them and do not suggest removing them; spreading them to other classes is not a priority, and refactoring a class is often better.
 - A method that subclasses must override gets a normal body with `unimplemented()` and a placeholder return, since a `UCLASS` cannot have pure virtual methods (`= 0`); `PURE_VIRTUAL` is avoided because its notation is confusing.
 - Few comments.
 - Follow this style in every detail when suggesting code; when in doubt, mirror the existing files.
@@ -85,7 +86,7 @@ Boolean logic puzzle game in Unreal Engine 5.8.3, built as a public portfolio pr
 - Two indicators:
   - Validity: is the sequence a well-formed formula?
   - Equivalence with the level's starting expression: cyan if equivalent, red if not, gray when the expression is invalid.
-- Visuals: simple 2D made with basic 3D. Top-down orthographic camera; blocks are meshes, not textures: capsules, or circles when the text is short.
+- Visuals: simple 2D made with basic 3D, at the real size of a board game (see `Docs/Scale.md`). Top-down orthographic camera; blocks are meshes, not textures: capsules, or circles when the text is short.
 
 ## Data rules
 
@@ -111,6 +112,7 @@ Each area's decisions, with their reasons and the alternatives already rejected,
 - `Docs/BlockCreation.md`: from the level texts to the blocks (the flow, the factory, deferred spawn, the notation and the text of each block, the formula stub).
 - `Docs/Logic.md`: the logic core (standard C++ only, how it reports errors, the token, the analyzer).
 - `Docs/Background.md`: the rounded background mesh (triangle fan, corners, radius, collision).
+- `Docs/Scale.md`: the real-world scale (the unit, the blocks' height passed down from `AExercise`, the sizes derived from it, the background's depth and the camera).
 - `Docs/Data.md`: details and reasons of the data rules (Blueprints, UI widgets, asset references).
 - `Docs/ClassDiagram.md`: the class diagram in its two forms (Mermaid in the README, kept up to date, and a Visual Paradigm image that may lag), the `Images/` folder and the notation.
 

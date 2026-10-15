@@ -17,7 +17,8 @@ UCLASS()
 class THISISLOGIC_API AFormula : public AActor
 {
 	GENERATED_BODY()
-
+	
+	#pragma region PublicMethods
 	public:
 
 		AFormula()
@@ -33,7 +34,13 @@ class THISISLOGIC_API AFormula : public AActor
 
 			this->RootComponent = Root;
 		}
-
+		
+		void SetBlockHeight(float BlockHeight)
+		{
+			this->DragHeight =
+				BlockHeight * AFormula::DragHeightRatio;
+		}
+	
 		void AddBlocks(
 			const TArray<ABlock*>& NewBlocks
 		)
@@ -101,7 +108,10 @@ class THISISLOGIC_API AFormula : public AActor
 		{
 			return this->bIsPropositionSelected;
 		}
-
+	
+	#pragma endregion
+	
+	#pragma region PrivateMethods
 	private:
 
 		void RegisterBlock(ABlock* Block)
@@ -496,6 +506,10 @@ class THISISLOGIC_API AFormula : public AActor
 			this->ToggleSelectedMinimized();
 		}
 
+	#pragma endregion
+	
+	#pragma region Attributes
+	
 		UPROPERTY()
 		TArray<TObjectPtr<ABlock>> Blocks;
 
@@ -508,5 +522,9 @@ class THISISLOGIC_API AFormula : public AActor
 
 		bool bIsPropositionSelected = false;
 
-		static constexpr double DragHeight = 10.0;
+		double DragHeight = 0.0;
+
+		static constexpr double DragHeightRatio = 0.2;
+	
+	#pragma endregion
 };
