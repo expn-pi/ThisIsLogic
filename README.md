@@ -30,6 +30,7 @@ Proposition blocks hold a sentence and a letter, and can be minimized (letter) o
 - [x] Blocks laid out in rows that wrap like text, reordered by dragging within and between rows
 - [x] Block width fitted to its text
 - [x] Proposition and operator blocks
+- [x] Operators shown with the textbook symbols (∧, ∨, ↔...)
 - [x] Levels loaded from a data table
 - [ ] Validity and equivalence indicators
 - [ ] Logic core: parser, evaluation and equivalence by truth table
@@ -63,7 +64,7 @@ Source/ThisIsLogic/
   UI/                UI widgets, with the logic in C++ and the layout in Widget Blueprints
   Visuals/           reusable visual components
 Content/             assets, in folders by feature
-Data/                levels, as a CSV file imported into a data table
+Data/                source files of imported assets: the levels (CSV) and the blocks' font (TTF)
 Docs/                design decisions by area
 Images/              pictures shown in this README
 ```
@@ -125,6 +126,8 @@ The same diagram drawn in Visual Paradigm. It shows the code of the latest commi
 ## License
 
 This project is licensed under the MIT License; see [LICENSE](LICENSE) for details.
+
+The blocks' font is DejaVu Sans, distributed under its own free license; see [Data/Fonts/DejaVuSans/LICENSE](Data/Fonts/DejaVuSans/LICENSE).
 
 Unreal Engine is a trademark of Epic Games, Inc., and its use is governed by the [Unreal Engine EULA](https://www.unrealengine.com/eula). This repository contains no engine code.
 

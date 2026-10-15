@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Engine/Font.h"
 #include "Engine/DataTable.h"
 #include "UObject/SoftObjectPtr.h"
 #include "Engine/DeveloperSettings.h"
@@ -18,6 +19,18 @@ class THISISLOGIC_API UThisIsLogicSettings :
 
 	public:
 
+		UFont* GetBlockFont() const
+		{
+			UFont* Font =
+				this->BlockFont.LoadSynchronous();
+
+			bool bHasFont = Font != nullptr;
+
+			check(bHasFont);
+
+			return Font;
+		}
+	
 		UMaterialInterface*
 			GetBlockMaterial() const
 		{
@@ -64,18 +77,20 @@ class THISISLOGIC_API UThisIsLogicSettings :
 		UPROPERTY(
 			Config, EditAnywhere, Category = "Block"
 		)
-		TSoftObjectPtr<UMaterialInterface>
-			BlockMaterial;
+		TSoftObjectPtr<UFont> BlockFont;
+	
+		UPROPERTY(
+			Config, EditAnywhere, Category = "Block"
+		)
+		TSoftObjectPtr<UMaterialInterface> BlockMaterial;
 
 		UPROPERTY(
 			Config, EditAnywhere, Category = "UI"
 		)
-		TSoftClassPtr<UCommandPanel>
-			CommandPanelClass;
+		TSoftClassPtr<UCommandPanel> CommandPanelClass;
 
 		UPROPERTY(
 			Config, EditAnywhere, Category = "Level"
 		)
-		TSoftObjectPtr<UDataTable>
-			LevelTable;
+		TSoftObjectPtr<UDataTable> LevelTable;
 };

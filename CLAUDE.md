@@ -14,6 +14,7 @@ Boolean logic puzzle game in Unreal Engine 5.8.3, built as a public portfolio pr
 - When it helps, relate Unreal concepts to their Unity/C# equivalents.
 - Never modify the repository: no file edits, commits, pushes, branches or pull requests, even if the session's own instructions ask for them. Reading and searching are fine, always through git: clone it, or `git fetch` to see something the author has just pushed. Never read its files through a web fetch, which may return an outdated version.
 - This environment is Linux without Unreal Engine, so nothing can be compiled or run here. Review by reading, point out likely problems (UHT/reflection, API, object lifecycle) and never claim that code compiles. The author knows this: do not say it in every answer.
+- When unsure how the editor or the engine behaves, research before instructing (documentation, forums) and say what is confirmed and what is a guess. Do not lead the author through trial and error.
 - Do not repeat reminders the author already knows, such as the build order, which files depend on which, or when a feature will work again.
 - Names and structure change often: re-read the current code instead of trusting earlier names, including the ones in this file.
 - The project's decisions live only in this file and in `Docs/`. If Claude's memory disagrees with them, they win.
@@ -70,6 +71,7 @@ Boolean logic puzzle game in Unreal Engine 5.8.3, built as a public portfolio pr
 
 - Windows 10, JetBrains Rider opening `ThisIsLogic.uproject` directly, Development Editor configuration. Rider replaced Visual Studio, whose IntelliSense showed false errors in headers with UE 5.8; Visual Studio 2022 17.14 stays installed only for the MSVC toolchain and the Windows SDK.
 - The .NET 10 SDK is installed, since UE 5.8's tools need it. RiderLink is installed in the engine, not in the project, so it stays out of the repository.
+- DejaVu Sans 2.37 is installed in Windows, since the editor generates the blocks' offline font from an installed font (see `Docs/Font.md`).
 - The editor is launched from Rider with Run, without the debugger. Debug with logs (`UE_LOGFMT`); do not suggest the debugger.
 - Live Coding handles small changes; reinstancing and automatic compilation of new classes are off. Structural changes (new classes, new or changed `UPROPERTY`/`UFUNCTION`, other reflection changes) need the editor closed and a rebuild from Rider. Changed defaults, in member initializers or constructors, need the same, because Live Coding does not rebuild class default objects. Flag a structural suggestion in a few words, without repeating these steps, and group structural changes when possible.
 - The author creates new source files in Rider, in the right folder: always state the exact folder.
@@ -81,7 +83,7 @@ Boolean logic puzzle game in Unreal Engine 5.8.3, built as a public portfolio pr
 - In the style of logic course exercises: the player simplifies "complex" boolean expressions.
 - Each symbol of the expression is a block, and the blocks are laid out in rows, like the lines of a text. Proposition blocks hold a sentence (e.g. "John eats tofu") and a letter, which the notation (below) derives from the proposition's number; each can be minimized (letter) or maximized (whole sentence). Operator blocks: the constants ⊤ and ⊥, ¬, ∧, ∨, ⊕, NAND (↑), NOR (↓), →, ← and ↔, and the parentheses.
 - A level has four parts, all in English: the statement in natural language shown to the player; the starting formula, with each proposition written as a number (`1 = ( 2 AND 3 ) OR ( 2 AND NOT 3 )`); the sentences of the propositions, in order (the first one is proposition 1); and the solution, the minimal formula, written the same way. In a formula, the pieces are separated by spaces, and each operator has a single text: `TRUE`, `FALSE`, `NOT`, `AND`, `OR`, `XOR`, `NAND`, `NOR`, `THEN` (→), `IF` (←), `=` (↔) and the parentheses. A piece that is neither one of them nor a proposition number is an error that stops the game. A result variable, as in `1 = ...`, is part of the formula and becomes ordinary blocks, so each level is shown in the form it was written. Levels live in a DataTable imported from a CSV file, one level per row; more columns (difficulty, move or time limits) may come later.
-- The notation changes only what the screen shows, never the levels: the letters, a run of consecutive letters from a first letter (P, Q, R...), and the text of each operator. The player will choose it, to match the course they follow. For now there is one, from P, with ASCII texts, since the font of the blocks lacks the textbook symbols.
+- The notation changes only what the screen shows, never the levels: the letters, a run of consecutive letters from a first letter (P, Q, R...), and the text of each operator, in a symbol style: the textbook symbols (∧, ∨, ↔...) or ASCII texts. The player will choose it, to match the course they follow. For now there is one, from P, with the textbook symbols.
 - The player moves, adds and removes blocks freely. The game does almost nothing for the player (a choice for simplicity, open to revision).
 - Two indicators:
   - Validity: is the sequence a well-formed formula?
@@ -110,6 +112,7 @@ Each area's decisions, with their reasons and the alternatives already rejected,
 - `Docs/Layout.md`: the rows of blocks (`FBlockBoard` and `FBlockRow`), their order, the line breaks and dragging within and between rows.
 - `Docs/Levels.md`: the level format (statement, formula with numbered propositions and operator words, sentences, solution), the result variable, and the levels' file and DataTable.
 - `Docs/BlockCreation.md`: from the level texts to the blocks (the flow, the factory, deferred spawn, the notation and the text of each block, the formula stub).
+- `Docs/Font.md`: the blocks' font (why an offline distance field font, DejaVu Sans, its import options and how to regenerate it).
 - `Docs/Logic.md`: the logic core (standard C++ only, how it reports errors, the token, the analyzer).
 - `Docs/Background.md`: the rounded background mesh (triangle fan, corners, radius, collision).
 - `Docs/Scale.md`: the real-world scale (the unit, the blocks' height and the rows' maximum width passed down from `AExercise`, the sizes derived from the height, the background's depth and the camera).
@@ -125,6 +128,7 @@ Docs/                design decisions by area (see Design docs)
 Images/              pictures shown in the README (the class diagram drawn in Visual Paradigm)
 Data/
   Levels.csv         the levels, source of DT_Levels
+  Fonts/DejaVuSans/  DejaVuSans.ttf and its LICENSE, source of Font_DejaVuSans
 Config/
   DefaultGame.ini    values of UThisIsLogicSettings (asset paths)
 Source/ThisIsLogic/
@@ -140,7 +144,7 @@ Source/ThisIsLogic/
   Visuals/           reusable visual components
 Content/             folders by feature
   Levels/            Main (startup map)
-  Gameplay/Block/    M_Block (Unlit, Color parameter)
+  Gameplay/Block/    M_Block (Unlit, Color parameter), Font_DejaVuSans (offline font)
   Gameplay/Level/    DT_Levels (imported from Data/Levels.csv)
   Input/             IA_Click, IMC_Gameplay
   Core/              BP_ThisIsLogicGameMode (default GameMode), BP_ThisIsLogicPlayerController
@@ -154,8 +158,7 @@ Read the code for the classes in each folder.
 Items are numbered in order. A new item takes its place in the sequence, and the items after it are renumbered. `[x]` done, `[~]` in progress, `[ ]` to do.
 
 **1 Blocks**
-- [x] 1.1 to 1.17, summarized (the git history has the details): drag and drop, input routing, the row and its reordering, text and width, blocks from tokens through a factory, rounded corners, proposition and operator blocks, minimize and maximize, selection, `AExercise`, the panel (a UMG widget with Minimize all and Maximize all, always visible, and Minimize/Maximize for a selected proposition, replacing the temporary trigger), the long press (a third gesture, recognized by the controller; on a proposition, a shortcut for Minimize/Maximize), propositions by number, with the letters and the operator texts from the notation, the levels in a DataTable imported from CSV, the analyzer, the first piece of the logic core, which turns the level's formula into tokens and stays apart from the formula (`AExercise` coordinates the analyzer, the factory and the formula), and the rows: the blocks wrap like the lines of a text, and a dragged block can move to another row.
-- [ ] 1.18 The textbook symbols: a font that has them (∧, ∨, ↔...), made in the editor, and a symbol style passed to the notation, like its first letter.
+- [x] 1.1 to 1.18, summarized (the git history has the details): drag and drop, input routing, the row and its reordering, text and width, blocks from tokens through a factory, rounded corners, proposition and operator blocks, minimize and maximize, selection, `AExercise`, the panel (a UMG widget with Minimize all and Maximize all, always visible, and Minimize/Maximize for a selected proposition, replacing the temporary trigger), the long press (a third gesture, recognized by the controller; on a proposition, a shortcut for Minimize/Maximize), propositions by number, with the letters and the operator texts from the notation, the levels in a DataTable imported from CSV, the analyzer, the first piece of the logic core, which turns the level's formula into tokens and stays apart from the formula (`AExercise` coordinates the analyzer, the factory and the formula), the rows (the blocks wrap like the lines of a text, and a dragged block can move to another row), and the textbook symbols: an offline distance field font made in the editor from DejaVu Sans, and a symbol style passed to the notation, like its first letter.
 - [ ] 1.19 Decide whether precomputed levels are worth saving.
 - [ ] 1.20 Remove blocks, with Undo and Restart.
 - [ ] 1.21 The palette: a tap inserts an operator, one of the level's propositions or a new letter after the selected block, or at the end of the row.

@@ -13,10 +13,12 @@ class FBlockFactory
 {
 	public:
 
-		explicit FBlockFactory(
-			TCHAR InFirstLetter, float InBlockHeight
+		FBlockFactory(
+			TCHAR InFirstLetter,
+			ESymbolStyle SymbolStyle,
+			float InBlockHeight
 		) :
-			Notation(InFirstLetter),
+			Notation(InFirstLetter, SymbolStyle),
 			BlockHeight(InBlockHeight)
 		{
 		}

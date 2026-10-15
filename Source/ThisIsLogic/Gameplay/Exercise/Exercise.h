@@ -287,8 +287,12 @@ class THISISLOGIC_API AExercise : public AActor
 
 		FLevelRow LevelRow;
 
-		FBlockFactory BlockFactory = 
-			FBlockFactory('P', AExercise::BlockHeight);
+		FBlockFactory BlockFactory =
+			FBlockFactory(
+				'P',
+				ESymbolStyle::Textbook,
+				AExercise::BlockHeight
+			);
 
 		static constexpr float BlockHeight = 2.f;
 	

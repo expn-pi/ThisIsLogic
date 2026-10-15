@@ -69,6 +69,11 @@ class THISISLOGIC_API ABlock :
 			this->Outline->
 				Build(this->Width, this->Height);
 
+			UFont* BlockFont =
+				Settings->GetBlockFont();
+
+			this->Label->SetFont(BlockFont);
+			
 			this->ApplyText();
 		}
 
