@@ -8,7 +8,7 @@ The player gets a statement in natural language, written as a "complex" boolean 
 
 ## How it works
 
-Each symbol of the formula is a block in a row, and the player moves, adds and removes blocks freely. Two indicators help along the way:
+Each symbol of the formula is a block, and the blocks are laid out in rows, like the lines of a text. The player moves, adds and removes blocks freely. Two indicators help along the way:
 
 - **Validity:** is the sequence of blocks a well-formed formula?
 - **Equivalence:** is it still equivalent to the level's starting formula? Cyan if it is, red if it is not, gray while the formula is invalid.
@@ -27,7 +27,7 @@ Proposition blocks hold a sentence and a letter, and can be minimized (letter) o
 ## Features
 
 - [x] Drag and drop blocks with the mouse
-- [x] Blocks laid out as a row, reordered by dragging
+- [x] Blocks laid out in rows that wrap like text, reordered by dragging within and between rows
 - [x] Block width fitted to its text
 - [x] Proposition and operator blocks
 - [x] Levels loaded from a data table
@@ -91,8 +91,13 @@ classDiagram
     AExercise ..> ABackgroundTarget
     AExercise ..> UThisIsLogicSettings
 
+    AFormula --> FBlockBoard
     AFormula --> ABlock
     AFormula ..> APropositionBlock
+
+    FBlockBoard --> FBlockRow
+    FBlockBoard --> ABlock
+    FBlockRow ..> ABlock
 
     FBlockFactory --> FNotation
     FBlockFactory ..> ABlock
@@ -113,7 +118,7 @@ classDiagram
     AThisIsLogicGameMode ..> ACameraPawn
 ```
 
-The same diagram drawn in Visual Paradigm, from the code at commit [08d44d7](https://github.com/expn-pi/ThisIsLogic/tree/08d44d7de868a162535b49d49d9b668392f0b044). It may lag behind the diagram above.
+The same diagram drawn in Visual Paradigm. It shows the code of the latest commit in [the image's history](https://github.com/expn-pi/ThisIsLogic/commits/main/Images/ProjectClassDiagram.png), and it may lag behind the diagram above.
 
 ![Class diagram drawn in Visual Paradigm](Images/ProjectClassDiagram.png)
 

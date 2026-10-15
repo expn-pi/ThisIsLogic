@@ -79,7 +79,7 @@ Boolean logic puzzle game in Unreal Engine 5.8.3, built as a public portfolio pr
 ## Game design
 
 - In the style of logic course exercises: the player simplifies "complex" boolean expressions.
-- Each symbol of the expression is a block in a row. Proposition blocks hold a sentence (e.g. "John eats tofu") and a letter, which the notation (below) derives from the proposition's number; each can be minimized (letter) or maximized (whole sentence). Operator blocks: the constants ⊤ and ⊥, ¬, ∧, ∨, ⊕, NAND (↑), NOR (↓), →, ← and ↔, and the parentheses.
+- Each symbol of the expression is a block, and the blocks are laid out in rows, like the lines of a text. Proposition blocks hold a sentence (e.g. "John eats tofu") and a letter, which the notation (below) derives from the proposition's number; each can be minimized (letter) or maximized (whole sentence). Operator blocks: the constants ⊤ and ⊥, ¬, ∧, ∨, ⊕, NAND (↑), NOR (↓), →, ← and ↔, and the parentheses.
 - A level has four parts, all in English: the statement in natural language shown to the player; the starting formula, with each proposition written as a number (`1 = ( 2 AND 3 ) OR ( 2 AND NOT 3 )`); the sentences of the propositions, in order (the first one is proposition 1); and the solution, the minimal formula, written the same way. In a formula, the pieces are separated by spaces, and each operator has a single text: `TRUE`, `FALSE`, `NOT`, `AND`, `OR`, `XOR`, `NAND`, `NOR`, `THEN` (→), `IF` (←), `=` (↔) and the parentheses. A piece that is neither one of them nor a proposition number is an error that stops the game. A result variable, as in `1 = ...`, is part of the formula and becomes ordinary blocks, so each level is shown in the form it was written. Levels live in a DataTable imported from a CSV file, one level per row; more columns (difficulty, move or time limits) may come later.
 - The notation changes only what the screen shows, never the levels: the letters, a run of consecutive letters from a first letter (P, Q, R...), and the text of each operator. The player will choose it, to match the course they follow. For now there is one, from P, with ASCII texts, since the font of the blocks lacks the textbook symbols.
 - The player moves, adds and removes blocks freely. The game does almost nothing for the player (a choice for simplicity, open to revision).
@@ -107,12 +107,12 @@ Each area's decisions, with their reasons and the alternatives already rejected,
 - `Docs/Input.md`: how presses reach the elements (the controller as a router, tap, drag or long press, the background target, UMG and the world).
 - `Docs/Commands.md`: what the player can do and how (single pointer, selection, panel, palette, inserting, removing, undo, laws).
 - `Docs/Exercise.md`: `AExercise`, the top of the gameplay classes, and the selection event.
-- `Docs/Layout.md`: the row of blocks, its order and the swaps while dragging.
+- `Docs/Layout.md`: the rows of blocks (`FBlockBoard` and `FBlockRow`), their order, the line breaks and dragging within and between rows.
 - `Docs/Levels.md`: the level format (statement, formula with numbered propositions and operator words, sentences, solution), the result variable, and the levels' file and DataTable.
 - `Docs/BlockCreation.md`: from the level texts to the blocks (the flow, the factory, deferred spawn, the notation and the text of each block, the formula stub).
 - `Docs/Logic.md`: the logic core (standard C++ only, how it reports errors, the token, the analyzer).
 - `Docs/Background.md`: the rounded background mesh (triangle fan, corners, radius, collision).
-- `Docs/Scale.md`: the real-world scale (the unit, the blocks' height passed down from `AExercise`, the sizes derived from it, the background's depth and the camera).
+- `Docs/Scale.md`: the real-world scale (the unit, the blocks' height and the rows' maximum width passed down from `AExercise`, the sizes derived from the height, the background's depth and the camera).
 - `Docs/Data.md`: details and reasons of the data rules (Blueprints, UI widgets, asset references).
 - `Docs/ClassDiagram.md`: the class diagram in its two forms (Mermaid in the README, kept up to date, and a Visual Paradigm image that may lag), the `Images/` folder and the notation.
 
@@ -129,9 +129,9 @@ Config/
   DefaultGame.ini    values of UThisIsLogicSettings (asset paths)
 Source/ThisIsLogic/
   BasicComponents/   camera pawn, game mode, player controller, settings
-  Gameplay/Block/    blocks and their factory
+  Gameplay/Block/    blocks, their factory, and the board that lays them out in rows
   Gameplay/Exercise/ the exercise being played
-  Gameplay/Formula/  the formula, a row of blocks
+  Gameplay/Formula/  the formula, its blocks laid out in rows
   Gameplay/Level/    the row of the levels' DataTable, and the formula stub for quick tests
   Gameplay/Notation/ the notation: letters and operator texts shown to the player
   Input/             pointer interface and background target
@@ -154,8 +154,7 @@ Read the code for the classes in each folder.
 Items are numbered in order. A new item takes its place in the sequence, and the items after it are renumbered. `[x]` done, `[~]` in progress, `[ ]` to do.
 
 **1 Blocks**
-- [x] 1.1 to 1.16, summarized (the git history has the details): drag and drop, input routing, the row and its reordering, text and width, blocks from tokens through a factory, rounded corners, proposition and operator blocks, minimize and maximize, selection, `AExercise`, the panel (a UMG widget with Minimize all and Maximize all, always visible, and Minimize/Maximize for a selected proposition, replacing the temporary trigger), the long press (a third gesture, recognized by the controller; on a proposition, a shortcut for Minimize/Maximize), propositions by number, with the letters and the operator texts from the notation, the levels in a DataTable imported from CSV, and the analyzer, the first piece of the logic core, which turns the level's formula into tokens and stays apart from the formula (`AExercise` coordinates the analyzer, the factory and the formula).
-- [ ] 1.17 Decide how to see a formula wider than the screen (several rows, zoom or scrolling, for example).
+- [x] 1.1 to 1.17, summarized (the git history has the details): drag and drop, input routing, the row and its reordering, text and width, blocks from tokens through a factory, rounded corners, proposition and operator blocks, minimize and maximize, selection, `AExercise`, the panel (a UMG widget with Minimize all and Maximize all, always visible, and Minimize/Maximize for a selected proposition, replacing the temporary trigger), the long press (a third gesture, recognized by the controller; on a proposition, a shortcut for Minimize/Maximize), propositions by number, with the letters and the operator texts from the notation, the levels in a DataTable imported from CSV, the analyzer, the first piece of the logic core, which turns the level's formula into tokens and stays apart from the formula (`AExercise` coordinates the analyzer, the factory and the formula), and the rows: the blocks wrap like the lines of a text, and a dragged block can move to another row.
 - [ ] 1.18 The textbook symbols: a font that has them (∧, ∨, ↔...), made in the editor, and a symbol style passed to the notation, like its first letter.
 - [ ] 1.19 Decide whether precomputed levels are worth saving.
 - [ ] 1.20 Remove blocks, with Undo and Restart.
@@ -194,6 +193,7 @@ Items are numbered in order. A new item takes its place in the sequence, and the
 ## Pending
 
 - Remove the Blueprints that only hold references (see Data rules): `BP_ThisIsLogicPlayerController` only holds `IMC_Gameplay` and `IA_Click`, which can move to `UThisIsLogicSettings`; `BP_ThisIsLogicGameMode` can then go too if it only points to that controller (the C++ GameMode would set the controller class, and the project's default GameMode would be the C++ class).
+- A block wider than the formula's area (only a very long sentence, maximized) jumps between two positions when dragged across, since its horizontal limits cross. No level has such a sentence yet.
 
 ## Maintaining this file
 

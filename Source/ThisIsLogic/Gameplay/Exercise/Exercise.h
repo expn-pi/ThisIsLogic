@@ -134,14 +134,15 @@ class THISISLOGIC_API AExercise : public AActor
 				World->
 					SpawnActor<
 						AFormula
-					>(
-						FormulaClass, Transform
-					);
+					>(FormulaClass, Transform);
 
 			this->Formula->SetOwner(this);
 			
 			this->Formula->
 				SetBlockHeight(AExercise::BlockHeight);
+
+			this->Formula->
+				SetMaxRowWidth(AExercise::MaxRowWidth);
 
 			this->Formula->
 				SetSelectionChangedListener(
@@ -290,6 +291,8 @@ class THISISLOGIC_API AExercise : public AActor
 			FBlockFactory('P', AExercise::BlockHeight);
 
 		static constexpr float BlockHeight = 2.f;
+	
+		static constexpr double MaxRowWidth = 40.0;
 
 		static constexpr double BackgroundDepth = 5.0;
 	

@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 
 #include "../Block/Block.h"
+#include "../Block/BlockBoard.h"
 #include "../Block/PropositionBlock.h"
 
 #include "GameFramework/Actor.h"
@@ -37,8 +38,12 @@ class THISISLOGIC_API AFormula : public AActor
 		
 		void SetBlockHeight(float BlockHeight)
 		{
-			this->DragHeight =
-				BlockHeight * AFormula::DragHeightRatio;
+			this->Board.SetBlockHeight(BlockHeight);
+		}
+	
+		void SetMaxRowWidth(double MaxRowWidth)
+		{
+			this->Board.SetMaxRowWidth(MaxRowWidth);
 		}
 	
 		void AddBlocks(
@@ -50,14 +55,14 @@ class THISISLOGIC_API AFormula : public AActor
 				this->RegisterBlock(Block);
 			}
 
-			this->UpdateRow();
+			this->Board.AddBlocks(NewBlocks);
 		}
 
 		void AddBlock(ABlock* Block)
 		{
 			this->RegisterBlock(Block);
 
-			this->UpdateRow();
+			this->Board.AddBlock(Block);
 		}
 	
 		template<typename UserClass>
@@ -79,7 +84,10 @@ class THISISLOGIC_API AFormula : public AActor
 
 		void SetAllMinimized(bool bMinimized)
 		{
-			for (ABlock* Block : this->Blocks)
+			const TArray<TObjectPtr<ABlock>>& Blocks =
+				this->Board.GetBlocks();
+
+			for (ABlock* Block : Blocks)
 			{
 				APropositionBlock* Proposition =
 					Cast<APropositionBlock>(Block);
@@ -97,9 +105,9 @@ class THISISLOGIC_API AFormula : public AActor
 		void ToggleSelectedMinimized()
 		{
 			APropositionBlock* Proposition =
-				CastChecked<APropositionBlock>(
-					this->SelectedBlock
-				);
+				CastChecked<
+					APropositionBlock
+				>(this->SelectedBlock);
 
 			Proposition->ToggleMinimized();
 		}
@@ -110,14 +118,23 @@ class THISISLOGIC_API AFormula : public AActor
 		}
 	
 	#pragma endregion
+
+	protected:
+
+		virtual void BeginPlay() override
+		{
+			Super::BeginPlay();
+
+			FVector Location = this->GetActorLocation();
+
+			this->Board.SetOrigin(Location);
+		}
 	
 	#pragma region PrivateMethods
 	private:
 
 		void RegisterBlock(ABlock* Block)
 		{
-			this->Blocks.Add(Block);
-
 			Block->SetOwner(this);
 
 			Block->
@@ -163,290 +180,24 @@ class THISISLOGIC_API AFormula : public AActor
 				);
 		}
 
-		void UpdateRow()
-		{
-			this->UpdateTotalWidth();
-
-			this->LayoutBlocks();
-		}
-
-		void UpdateTotalWidth()
-		{
-			double Sum = 0.0;
-
-			for (const ABlock* Block : this->Blocks)
-			{
-				double BlockWidth = Block->GetWidth();
-
-				Sum = Sum + BlockWidth;
-			}
-
-			this->TotalWidth = Sum;
-		}
-
-		void LayoutBlocks()
-		{
-			FVector FormulaLocation =
-				this->GetActorLocation();
-
-			double CursorY = this->GetLeftEdgeY();
-
-			for (ABlock* Block : this->Blocks)
-			{
-				double BlockWidth = Block->GetWidth();
-
-				double HalfWidth = BlockWidth * 0.5;
-
-				FVector Location = FormulaLocation;
-
-				Location.Y = CursorY + HalfWidth;
-
-				Block->SetActorLocation(Location);
-
-				CursorY = CursorY + BlockWidth;
-			}
-		}
-
-		double GetLeftEdgeY() const
-		{
-			FVector FormulaLocation =
-				this->GetActorLocation();
-
-			double HalfTotalWidth = this->TotalWidth * 0.5;
-
-			double FormulaLocationY = FormulaLocation.Y;
-
-			return FormulaLocationY - HalfTotalWidth;
-		}
-
-		double GetRightEdgeY() const
-		{
-			FVector FormulaLocation =
-				this->GetActorLocation();
-
-			double HalfTotalWidth = this->TotalWidth * 0.5;
-
-			double FormulaLocationY = FormulaLocation.Y;
-
-			return FormulaLocationY + HalfTotalWidth;
-		}
-
 		void OnBlockMoveRequested(
-			ABlock* Block,
-			const FVector& DesiredLocation
+			ABlock* Block, const FVector& DesiredLocation
 		)
 		{
-			double DesiredY = DesiredLocation.Y;
-
-			double CenterY = this->ClampY(Block, DesiredY);
-
-			this->ReorderBlock(Block, CenterY);
-
-			this->MoveBlock(Block, CenterY);
+			this->Board.DragBlock(Block, DesiredLocation);
 		}
 
-		double ClampY(
-			const ABlock* Block, double DesiredY
-		) const
+		void OnBlockDropRequested(ABlock* Block)
 		{
-			double MinY = this->GetMinY(Block);
-			double MaxY = this->GetMaxY(Block);
-
-			return FMath::Clamp(DesiredY, MinY, MaxY);
+			this->Board.LayoutBlocks();
 		}
 
-		double GetMinY(const ABlock* Block) const
+		void OnBlockWidthChanged(ABlock* Block)
 		{
-			double LeftEdgeY = this->GetLeftEdgeY();
-
-			double BlockWidth = Block->GetWidth();
-
-			double HalfWidth = BlockWidth * 0.5;
-
-			return LeftEdgeY + HalfWidth;
+			this->Board.UpdateLayout();
 		}
 
-		double GetMaxY(const ABlock* Block) const
-		{
-			double RightEdgeY = this->GetRightEdgeY();
-
-			double BlockWidth = Block->GetWidth();
-
-			double HalfWidth = BlockWidth * 0.5;
-
-			return RightEdgeY - HalfWidth;
-		}
-
-		void ReorderBlock(
-			ABlock* Block, double CenterY
-		)
-		{
-			double BlockWidth = Block->GetWidth();
-
-			double HalfWidth = BlockWidth * 0.5;
-
-			double LeftEdgeY = CenterY - HalfWidth;
-
-			double RightEdgeY = CenterY + HalfWidth;
-
-			int32 Index = this->Blocks.Find(Block);
-
-			Index =
-				this->ReorderIncreasing(
-					Index, RightEdgeY
-				);
-
-			this->ReorderDecreasing(Index, LeftEdgeY);
-		}
-
-		int32 ReorderIncreasing(
-			int32 Index, double RightEdgeY
-		)
-		{
-			bool bIsPastNext =
-				this->IsPastNextBlock(Index, RightEdgeY);
-
-			while (bIsPastNext)
-			{
-				int32 NextIndex = Index + 1;
-
-				this->Blocks.
-					Swap(
-						Index,
-						NextIndex
-					);
-
-				this->LayoutBlocks();
-
-				Index = NextIndex;
-
-				bIsPastNext =
-					this->IsPastNextBlock(
-						Index, RightEdgeY
-					);
-			}
-
-			return Index;
-		}
-
-		void ReorderDecreasing(
-			int32 Index, double LeftEdgeY
-		)
-		{
-			bool bIsPastPrevious =
-				this->IsPastPreviousBlock(
-					Index, LeftEdgeY
-				);
-
-			while (bIsPastPrevious)
-			{
-				int32 PreviousIndex = Index - 1;
-
-				this->Blocks.
-					Swap(
-						Index,
-						PreviousIndex
-					);
-
-				this->LayoutBlocks();
-
-				Index = PreviousIndex;
-
-				bIsPastPrevious =
-					this->IsPastPreviousBlock(
-						Index, LeftEdgeY
-					);
-			}
-		}
-
-		bool IsPastNextBlock(
-			int32 Index, double RightEdgeY
-		) const
-		{
-			bool bIsPast = false;
-
-			int32 NextIndex = Index + 1;
-
-			bool bHasNextBlock =
-				this->Blocks.IsValidIndex(NextIndex);
-
-			if (bHasNextBlock)
-			{
-				const ABlock* NextBlock =
-					this->Blocks[NextIndex];
-
-				FVector NextLocation =
-					NextBlock->GetActorLocation();
-
-				double NextLocationY = NextLocation.Y;
-
-				bIsPast = RightEdgeY > NextLocationY;
-			}
-
-			return bIsPast;
-		}
-
-		bool IsPastPreviousBlock(
-			int32 Index, double LeftEdgeY
-		) const
-		{
-			bool bIsPast = false;
-
-			int32 PreviousIndex = Index - 1;
-
-			bool bHasPreviousBlock =
-				this->Blocks.IsValidIndex(PreviousIndex);
-
-			if (bHasPreviousBlock)
-			{
-				const ABlock* PreviousBlock =
-					this->Blocks[PreviousIndex];
-
-				FVector PreviousLocation =
-					PreviousBlock->GetActorLocation();
-
-				bIsPast = LeftEdgeY < PreviousLocation.Y;
-			}
-
-			return bIsPast;
-		}
-
-		void MoveBlock(
-			ABlock* Block, double CenterY
-		)
-		{
-			FVector FormulaLocation =
-				this->GetActorLocation();
-
-			FVector Location = FormulaLocation;
-
-			Location.Y = CenterY;
-
-			double FormulaLocationZ = FormulaLocation.Z;
-
-			Location.Z =
-				FormulaLocationZ + this->DragHeight;
-
-			Block->SetActorLocation(Location);
-		}
-
-		void OnBlockDropRequested(
-			ABlock* Block
-		)
-		{
-			this->LayoutBlocks();
-		}
-
-		void OnBlockWidthChanged(
-			ABlock* Block
-		)
-		{
-			this->UpdateRow();
-		}
-
-		void OnBlockSelectRequested(
-			ABlock* Block
-		)
+		void OnBlockSelectRequested(ABlock* Block)
 		{
 			this->SelectBlock(Block);
 		}
@@ -511,20 +262,14 @@ class THISISLOGIC_API AFormula : public AActor
 	#pragma region Attributes
 	
 		UPROPERTY()
-		TArray<TObjectPtr<ABlock>> Blocks;
+		FBlockBoard Board;
 
 		UPROPERTY()
 		TObjectPtr<ABlock> SelectedBlock;
 
 		FOnFormulaSelectionChanged OnSelectionChanged;
 
-		double TotalWidth = 0.0;
-
 		bool bIsPropositionSelected = false;
-
-		double DragHeight = 0.0;
-
-		static constexpr double DragHeightRatio = 0.2;
 	
 	#pragma endregion
 };
