@@ -52,6 +52,13 @@ struct FBlockBoard
 
 			this->UpdateLayout();
 		}
+	
+		void RemoveBlock(ABlock* Block)
+		{
+			this->Blocks.RemoveSingle(Block);
+
+			this->UpdateLayout();
+		}
 
 		const TArray<TObjectPtr<ABlock>>& GetBlocks() const
 		{

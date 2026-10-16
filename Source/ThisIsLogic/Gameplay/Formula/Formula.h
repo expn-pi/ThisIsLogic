@@ -111,7 +111,25 @@ class THISISLOGIC_API AFormula : public AActor
 
 			Proposition->ToggleMinimized();
 		}
+	
+		void RemoveSelectedBlock()
+		{
+			ABlock* Block = this->SelectedBlock;
 
+			this->DeselectBlock();
+
+			this->Board.RemoveBlock(Block);
+
+			Block->Destroy();
+
+			this->NotifySelectionChanged();
+		}
+
+		bool HasSelection() const
+		{
+			return this->SelectedBlock != nullptr;
+		}
+	
 		bool IsPropositionSelected() const
 		{
 			return this->bIsPropositionSelected;

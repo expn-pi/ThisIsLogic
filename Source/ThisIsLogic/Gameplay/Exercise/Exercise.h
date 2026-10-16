@@ -187,8 +187,9 @@ class THISISLOGIC_API AExercise : public AActor
 			std::string FormulaText =
 				TCHAR_TO_UTF8(FormulaChars);
 
-			std::optional<std::vector<FToken>> AnalyzedTokens =
-				FFormulaAnalyzer::Analyze(FormulaText);
+			std::optional<std::vector<FToken>>
+				AnalyzedTokens =
+					FFormulaAnalyzer::Analyze(FormulaText);
 
 			bool bIsValid = AnalyzedTokens.has_value();
 
@@ -238,6 +239,11 @@ class THISISLOGIC_API AExercise : public AActor
 					this,
 					&AExercise::OnToggleMinimizedRequested
 				);
+			
+			this->CommandPanel->
+				SetRemoveRequestedListener(
+					this, &AExercise::OnRemoveRequested
+				);
 
 			this->UpdatePanel();
 
@@ -246,8 +252,14 @@ class THISISLOGIC_API AExercise : public AActor
 
 		void UpdatePanel()
 		{
+			bool bHasSelection =
+				this->Formula->HasSelection();
+
 			bool bIsPropositionSelected =
 				this->Formula->IsPropositionSelected();
+
+			this->CommandPanel->
+				SetSelectionButtonsVisible(bHasSelection);
 
 			this->CommandPanel->
 				SetToggleMinimizedVisible(
@@ -273,6 +285,11 @@ class THISISLOGIC_API AExercise : public AActor
 		void OnToggleMinimizedRequested()
 		{
 			this->Formula->ToggleSelectedMinimized();
+		}
+	
+		void OnRemoveRequested()
+		{
+			this->Formula->RemoveSelectedBlock();
 		}
 
 	#pragma endregion

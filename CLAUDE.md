@@ -6,7 +6,7 @@ Boolean logic puzzle game in Unreal Engine 5.8.3, built as a public portfolio pr
 
 - Reply in Brazilian Portuguese. Code, identifiers and commit messages in English. Use Unreal Engine terms in English (Content Browser, Details panel, ...), never translated.
 - The author leads the conversation. Answer what was asked and do not propose next steps unless asked. Scope warnings (below) are the exception.
-- Explain and instruct in small steps, one at a time. Avoid long answers that cover many topics.
+- Explain and instruct in small steps, one at a time. Avoid long answers that cover many topics. Instructions for the editor go one step per message, and the next one waits for the author's report; never send all the steps at once, not even in a card that shows one at a time, since the author asks questions along the way and does not want to scroll back to a step.
 - This project is also a way to learn Unreal C++: explain rather than do. Show code one file at a time, in the conversation (no files to download). The author implements or pastes it, reviews it and reports back.
 - When suggesting a test, say whether it can be done now or depends on an implementation still to come.
 - When showing only part of a file, say whether its includes change.
@@ -159,7 +159,7 @@ Items are numbered in order. A new item takes its place in the sequence, and the
 
 **1 Blocks**
 - [x] 1.1 to 1.19, summarized (the git history has the details): drag and drop, input routing, the row and its reordering, text and width, blocks from tokens through a factory, rounded corners, proposition and operator blocks, minimize and maximize, selection, `AExercise`, the panel (a UMG widget with Minimize all and Maximize all, always visible, and Minimize/Maximize for a selected proposition, replacing the temporary trigger), the long press (a third gesture, recognized by the controller; on a proposition, a shortcut for Minimize/Maximize), propositions by number, with the letters and the operator texts from the notation, the levels in a DataTable imported from CSV, the analyzer, the first piece of the logic core, which turns the level's formula into tokens and stays apart from the formula (`AExercise` coordinates the analyzer, the factory and the formula), the rows (the blocks wrap like the lines of a text, and a dragged block can move to another row), the textbook symbols (an offline distance field font made in the editor from DejaVu Sans, and a symbol style passed to the notation, like its first letter), and the decision not to save precomputed levels (see `Docs/Levels.md`).
-- [ ] 1.20 Remove blocks, with Undo and Restart.
+- [~] 1.20 Remove blocks, with Undo and Restart.
 - [ ] 1.21 The palette: a tap inserts an operator, one of the level's propositions or a new letter after the selected block, or at the end of the row.
 - [ ] 1.22 Drag from the palette to insert, and drop a block on the palette to remove it.
 - [ ] 1.23 Equivalence indicator (cyan / red / gray), with a stub.

@@ -107,8 +107,7 @@ class FBlockRow
 
 		bool IsPastNextBlock(
 			const TArray<TObjectPtr<ABlock>>& Blocks,
-			int32 Index,
-			double RightEdgeY
+			int32 Index, double RightEdgeY
 		) const
 		{
 			bool bIsPast = false;
@@ -119,7 +118,8 @@ class FBlockRow
 
 			if (bHasNextBlock)
 			{
-				const ABlock* NextBlock = Blocks[NextIndex];
+				const ABlock* NextBlock =
+					Blocks[NextIndex];
 
 				FVector NextLocation =
 					NextBlock->GetActorLocation();
@@ -134,8 +134,7 @@ class FBlockRow
 
 		bool IsPastPreviousBlock(
 			const TArray<TObjectPtr<ABlock>>& Blocks,
-			int32 Index,
-			double LeftEdgeY
+			int32 Index, double LeftEdgeY
 		) const
 		{
 			bool bIsPast = false;
