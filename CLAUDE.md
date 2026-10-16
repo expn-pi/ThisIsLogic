@@ -140,7 +140,7 @@ Source/ThisIsLogic/
   Gameplay/Notation/ the notation: letters and operator texts shown to the player
   Input/             pointer interface and background target
   Logic/             logic core (no engine dependencies)
-  UI/                UMG widgets (C++ classes)
+  UI/                UMG widgets (C++ classes) and their helpers
   Visuals/           reusable visual components
 Content/             folders by feature
   Levels/            Main (startup map)
@@ -196,6 +196,7 @@ Items are numbered in order. A new item takes its place in the sequence, and the
 
 - Remove the Blueprints that only hold references (see Data rules): `BP_ThisIsLogicPlayerController` only holds `IMC_Gameplay` and `IA_Click`, which can move to `UThisIsLogicSettings`; `BP_ThisIsLogicGameMode` can then go too if it only points to that controller (the C++ GameMode would set the controller class, and the project's default GameMode would be the C++ class).
 - A block wider than the formula's area (only a very long sentence, maximized) jumps between two positions when dragged across, since its horizontal limits cross. No level has such a sentence yet.
+- `UCommandPanel` binds its buttons by name, written as text, through `FAuxUI::AssignButtonClick`, which uses `FScriptDelegate::BindUFunction`: a typo or a renamed handler still compiles and leaves its button silent, where `AddDynamic` or a name from `GET_FUNCTION_NAME_CHECKED` would break the build. Kept for now, to be investigated.
 
 ## Maintaining this file
 

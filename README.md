@@ -30,7 +30,7 @@ Proposition blocks hold a sentence and a letter, and can be minimized (letter) o
 - [x] Blocks laid out in rows that wrap like text, reordered by dragging within and between rows
 - [x] Block width fitted to its text
 - [x] Proposition and operator blocks
-- [x] Command panel to minimize or maximize propositions and remove the selected block
+- [x] Command panel to minimize or maximize propositions, remove the selected block and restart the level
 - [x] Operators shown with the textbook symbols (∧, ∨, ↔...)
 - [x] Levels loaded from a data table
 - [ ] Validity and equivalence indicators
@@ -116,6 +116,7 @@ classDiagram
     AThisIsLogicPlayerController --> IPointerTarget
 
     UThisIsLogicSettings ..> UCommandPanel
+    UCommandPanel ..> FAuxUI
 
     AThisIsLogicGameMode ..> ACameraPawn
 ```

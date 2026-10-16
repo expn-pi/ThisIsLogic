@@ -60,7 +60,15 @@ struct FBlockBoard
 			this->UpdateLayout();
 		}
 
-		const TArray<TObjectPtr<ABlock>>& GetBlocks() const
+		void RemoveAllBlocks()
+		{
+			this->Blocks.Reset();
+
+			this->UpdateLayout();
+		}
+	
+		const TArray<TObjectPtr<ABlock>>& GetBlocks()
+			const
 		{
 			return this->Blocks;
 		}

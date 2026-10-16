@@ -244,6 +244,11 @@ class THISISLOGIC_API AExercise : public AActor
 				SetRemoveRequestedListener(
 					this, &AExercise::OnRemoveRequested
 				);
+			
+			this->CommandPanel->
+				SetRestartRequestedListener(
+					this, &AExercise::OnRestartRequested
+				);
 
 			this->UpdatePanel();
 
@@ -265,6 +270,13 @@ class THISISLOGIC_API AExercise : public AActor
 				SetToggleMinimizedVisible(
 					bIsPropositionSelected
 				);
+		}
+	
+		void Restart()
+		{
+			this->Formula->RemoveAllBlocks();
+
+			this->CreateBlocks();
 		}
 
 		void OnBackgroundTapped()
@@ -290,6 +302,11 @@ class THISISLOGIC_API AExercise : public AActor
 		void OnRemoveRequested()
 		{
 			this->Formula->RemoveSelectedBlock();
+		}
+	
+		void OnRestartRequested()
+		{
+			this->Restart();
 		}
 
 	#pragma endregion

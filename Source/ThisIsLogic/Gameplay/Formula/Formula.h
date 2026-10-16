@@ -124,6 +124,23 @@ class THISISLOGIC_API AFormula : public AActor
 
 			this->NotifySelectionChanged();
 		}
+	
+		void RemoveAllBlocks()
+		{
+			TArray<TObjectPtr<ABlock>> RemovedBlocks =
+				this->Board.GetBlocks();
+
+			this->DeselectBlock();
+
+			this->Board.RemoveAllBlocks();
+
+			for (ABlock* Block : RemovedBlocks)
+			{
+				Block->Destroy();
+			}
+
+			this->NotifySelectionChanged();
+		}
 
 		bool HasSelection() const
 		{

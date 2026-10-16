@@ -5,6 +5,8 @@
 #include "Blueprint/UserWidget.h"
 #include "Components/HorizontalBox.h"
 
+#include "AuxUI.h"
+
 #include "CommandPanel.generated.h"
 
 DECLARE_DELEGATE_OneParam(FOnAllMinimizedRequested, bool);
@@ -12,6 +14,8 @@ DECLARE_DELEGATE_OneParam(FOnAllMinimizedRequested, bool);
 DECLARE_DELEGATE(FOnToggleMinimizedRequested);
 
 DECLARE_DELEGATE(FOnRemoveRequested);
+
+DECLARE_DELEGATE(FOnRestartRequested);
 
 UCLASS(Abstract)
 class THISISLOGIC_API UCommandPanel :
@@ -49,6 +53,16 @@ class THISISLOGIC_API UCommandPanel :
 		)
 		{
 			this->OnRemoveRequested.
+				BindUObject(Listener, Callback);
+		}
+	
+		template<typename UserClass>
+		void SetRestartRequestedListener(
+			UserClass* Listener,
+			void (UserClass::* Callback)()
+		)
+		{
+			this->OnRestartRequested.
 				BindUObject(Listener, Callback);
 		}
 
@@ -89,37 +103,40 @@ class THISISLOGIC_API UCommandPanel :
 		{
 			Super::NativeOnInitialized();
 
-			FOnButtonClickedEvent& MinimizeAllClicked =
-				this->MinimizeAllButton->OnClicked;
-
-			MinimizeAllClicked.AddDynamic(
-				this,
-				&UCommandPanel::OnMinimizeAllClicked
-			);
-
-			FOnButtonClickedEvent& MaximizeAllClicked =
-				this->MaximizeAllButton->OnClicked;
-
-			MaximizeAllClicked.AddDynamic(
-				this,
-				&UCommandPanel::OnMaximizeAllClicked
-			);
+			FAuxUI::
+				AssignButtonClick(
+					this,
+					this->MinimizeAllButton,
+					"OnMinimizeAllClicked"
+				);
 			
-			FOnButtonClickedEvent& ToggleMinimizedClicked =
-				this->ToggleMinimizedButton->OnClicked;
-
-			ToggleMinimizedClicked.AddDynamic(
-				this,
-				&UCommandPanel::OnToggleMinimizedClicked
-			);
-
-			FOnButtonClickedEvent& RemoveClicked =
-				this->RemoveButton->OnClicked;
-
-			RemoveClicked.AddDynamic(
-				this,
-				&UCommandPanel::OnRemoveClicked
-			);
+			FAuxUI::
+				AssignButtonClick(
+					this,
+					this->MaximizeAllButton,
+					"OnMaximizeAllClicked"
+				);
+			
+			FAuxUI::
+				AssignButtonClick(
+					this,
+					this->ToggleMinimizedButton,
+					"OnToggleMinimizedClicked"
+				);
+			
+			FAuxUI::
+				AssignButtonClick(
+					this,
+					this->RemoveButton,
+					"OnRemoveClicked"
+				);
+			
+			FAuxUI::
+				AssignButtonClick(
+					this,
+					this->RestartButton,
+					"OnRestartClicked"
+				);
 		}
 
 	#pragma region PrivateMethods
@@ -158,6 +175,17 @@ class THISISLOGIC_API UCommandPanel :
 
 			this->OnRemoveRequested.Execute();
 		}
+		
+		UFUNCTION()
+		void OnRestartClicked()
+		{
+			bool bHasRestartListener =
+				this->OnRestartRequested.IsBound();
+
+			check(bHasRestartListener);
+
+			this->OnRestartRequested.Execute();
+		}
 
 		void RequestAllMinimized(bool bMinimized)
 		{
@@ -189,12 +217,17 @@ class THISISLOGIC_API UCommandPanel :
 		UPROPERTY(meta = (BindWidget))
 		TObjectPtr<UButton> RemoveButton;
 		
+		UPROPERTY(meta = (BindWidget))
+		TObjectPtr<UButton> RestartButton;
+		
 		FOnAllMinimizedRequested OnAllMinimizedRequested;
 	
 		FOnToggleMinimizedRequested
 			OnToggleMinimizedRequested;
 
 		FOnRemoveRequested OnRemoveRequested;
+		
+		FOnRestartRequested OnRestartRequested;
 	
 	#pragma endregion
 };
