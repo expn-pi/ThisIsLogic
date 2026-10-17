@@ -30,6 +30,7 @@ Boolean logic puzzle game in Unreal Engine 5.8.3, built as a public portfolio pr
 ## Engineering principles
 
 - Maintainability over performance. Low coupling, high cohesion: each class owns its domain and its rules.
+- A class that keeps data does the work on it: others tell it what to do instead of getting its data to work on (Tell, Don't Ask). `FBlockBoard`, for example, minimizes its propositions and returns its blocks' tokens and states, and never hands out its list. Keeping a reference to an object held in another class's list is fine, as `AFormula` does with the selected block, and plain data structs such as `FBlockState` are meant to be read.
 - In code and design proposals, organization comes before convenience.
 - Prefer idiomatic, professional Unreal C++ and engine features over reinventing them.
 - Methods trust each other: each assumes the others did their part. Avoid defensive checks inside methods, since they hide errors; use explicit, loud checks (`check`, `ensure`) sparingly, in vulnerable or confusing spots. Null checks belong to the caller.
@@ -44,15 +45,17 @@ Boolean logic puzzle game in Unreal Engine 5.8.3, built as a public portfolio pr
 - Keep suggestions small and testable in the editor. Prefer increments that show something on screen, and stub whatever depends on unfinished systems.
 - The logic core (`Logic/`) has no engine dependencies, only standard C++, so it can be tested and reused on its own. Conversions to engine types happen where gameplay code calls it.
 - Calls go down, events go up: an owner calls its parts directly; a part only notifies its owner through an event.
+- "Owner", in design discussions, has its object-oriented meaning: the object that keeps another, in a field or a list, and ends its lifetime. Unreal's actor `Owner` (`SetOwner`) is a different thing: a link between actors that the engine uses mainly for networking and visibility, which neither encapsulates nor destroys anything. Here, `FBlockBoard` owns the blocks, since it keeps and destroys them, while `AFormula`, which holds the board, is their engine `Owner` and listens to their events, since a struct cannot bind them (see `Docs/Layout.md`).
 - Events a class sends to its owner use single-listener delegates (`DECLARE_DELEGATE_*`), bound through a `Set...Listener` method and called with `Execute` after a `check` on `IsBound()`. A part without an owner is an error. Prefer explicit calls over optional ones such as `ExecuteIfBound`.
 
 ## Code style
 
 - Whole classes in the `.h` for now; splitting into `.h`/`.cpp` is planned.
+- Plain data structs live in files of their own, apart from the classes that use them, such as `FBlockState` in `BlockData.h`.
 - Epic naming conventions (A/U/F/E/I/T prefixes, `b` for bools, PascalCase), with two deliberate exceptions:
   - `public:` and `private:` are indented inside the class, with members one level deeper;
   - `this->` on every member access, methods and fields alike; static members go through the class name (`AExercise::BackgroundDepth`), since they belong to no object. A constructor's initializer list is the one exception, since its syntax does not take `this->`.
-- Vertical code: it grows downward, not sideways. Lines stay within about 60 columns, counting a tab as 4: the author splits the IDE into two panes and uses a vertical monitor, and does not want to scroll sideways.
+- Vertical code: it grows downward, not sideways. Lines stay within about 68 columns, counting a tab as 4: the author splits the IDE into two panes and uses a vertical monitor, and does not want to scroll sideways.
   - When a line must be broken, the breaks come as early in it as possible, such as after the `=` of an assignment or after a return type, rather than near its end.
   - No inline conditionals (one-line `if`, ternary operator) or several statements per line.
   - When an `if` returns and the other outcome is also a return, that return goes in an `else`, not after the `if`.
@@ -133,8 +136,8 @@ Config/
   DefaultGame.ini    values of UThisIsLogicSettings (asset paths)
 Source/ThisIsLogic/
   BasicComponents/   camera pawn, game mode, player controller, settings
-  Gameplay/Block/    blocks, their factory, and the board that lays them out in rows
-  Gameplay/Exercise/ the exercise being played
+  Gameplay/Block/    blocks, their data, their factory, and the board that keeps them and lays them out in rows
+  Gameplay/Exercise/ the exercise being played, and its undo history
   Gameplay/Formula/  the formula, its blocks laid out in rows
   Gameplay/Level/    the row of the levels' DataTable, and the formula stub for quick tests
   Gameplay/Notation/ the notation: letters and operator texts shown to the player
@@ -158,8 +161,7 @@ Read the code for the classes in each folder.
 Items are numbered in order. A new item takes its place in the sequence, and the items after it are renumbered. `[x]` done, `[~]` in progress, `[ ]` to do.
 
 **1 Blocks**
-- [x] 1.1 to 1.19, summarized (the git history has the details): drag and drop, input routing, the row and its reordering, text and width, blocks from tokens through a factory, rounded corners, proposition and operator blocks, minimize and maximize, selection, `AExercise`, the panel (a UMG widget with Minimize all and Maximize all, always visible, and Minimize/Maximize for a selected proposition, replacing the temporary trigger), the long press (a third gesture, recognized by the controller; on a proposition, a shortcut for Minimize/Maximize), propositions by number, with the letters and the operator texts from the notation, the levels in a DataTable imported from CSV, the analyzer, the first piece of the logic core, which turns the level's formula into tokens and stays apart from the formula (`AExercise` coordinates the analyzer, the factory and the formula), the rows (the blocks wrap like the lines of a text, and a dragged block can move to another row), the textbook symbols (an offline distance field font made in the editor from DejaVu Sans, and a symbol style passed to the notation, like its first letter), and the decision not to save precomputed levels (see `Docs/Levels.md`).
-- [~] 1.20 Remove blocks, with Undo and Restart.
+- [x] 1.1 to 1.20, summarized (the git history has the details): drag and drop, input routing, the row and its reordering, text and width, blocks from tokens through a factory, rounded corners, proposition and operator blocks, minimize and maximize, selection, `AExercise`, the panel (a UMG widget with Minimize all and Maximize all, always visible, and Minimize/Maximize for a selected proposition, replacing the temporary trigger), the long press (a third gesture, recognized by the controller; on a proposition, a shortcut for Minimize/Maximize), propositions by number, with the letters and the operator texts from the notation, the levels in a DataTable imported from CSV, the analyzer, the first piece of the logic core, which turns the level's formula into tokens and stays apart from the formula (`AExercise` coordinates the analyzer, the factory and the formula), the rows (the blocks wrap like the lines of a text, and a dragged block can move to another row), the textbook symbols (an offline distance field font made in the editor from DejaVu Sans, and a symbol style passed to the notation, like its first letter), the decision not to save precomputed levels (see `Docs/Levels.md`), and removing blocks, with Restart and Undo (a history of the blocks' states; see `Docs/Commands.md`).
 - [ ] 1.21 The palette: a tap inserts an operator, one of the level's propositions or a new letter after the selected block, or at the end of the row.
 - [ ] 1.22 Drag from the palette to insert, and drop a block on the palette to remove it.
 - [ ] 1.23 Equivalence indicator (cyan / red / gray), with a stub.

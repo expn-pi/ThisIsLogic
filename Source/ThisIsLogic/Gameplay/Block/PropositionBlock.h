@@ -7,8 +7,7 @@
 class APropositionBlock;
 
 DECLARE_DELEGATE_OneParam(
-	FOnPropositionToggleMinimizedRequested,
-	APropositionBlock*
+	FOnPropositionToggleMinimizedRequested, APropositionBlock*
 );
 
 UCLASS()
@@ -16,9 +15,10 @@ class THISISLOGIC_API APropositionBlock :
 	public ABlock
 {
 	GENERATED_BODY()
-
+	
+	#pragma region PublicMethods
 	public:
-
+	
 		APropositionBlock()
 		{
 			FLinearColor BlockColor =
@@ -28,8 +28,7 @@ class THISISLOGIC_API APropositionBlock :
 		}
 
 		void SetProposition(
-			const FString& NewLetter,
-			const FString& NewSentence
+			const FString& NewLetter, const FString& NewSentence
 		)
 		{
 			this->Letter = NewLetter;
@@ -51,6 +50,25 @@ class THISISLOGIC_API APropositionBlock :
 			this->SetMinimized(bNewMinimized);
 		}
 
+		virtual FBlockState GetState() const override
+		{
+			FBlockState State = Super::GetState();
+
+			State.bMinimized = this->bMinimized;
+
+			return State;
+		}
+
+		virtual void ApplyState(const FBlockState& State)
+			override
+		{
+			Super::ApplyState(State);
+			
+			bool bStateMinimized = State.bMinimized;
+			
+			this->SetMinimized(bStateMinimized);
+		}
+	
 		template<typename UserClass>
 		void SetToggleMinimizedRequestedListener(
 			UserClass* Listener,
@@ -67,7 +85,9 @@ class THISISLOGIC_API APropositionBlock :
 
 			this->RequestToggleMinimized();
 		}
-
+	
+	#pragma endregion
+	
 	protected:
 
 		virtual FString GetText() const override

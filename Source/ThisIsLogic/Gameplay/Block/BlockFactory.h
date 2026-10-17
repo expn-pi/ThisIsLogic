@@ -89,7 +89,7 @@ class FBlockFactory
 						APropositionBlock
 					>(BlockClass, Transform);
 
-			Block->SetHeight(this->BlockHeight);
+			Block->SetData(this->BlockHeight, Token);
 			
 			int32 PropositionIndex =
 				Token.Index;
@@ -123,7 +123,7 @@ class FBlockFactory
 						AOperatorBlock
 					>(BlockClass, Transform);
 			
-			Block->SetHeight(this->BlockHeight);
+			Block->SetData(this->BlockHeight, Token);
 
 			ETokenKind Kind = Token.Kind;
 

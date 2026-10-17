@@ -3,7 +3,9 @@
 #include "CoreMinimal.h"
 
 #include "../Block/Block.h"
+#include "../Block/BlockData.h"
 #include "../Block/BlockBoard.h"
+#include "../../Logic/LogicTypes.h"
 #include "../Block/PropositionBlock.h"
 
 #include "GameFramework/Actor.h"
@@ -13,6 +15,8 @@
 #include "Formula.generated.h"
 
 DECLARE_DELEGATE(FOnFormulaSelectionChanged);
+
+DECLARE_DELEGATE(FOnFormulaChanged);
 
 UCLASS()
 class THISISLOGIC_API AFormula : public AActor
@@ -29,9 +33,7 @@ class THISISLOGIC_API AFormula : public AActor
 			FName RootName = TEXT("Root");
 
 			USceneComponent* Root =
-				CreateDefaultSubobject<
-					USceneComponent
-				>(RootName);
+				CreateDefaultSubobject<USceneComponent>(RootName);
 
 			this->RootComponent = Root;
 		}
@@ -46,9 +48,7 @@ class THISISLOGIC_API AFormula : public AActor
 			this->Board.SetMaxRowWidth(MaxRowWidth);
 		}
 	
-		void AddBlocks(
-			const TArray<ABlock*>& NewBlocks
-		)
+		void AddBlocks(const TArray<ABlock*>& NewBlocks)
 		{
 			for (ABlock* Block : NewBlocks)
 			{
@@ -56,6 +56,8 @@ class THISISLOGIC_API AFormula : public AActor
 			}
 
 			this->Board.AddBlocks(NewBlocks);
+			
+			this->LogTokens();
 		}
 
 		void AddBlock(ABlock* Block)
@@ -67,12 +69,19 @@ class THISISLOGIC_API AFormula : public AActor
 	
 		template<typename UserClass>
 		void SetSelectionChangedListener(
-			UserClass* Listener,
-			void (UserClass::* Callback)()
+			UserClass* Listener, void (UserClass::* Callback)()
 		)
 		{
 			this->OnSelectionChanged.
 				BindUObject(Listener, Callback);
+		}
+	
+		template<typename UserClass>
+		void SetChangedListener(
+			UserClass* Listener, void (UserClass::* Callback)()
+		)
+		{
+			this->OnChanged.BindUObject(Listener, Callback);
 		}
 
 		void ClearSelection()
@@ -84,32 +93,19 @@ class THISISLOGIC_API AFormula : public AActor
 
 		void SetAllMinimized(bool bMinimized)
 		{
-			const TArray<TObjectPtr<ABlock>>& Blocks =
-				this->Board.GetBlocks();
-
-			for (ABlock* Block : Blocks)
-			{
-				APropositionBlock* Proposition =
-					Cast<APropositionBlock>(Block);
-
-				bool bIsProposition =
-					Proposition != nullptr;
-
-				if (bIsProposition)
-				{
-					Proposition->SetMinimized(bMinimized);
-				}
-			}
+			this->Board.SetAllMinimized(bMinimized);
+			
+			this->NotifyChanged();
 		}
 
 		void ToggleSelectedMinimized()
 		{
 			APropositionBlock* Proposition =
-				CastChecked<
-					APropositionBlock
-				>(this->SelectedBlock);
+				CastChecked<APropositionBlock>(this->SelectedBlock);
 
 			Proposition->ToggleMinimized();
+			
+			this->NotifyChanged();
 		}
 	
 		void RemoveSelectedBlock()
@@ -120,24 +116,18 @@ class THISISLOGIC_API AFormula : public AActor
 
 			this->Board.RemoveBlock(Block);
 
-			Block->Destroy();
-
 			this->NotifySelectionChanged();
+			
+			this->NotifyChanged();
+			
+			this->LogTokens();
 		}
 	
 		void RemoveAllBlocks()
 		{
-			TArray<TObjectPtr<ABlock>> RemovedBlocks =
-				this->Board.GetBlocks();
-
 			this->DeselectBlock();
 
 			this->Board.RemoveAllBlocks();
-
-			for (ABlock* Block : RemovedBlocks)
-			{
-				Block->Destroy();
-			}
 
 			this->NotifySelectionChanged();
 		}
@@ -150,6 +140,21 @@ class THISISLOGIC_API AFormula : public AActor
 		bool IsPropositionSelected() const
 		{
 			return this->bIsPropositionSelected;
+		}
+	
+		TArray<FToken> GetTokens() const
+		{
+			return this->Board.GetTokens();
+		}
+	
+		TArray<FBlockState> GetStates() const
+		{
+			return this->Board.GetStates();
+		}
+
+		void ApplyStates(const TArray<FBlockState>& States)
+		{
+			this->Board.ApplyStates(States);
 		}
 	
 	#pragma endregion
@@ -220,11 +225,17 @@ class THISISLOGIC_API AFormula : public AActor
 		)
 		{
 			this->Board.DragBlock(Block, DesiredLocation);
+			
+			this->LogTokens();
 		}
 
 		void OnBlockDropRequested(ABlock* Block)
 		{
 			this->Board.LayoutBlocks();
+			
+			this->NotifyChanged();
+			
+			this->LogTokens();
 		}
 
 		void OnBlockWidthChanged(ABlock* Block)
@@ -248,16 +259,14 @@ class THISISLOGIC_API AFormula : public AActor
 			APropositionBlock* Proposition =
 				Cast<APropositionBlock>(Block);
 
-			this->bIsPropositionSelected =
-				Proposition != nullptr;
+			this->bIsPropositionSelected = Proposition != nullptr;
 
 			this->NotifySelectionChanged();
 		}
 
 		void DeselectBlock()
 		{
-			bool bHasSelection =
-				this->SelectedBlock != nullptr;
+			bool bHasSelection = this->SelectedBlock != nullptr;
 
 			if (bHasSelection)
 			{
@@ -279,6 +288,15 @@ class THISISLOGIC_API AFormula : public AActor
 			this->OnSelectionChanged.Execute();
 		}
 	
+		void NotifyChanged()
+		{
+			bool bHasChangedListener = this->OnChanged.IsBound();
+
+			check(bHasChangedListener);
+
+			this->OnChanged.Execute();
+		}
+	
 		void OnPropositionToggleMinimizedRequested(
 			APropositionBlock* Proposition
 		)
@@ -292,6 +310,27 @@ class THISISLOGIC_API AFormula : public AActor
 			this->ToggleSelectedMinimized();
 		}
 
+		void LogTokens() const
+		{
+			TArray<FToken> Tokens = this->GetTokens();
+
+			UE_LOGFMT(LogTemp, Warning, "Tokens:");
+
+			for (const FToken& Token : Tokens)
+			{
+				ETokenKind Kind = Token.Kind;
+				
+				int32 KindIndex = static_cast<int32>(Kind);
+
+				int32 Index = Token.Index;
+
+				UE_LOGFMT(
+					LogTemp, Warning,
+					"Kind {0}, index {1}", KindIndex, Index
+				);
+			}
+		}
+	
 	#pragma endregion
 	
 	#pragma region Attributes
@@ -303,6 +342,8 @@ class THISISLOGIC_API AFormula : public AActor
 		TObjectPtr<ABlock> SelectedBlock;
 
 		FOnFormulaSelectionChanged OnSelectionChanged;
+	
+		FOnFormulaChanged OnChanged;
 
 		bool bIsPropositionSelected = false;
 	

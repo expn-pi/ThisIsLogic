@@ -4,6 +4,9 @@
 
 #include "Block.h"
 #include "BlockRow.h"
+#include "BlockData.h"
+#include "PropositionBlock.h"
+#include "../../Logic/LogicTypes.h"
 
 #include "BlockBoard.generated.h"
 
@@ -34,9 +37,7 @@ struct FBlockBoard
 			this->MaxRowWidth = NewMaxRowWidth;
 		}
 
-		void AddBlocks(
-			const TArray<ABlock*>& NewBlocks
-		)
+		void AddBlocks(const TArray<ABlock*>& NewBlocks)
 		{
 			for (ABlock* Block : NewBlocks)
 			{
@@ -55,6 +56,8 @@ struct FBlockBoard
 	
 		void RemoveBlock(ABlock* Block)
 		{
+			Block->Destroy();
+
 			this->Blocks.RemoveSingle(Block);
 
 			this->UpdateLayout();
@@ -62,15 +65,78 @@ struct FBlockBoard
 
 		void RemoveAllBlocks()
 		{
+			for (ABlock* Block : this->Blocks)
+			{
+				Block->Destroy();
+			}
+
 			this->Blocks.Reset();
 
 			this->UpdateLayout();
 		}
 	
-		const TArray<TObjectPtr<ABlock>>& GetBlocks()
-			const
+		void SetAllMinimized(bool bMinimized)
 		{
-			return this->Blocks;
+			for (ABlock* Block : this->Blocks)
+			{
+				APropositionBlock* Proposition =
+					Cast<APropositionBlock>(Block);
+
+				bool bIsProposition = Proposition != nullptr;
+
+				if (bIsProposition)
+				{
+					Proposition->SetMinimized(bMinimized);
+				}
+			}
+		}
+
+		TArray<FToken> GetTokens() const
+		{
+			TArray<FToken> Tokens;
+
+			for (const ABlock* Block : this->Blocks)
+			{
+				FToken Token = Block->GetToken();
+
+				Tokens.Add(Token);
+			}
+
+			return Tokens;
+		}
+	
+		TArray<FBlockState> GetStates() const
+		{
+			TArray<FBlockState> States;
+
+			for (const ABlock* Block : this->Blocks)
+			{
+				FBlockState State = Block->GetState();
+
+				States.Add(State);
+			}
+
+			return States;
+		}
+
+		void ApplyStates(const TArray<FBlockState>& States)
+		{
+			int32 BlockCount = this->Blocks.Num();
+
+			int32 StateCount = States.Num();
+
+			bool bHasSameCount = BlockCount == StateCount;
+
+			check(bHasSameCount);
+
+			for (int32 Index=0; Index<BlockCount; Index++)
+			{
+				ABlock* Block = this->Blocks[Index];
+
+				const FBlockState& State = States[Index];
+
+				Block->ApplyState(State);
+			}
 		}
 
 		void UpdateLayout()
@@ -89,8 +155,7 @@ struct FBlockBoard
 		}
 
 		void DragBlock(
-			ABlock* Block,
-			const FVector& DesiredLocation
+			ABlock* Block, const FVector& DesiredLocation
 		)
 		{
 			FVector Location =
@@ -100,29 +165,21 @@ struct FBlockBoard
 
 			double CenterY = Location.Y;
 
-			int32 BlockRowIndex =
-				this->GetRowIndexOf(Block);
+			int32 BlockRowIndex = this->GetRowIndexOf(Block);
 
-			int32 TargetRowIndex =
-				this->GetRowIndexAt(CenterX);
+			int32 TargetRowIndex = this->GetRowIndexAt(CenterX);
 
-			FBlockRow TargetRow =
-				this->Rows[TargetRowIndex];
+			FBlockRow TargetRow = this->Rows[TargetRowIndex];
 
-			bool bIsSameRow =
-				BlockRowIndex == TargetRowIndex;
+			bool bIsSameRow = BlockRowIndex == TargetRowIndex;
 
 			if (bIsSameRow)
 			{
-				this->ReorderBlock(
-					Block, TargetRow, CenterY
-				);
+				this->ReorderBlock(Block, TargetRow, CenterY);
 			}
 			else
 			{
-				this->EnterRow(
-					Block, TargetRow, CenterY
-				);
+				this->EnterRow(Block, TargetRow, CenterY);
 			}
 
 			this->MoveBlock(Block, Location);
@@ -167,12 +224,13 @@ struct FBlockBoard
 		{
 			bool bFits = false;
 
-			bool bHasRow = !this->Rows.IsEmpty();
+			bool bIsEmpty = this->Rows.IsEmpty();
+			
+			bool bHasRow = !bIsEmpty;
 
 			if (bHasRow)
 			{
-				const FBlockRow& LastRow =
-					this->Rows.Last();
+				const FBlockRow& LastRow = this->Rows.Last();
 
 				bFits = LastRow.Fits(BlockWidth);
 			}
@@ -180,9 +238,7 @@ struct FBlockBoard
 			return bFits;
 		}
 
-		void ExtendLastRow(
-			int32 Index, double BlockWidth
-		)
+		void ExtendLastRow(int32 Index, double BlockWidth)
 		{
 			FBlockRow& LastRow = this->Rows.Last();
 
@@ -219,8 +275,7 @@ struct FBlockBoard
 
 		double GetLeftEdgeY() const
 		{
-			double HalfMaxRowWidth =
-				this->MaxRowWidth * 0.5;
+			double HalfMaxRowWidth = this->MaxRowWidth * 0.5;
 
 			double OriginY = this->Origin.Y;
 
@@ -229,8 +284,7 @@ struct FBlockBoard
 
 		double GetRightEdgeY() const
 		{
-			double HalfMaxRowWidth =
-				this->MaxRowWidth * 0.5;
+			double HalfMaxRowWidth = this->MaxRowWidth * 0.5;
 
 			double OriginY = this->Origin.Y;
 
@@ -238,8 +292,7 @@ struct FBlockBoard
 		}
 
 		FVector ClampToArea(
-			const ABlock* Block,
-			const FVector& DesiredLocation
+			const ABlock* Block, const FVector& DesiredLocation
 		) const
 		{
 			double DesiredX = DesiredLocation.X;
@@ -263,15 +316,13 @@ struct FBlockBoard
 
 			double MaxX = this->GetRowCenterX(0);
 
-			double MinX =
-				this->GetRowCenterX(LastRowIndex);
+			double MinX = this->GetRowCenterX(LastRowIndex);
 
 			return FMath::Clamp(DesiredX, MinX, MaxX);
 		}
 
-		double ClampY(
-			const ABlock* Block, double DesiredY
-		) const
+		double ClampY(const ABlock* Block, double DesiredY)
+			const
 		{
 			double MinY = this->GetMinY(Block);
 			double MaxY = this->GetMaxY(Block);
@@ -309,14 +360,9 @@ struct FBlockBoard
 
 			int32 RowCount = this->Rows.Num();
 
-			for (
-				int32 RowIndex=0;
-				RowIndex<RowCount;
-				RowIndex++
-			)
+			for (int32 RowIndex=0; RowIndex<RowCount; RowIndex++)
 			{
-				const FBlockRow& Row =
-					this->Rows[RowIndex];
+				const FBlockRow& Row = this->Rows[RowIndex];
 
 				bool bContains = Row.Contains(BlockIndex);
 
@@ -341,8 +387,7 @@ struct FBlockBoard
 		}
 
 		void EnterRow(
-			ABlock* Block, const FBlockRow& Row,
-			double CenterY
+			ABlock* Block, const FBlockRow& Row, double CenterY
 		)
 		{
 			int32 Index = this->Blocks.Find(Block);
@@ -370,8 +415,7 @@ struct FBlockBoard
 		}
 
 		void ReorderBlock(
-			ABlock* Block, const FBlockRow& Row,
-			double CenterY
+			ABlock* Block, const FBlockRow& Row, double CenterY
 		)
 		{
 			double BlockWidth = Block->GetWidth();
@@ -384,17 +428,13 @@ struct FBlockBoard
 
 			int32 Index = this->Blocks.Find(Block);
 
-			Index =
-				this->ReorderIncreasing(
-					Row, Index, RightEdgeY
-				);
+			Index = this->ReorderIncreasing(Row, Index, RightEdgeY);
 
 			this->ReorderDecreasing(Row, Index, LeftEdgeY);
 		}
 
 		int32 ReorderIncreasing(
-			const FBlockRow& Row, int32 Index,
-			double RightEdgeY
+			const FBlockRow& Row, int32 Index, double RightEdgeY
 		)
 		{
 			bool bIsPastNext =
@@ -417,17 +457,17 @@ struct FBlockBoard
 				Index = NextIndex;
 
 				bIsPastNext =
-					Row.IsPastNextBlock(
-						this->Blocks, Index, RightEdgeY
-					);
+					Row.
+						IsPastNextBlock(
+							this->Blocks, Index, RightEdgeY
+						);
 			}
 
 			return Index;
 		}
 
 		void ReorderDecreasing(
-			const FBlockRow& Row, int32 Index,
-			double LeftEdgeY
+			const FBlockRow& Row, int32 Index, double LeftEdgeY
 		)
 		{
 			bool bIsPastPrevious =
@@ -450,9 +490,10 @@ struct FBlockBoard
 				Index = PreviousIndex;
 
 				bIsPastPrevious =
-					Row.IsPastPreviousBlock(
-						this->Blocks, Index, LeftEdgeY
-					);
+					Row.
+						IsPastPreviousBlock(
+							this->Blocks, Index, LeftEdgeY
+						);
 			}
 		}
 
@@ -464,8 +505,7 @@ struct FBlockBoard
 
 			double OriginZ = this->Origin.Z;
 
-			LiftedLocation.Z =
-				OriginZ + this->DragHeight;
+			LiftedLocation.Z = OriginZ + this->DragHeight;
 
 			Block->SetActorLocation(LiftedLocation);
 		}

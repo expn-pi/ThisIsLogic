@@ -25,4 +25,6 @@ struct FToken
 	ETokenKind Kind;
 
 	int Index = -1;
+	
+	bool operator==(const FToken& Other) const = default;
 };

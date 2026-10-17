@@ -10,10 +10,8 @@ class FBlockRow
 	public:
 
 		FBlockRow(
-			int32 InFirstIndex,
-			double InFirstWidth,
-			const FVector& InStart,
-			double InMaxWidth
+			int32 InFirstIndex, double InFirstWidth,
+			const FVector& InStart, double InMaxWidth
 		) :
 			FirstIndex(InFirstIndex),
 			LastIndex(InFirstIndex),
@@ -89,8 +87,7 @@ class FBlockRow
 			{
 				const ABlock* Block = Blocks[Index];
 
-				FVector Location =
-					Block->GetActorLocation();
+				FVector Location = Block->GetActorLocation();
 				
 				double LocationY = Location.Y;
 				

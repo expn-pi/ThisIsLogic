@@ -30,9 +30,9 @@ Proposition blocks hold a sentence and a letter, and can be minimized (letter) o
 - [x] Blocks laid out in rows that wrap like text, reordered by dragging within and between rows
 - [x] Block width fitted to its text
 - [x] Proposition and operator blocks
-- [x] Command panel to minimize or maximize propositions, remove the selected block and restart the level
 - [x] Operators shown with the textbook symbols (∧, ∨, ↔...)
 - [x] Levels loaded from a data table
+- [x] Command panel to minimize or maximize propositions, remove the selected block, undo any command and restart the level
 - [ ] Validity and equivalence indicators
 - [ ] Logic core: parser, evaluation and equivalence by truth table
 - [ ] Win condition and progression between levels
@@ -87,6 +87,7 @@ classDiagram
     AExercise --> UCommandPanel
     AExercise --> FLevelRow
     AExercise --> FBlockFactory
+    AExercise --> FUndoHistory
     AExercise ..> FFormulaAnalyzer
     AExercise ..> FFormulaStub
     AExercise ..> ABlock
@@ -99,6 +100,7 @@ classDiagram
 
     FBlockBoard --> FBlockRow
     FBlockBoard --> ABlock
+    FBlockBoard ..> APropositionBlock
     FBlockRow ..> ABlock
 
     FBlockFactory --> FNotation

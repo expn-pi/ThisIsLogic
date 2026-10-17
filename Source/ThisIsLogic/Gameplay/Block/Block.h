@@ -4,6 +4,8 @@
 #include "GameFramework/Actor.h"
 #include "Components/TextRenderComponent.h"
 
+#include "BlockData.h"
+#include "../../Logic/LogicTypes.h"
 #include "../../Input/PointerTarget.h"
 #include "../../Visuals/RoundedBackgroundComponent.h"
 #include "../../BasicComponents/ThisIsLogicSettings.h"
@@ -42,9 +44,7 @@ class THISISLOGIC_API ABlock :
 			this->CreateOutline();
 		}
 
-		virtual void OnConstruction(
-			const FTransform& Transform
-		)
+		virtual void OnConstruction(const FTransform& Transform)
 			override
 		{
 			Super::OnConstruction(Transform);
@@ -57,29 +57,47 @@ class THISISLOGIC_API ABlock :
 			UMaterialInterface* BlockMaterial =
 				Settings->GetBlockMaterial();
 
-			this->Background->
-				SetBaseMaterial(BlockMaterial);
+			this->Background->SetBaseMaterial(BlockMaterial);
 
-			this->Background->
-				Build(this->Width, this->Height);
+			this->Background->Build(this->Width, this->Height);
 
-			this->Outline->
-				SetBaseMaterial(BlockMaterial);
+			this->Outline->SetBaseMaterial(BlockMaterial);
 
-			this->Outline->
-				Build(this->Width, this->Height);
+			this->Outline->Build(this->Width, this->Height);
 
-			UFont* BlockFont =
-				Settings->GetBlockFont();
+			UFont* BlockFont = Settings->GetBlockFont();
 
 			this->Label->SetFont(BlockFont);
 			
 			this->ApplyText();
 		}
 
-		void SetHeight(float NewHeight)
+		void SetData(float NewHeight, const FToken& NewToken)
 		{
 			this->Height = NewHeight;
+			
+			this->Token = NewToken;
+		}
+	
+		FToken GetToken() const
+		{
+			return this->Token;
+		}
+	
+		virtual FBlockState GetState() const
+		{
+			FBlockState State;
+
+			State.Token = this->Token;
+
+			return State;
+		}
+
+		virtual void ApplyState(const FBlockState& State)
+		{
+			bool bHasSameToken = State.Token == this->Token;
+
+			check(bHasSameToken);
 		}
 	
 		float GetWidth() const
@@ -93,20 +111,16 @@ class THISISLOGIC_API ABlock :
 			void (UserClass::* Callback)(ABlock*)
 		)
 		{
-			this->OnWidthChanged.
-				BindUObject(Listener, Callback);
+			this->OnWidthChanged.BindUObject(Listener, Callback);
 		}
 
 		template<typename UserClass>
 		void SetMoveRequestedListener(
 			UserClass* Listener,
-			void (UserClass::* Callback)(
-				ABlock*, const FVector&
-			)
+			void (UserClass::* Callback)(ABlock*, const FVector&)
 		)
 		{
-			this->OnMoveRequested.
-				BindUObject(Listener, Callback);
+			this->OnMoveRequested.BindUObject(Listener, Callback);
 		}
 
 		template<typename UserClass>
@@ -115,8 +129,7 @@ class THISISLOGIC_API ABlock :
 			void (UserClass::* Callback)(ABlock*)
 		)
 		{
-			this->OnDropRequested.
-				BindUObject(Listener, Callback);
+			this->OnDropRequested.BindUObject(Listener, Callback);
 		}
 
 		template<typename UserClass>
@@ -125,8 +138,7 @@ class THISISLOGIC_API ABlock :
 			void (UserClass::* Callback)(ABlock*)
 		)
 		{
-			this->OnSelectRequested.
-				BindUObject(Listener, Callback);
+			this->OnSelectRequested.BindUObject(Listener, Callback);
 		}
 
 		void SetSelected(bool bNewSelected)
@@ -144,9 +156,7 @@ class THISISLOGIC_API ABlock :
 			this->Tapped();
 		}
 
-		virtual void DragStarted(
-			const FVector& PressPoint
-		)
+		virtual void DragStarted(const FVector& PressPoint)
 			override
 		{
 			this->RequestSelection();
@@ -202,8 +212,7 @@ class THISISLOGIC_API ABlock :
 		{
 			this->ApplyText();
 
-			bool bHasWidthListener =
-				this->OnWidthChanged.IsBound();
+			bool bHasWidthListener = this->OnWidthChanged.IsBound();
 
 			check(bHasWidthListener);
 
@@ -314,8 +323,7 @@ class THISISLOGIC_API ABlock :
 				this->Height * ABlock::TextMarginRatio;
 
 			this->OutlineThickness =
-				this->Height *
-				ABlock::OutlineThicknessRatio;
+				this->Height * ABlock::OutlineThicknessRatio;
 
 			this->Width = this->Height;
 		}
@@ -331,8 +339,7 @@ class THISISLOGIC_API ABlock :
 
 			this->Width = this->GetWidthForText();
 
-			this->Background->
-				Resize(this->Width, this->Height);
+			this->Background->Resize(this->Width, this->Height);
 
 			this->ResizeOutline();
 		}
@@ -389,6 +396,10 @@ class THISISLOGIC_API ABlock :
 
 		FVector GrabOffset = FVector::ZeroVector;
 
+		// Token
+
+		FToken Token;
+	
 		// Text
 
 		UPROPERTY(VisibleAnywhere)
@@ -418,8 +429,7 @@ class THISISLOGIC_API ABlock :
 
 		static constexpr float TextMarginRatio = 0.2f;
 
-		static constexpr float
-			OutlineThicknessRatio = 0.08f;
+		static constexpr float OutlineThicknessRatio = 0.08f;
 
 		static constexpr float LayerOffsetRatio = 0.05f;
 	

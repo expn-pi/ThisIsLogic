@@ -17,6 +17,8 @@ DECLARE_DELEGATE(FOnRemoveRequested);
 
 DECLARE_DELEGATE(FOnRestartRequested);
 
+DECLARE_DELEGATE(FOnUndoRequested);
+
 UCLASS(Abstract)
 class THISISLOGIC_API UCommandPanel :
 	public UUserWidget
@@ -28,8 +30,7 @@ class THISISLOGIC_API UCommandPanel :
 
 		template<typename UserClass>
 		void SetAllMinimizedRequestedListener(
-			UserClass* Listener,
-			void (UserClass::* Callback)(bool)
+			UserClass* Listener, void (UserClass::* Callback)(bool)
 		)
 		{
 			this->OnAllMinimizedRequested.
@@ -38,8 +39,7 @@ class THISISLOGIC_API UCommandPanel :
 	
 		template<typename UserClass>
 		void SetToggleMinimizedRequestedListener(
-			UserClass* Listener,
-			void (UserClass::* Callback)()
+			UserClass* Listener, void (UserClass::* Callback)()
 		)
 		{
 			this->OnToggleMinimizedRequested.
@@ -48,8 +48,7 @@ class THISISLOGIC_API UCommandPanel :
 
 		template<typename UserClass>
 		void SetRemoveRequestedListener(
-			UserClass* Listener,
-			void (UserClass::* Callback)()
+			UserClass* Listener, void (UserClass::* Callback)()
 		)
 		{
 			this->OnRemoveRequested.
@@ -58,12 +57,19 @@ class THISISLOGIC_API UCommandPanel :
 	
 		template<typename UserClass>
 		void SetRestartRequestedListener(
-			UserClass* Listener,
-			void (UserClass::* Callback)()
+			UserClass* Listener, void (UserClass::* Callback)()
 		)
 		{
 			this->OnRestartRequested.
 				BindUObject(Listener, Callback);
+		}
+	
+		template<typename UserClass>
+		void SetUndoRequestedListener(
+			UserClass* Listener, void (UserClass::* Callback)()
+		)
+		{
+			this->OnUndoRequested.BindUObject(Listener, Callback);
 		}
 
 		void SetSelectionButtonsVisible(bool bVisible)
@@ -137,6 +143,13 @@ class THISISLOGIC_API UCommandPanel :
 					this->RestartButton,
 					"OnRestartClicked"
 				);
+			
+			FAuxUI::
+				AssignButtonClick(
+					this,
+					this->UndoButton,
+					"OnUndoClicked"
+				);
 		}
 
 	#pragma region PrivateMethods
@@ -186,6 +199,17 @@ class THISISLOGIC_API UCommandPanel :
 
 			this->OnRestartRequested.Execute();
 		}
+	
+		UFUNCTION()
+		void OnUndoClicked()
+		{
+			bool bHasUndoListener =
+				this->OnUndoRequested.IsBound();
+
+			check(bHasUndoListener);
+
+			this->OnUndoRequested.Execute();
+		}
 
 		void RequestAllMinimized(bool bMinimized)
 		{
@@ -219,6 +243,9 @@ class THISISLOGIC_API UCommandPanel :
 		
 		UPROPERTY(meta = (BindWidget))
 		TObjectPtr<UButton> RestartButton;
+	
+		UPROPERTY(meta = (BindWidget))
+		TObjectPtr<UButton> UndoButton;
 		
 		FOnAllMinimizedRequested OnAllMinimizedRequested;
 	
@@ -228,6 +255,8 @@ class THISISLOGIC_API UCommandPanel :
 		FOnRemoveRequested OnRemoveRequested;
 		
 		FOnRestartRequested OnRestartRequested;
+	
+		FOnUndoRequested OnUndoRequested;
 	
 	#pragma endregion
 };

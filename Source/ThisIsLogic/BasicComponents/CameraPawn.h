@@ -31,7 +31,7 @@ class THISISLOGIC_API ACameraPawn : public APawn
 
 			this->Camera->SetProjectionMode(ProjectionMode);
 
-			this->Camera->SetOrthoWidth(50.f);
+			this->Camera->SetOrthoWidth(30.f);
 		}
 
 	protected:
