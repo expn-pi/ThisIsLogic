@@ -1,34 +1,29 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "Logging/StructuredLog.h"
-#include "Components/SceneComponent.h"
 
 #include "../Block/Block.h"
-#include "../Block/BlockBoard.h"
-#include "../Block/BlockFactory.h"
 #include "../../Logic/LogicTypes.h"
+#include "../Block/AbstractBlocksManager.h"
 
 #include "Palette.generated.h"
 
+DECLARE_DELEGATE_OneParam(FOnPaletteInsertRequested, const FToken&);
+
 UCLASS(Abstract)
-class THISISLOGIC_API APalette : public AActor
+class THISISLOGIC_API APalette : public AAbstractBlocksManager
 {
 	GENERATED_BODY()
 
 	public:
 
-		APalette()
+		template<typename UserClass>
+		void SetInsertRequestedListener(
+			UserClass* Listener,
+			void (UserClass::* Callback)(const FToken&)
+		)
 		{
-			this->PrimaryActorTick.bCanEverTick = false;
-
-			FName RootName = TEXT("Root");
-
-			USceneComponent* Root =
-				CreateDefaultSubobject<USceneComponent>(RootName);
-
-			this->RootComponent = Root;
+			this->OnInsertRequested.BindUObject(Listener, Callback);
 		}
 
 	protected:
@@ -37,22 +32,16 @@ class THISISLOGIC_API APalette : public AActor
 		{
 			Super::BeginPlay();
 
-			FVector Location = this->GetActorLocation();
-
-			this->Board.SetOrigin(Location);
-
 			double MaxRowWidth = this->GetMaxRowWidth();
 
-			this->Board.
-				SetData(
-					APalette::RowHeightRatio,
-					APalette::BlockHeight, MaxRowWidth
-				);
+			this->SetMaxRowWidth(MaxRowWidth);
 
-			this->CreateBlocks();
+			TArray<FToken> Tokens = this->GetItemTokens();
+
+			this->CreateBlocks(Tokens);
 		}
 
-		virtual TArray<FToken> GetTokens() const
+		virtual TArray<FToken> GetItemTokens() const
 		{
 			unimplemented();
 
@@ -66,89 +55,26 @@ class THISISLOGIC_API APalette : public AActor
 			return 0.0;
 		}
 
-		static constexpr float BlockHeight = 2.f;
+		virtual double GetRowHeightRatio() const override
+		{
+			return APalette::RowHeightRatio;
+		}
+
+		virtual void OnBlockSelectRequested(ABlock* Block) override
+		{
+			bool bHasInsertListener =
+				this->OnInsertRequested.IsBound();
+
+			check(bHasInsertListener);
+
+			FToken Token = Block->GetToken();
+
+			this->OnInsertRequested.Execute(Token);
+		}
 
 	private:
 
-		void CreateBlocks()
-		{
-			UWorld* World = this->GetWorld();
+		FOnPaletteInsertRequested OnInsertRequested;
 
-			TArray<FToken> Tokens = this->GetTokens();
-
-			TArray<FString> Sentences;
-
-			TArray<ABlock*> Blocks =
-				this->BlockFactory.
-					CreateBlocks(World, Tokens, Sentences);
-
-			for (ABlock* Block : Blocks)
-			{
-				this->RegisterBlock(Block);
-			}
-
-			this->Board.AddBlocks(Blocks);
-		}
-
-		void RegisterBlock(ABlock* Block)
-		{
-			Block->SetOwner(this);
-
-			Block->
-				SetWidthChangedListener(
-					this, &APalette::OnBlockWidthChanged
-				);
-
-			Block->
-				SetMoveRequestedListener(
-					this, &APalette::OnBlockMoveRequested
-				);
-
-			Block->
-				SetDropRequestedListener(
-					this, &APalette::OnBlockDropRequested
-				);
-
-			Block->
-				SetSelectRequestedListener(
-					this, &APalette::OnBlockSelectRequested
-				);
-		}
-
-		void OnBlockWidthChanged(ABlock* Block)
-		{
-			this->Board.UpdateLayout();
-		}
-
-		void OnBlockMoveRequested(
-			ABlock* Block, const FVector& DesiredLocation
-		)
-		{
-		}
-
-		void OnBlockDropRequested(ABlock* Block)
-		{
-		}
-
-		void OnBlockSelectRequested(ABlock* Block)
-		{
-			FToken Token = Block->GetToken();
-
-			ETokenKind Kind = Token.Kind;
-
-			int32 KindIndex = static_cast<int32>(Kind);
-
-			UE_LOGFMT(
-				LogTemp, Warning,
-				"Palette tapped: kind {0}", KindIndex
-			);
-		}
-
-		UPROPERTY()
-		FBlockBoard Board;
-
-		FBlockFactory BlockFactory =
-			FBlockFactory(APalette::BlockHeight);
-	
 		static constexpr double RowHeightRatio = 1.1;
 };

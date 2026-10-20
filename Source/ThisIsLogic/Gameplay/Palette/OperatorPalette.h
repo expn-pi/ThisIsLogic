@@ -14,7 +14,7 @@ class THISISLOGIC_API AOperatorPalette : public APalette
 
 	protected:
 
-		virtual TArray<FToken> GetTokens() const override
+		virtual TArray<FToken> GetItemTokens() const override
 		{
 			TArray<ETokenKind> Kinds = {
 				ETokenKind::And,
@@ -50,7 +50,7 @@ class THISISLOGIC_API AOperatorPalette : public APalette
 		{
 			double Columns = AOperatorPalette::ColumnCount;
 
-			return APalette::BlockHeight * Columns;
+			return AAbstractBlocksManager::BlockHeight * Columns;
 		}
 
 	private:

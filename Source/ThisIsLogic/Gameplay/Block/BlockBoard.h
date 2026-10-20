@@ -54,6 +54,15 @@ struct FBlockBoard
 
 			this->UpdateLayout();
 		}
+		
+		void AddBlockBefore(ABlock* Block, ABlock* NextBlock)
+		{
+			int32 Index = this->Blocks.Find(NextBlock);
+
+			this->Blocks.Insert(Block, Index);
+
+			this->UpdateLayout();
+		}
 	
 		void RemoveBlock(ABlock* Block)
 		{

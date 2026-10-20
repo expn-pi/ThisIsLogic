@@ -4,14 +4,11 @@
 
 #include "../Block/Block.h"
 #include "../Block/BlockData.h"
-#include "../Block/BlockBoard.h"
-#include "../Block/BlockFactory.h"
 #include "../../Logic/LogicTypes.h"
 #include "../Block/PropositionBlock.h"
+#include "../Block/AbstractBlocksManager.h"
 
-#include "GameFramework/Actor.h"
 #include "Logging/StructuredLog.h"
-#include "Components/SceneComponent.h"
 
 #include "Formula.generated.h"
 
@@ -20,43 +17,22 @@ DECLARE_DELEGATE_TwoParams(FOnFormulaSelectionChanged, bool, bool);
 DECLARE_DELEGATE(FOnFormulaChanged);
 
 UCLASS()
-class THISISLOGIC_API AFormula : public AActor
+class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 {
 	GENERATED_BODY()
 	
 	#pragma region PublicMethods
 	public:
 
-		AFormula()
-		{
-			this->PrimaryActorTick.bCanEverTick = false;
-
-			FName RootName = TEXT("Root");
-
-			USceneComponent* Root =
-				CreateDefaultSubobject<USceneComponent>(RootName);
-
-			this->RootComponent = Root;
-		}
-		
-		void SetMaxRowWidth(double MaxRowWidth)
-		{
-			this->Board.SetData(
-				AFormula::RowHeightRatio, AFormula::BlockHeight,
-				MaxRowWidth
-			);
-		}
-
-		void SetSentences(const TArray<FString>& NewSentences)
-		{
-			this->Sentences = NewSentences;
-		}
-
 		void SetTokens(const TArray<FToken>& Tokens)
 		{
+			this->ClearSelection();
+
 			this->RemoveAllBlocks();
 
 			this->CreateBlocks(Tokens);
+
+			this->LogTokens();
 		}
 
 		void SetStates(const TArray<FBlockState>& States)
@@ -66,9 +42,9 @@ class THISISLOGIC_API AFormula : public AActor
 
 			this->SetTokens(Tokens);
 
-			this->Board.ApplyStates(States);
+			this->ApplyStates(States);
 		}
-	
+
 		template<typename UserClass>
 		void SetSelectionChangedListener(
 			UserClass* Listener,
@@ -78,7 +54,7 @@ class THISISLOGIC_API AFormula : public AActor
 			this->OnSelectionChanged.
 				BindUObject(Listener, Callback);
 		}
-	
+
 		template<typename UserClass>
 		void SetChangedListener(
 			UserClass* Listener, void (UserClass::* Callback)()
@@ -96,8 +72,8 @@ class THISISLOGIC_API AFormula : public AActor
 
 		void SetAllMinimized(bool bMinimized)
 		{
-			this->Board.SetAllMinimized(bMinimized);
-			
+			this->SetPropositionsMinimized(bMinimized);
+
 			this->NotifyChanged();
 		}
 
@@ -107,22 +83,42 @@ class THISISLOGIC_API AFormula : public AActor
 				CastChecked<APropositionBlock>(this->SelectedBlock);
 
 			Proposition->ToggleMinimized();
-			
+
 			this->NotifyChanged();
 		}
-	
+
+		void InsertBlock(const FToken& Token)
+		{
+			bool bHasSelection = this->HasSelection();
+
+			if (bHasSelection)
+			{
+				ABlock* Selected = this->SelectedBlock;
+
+				this->CreateBlockBefore(Token, Selected);
+			}
+			else
+			{
+				this->CreateBlock(Token);
+			}
+
+			this->NotifyChanged();
+
+			this->LogTokens();
+		}
+
 		void RemoveSelectedBlock()
 		{
 			ABlock* Block = this->SelectedBlock;
 
 			this->DeselectBlock();
 
-			this->Board.RemoveBlock(Block);
+			this->RemoveBlock(Block);
 
 			this->NotifySelectionChanged();
-			
+
 			this->NotifyChanged();
-			
+
 			this->LogTokens();
 		}
 
@@ -130,64 +126,66 @@ class THISISLOGIC_API AFormula : public AActor
 		{
 			return this->SelectedBlock != nullptr;
 		}
-	
+
 		bool IsPropositionSelected() const
 		{
 			return this->bIsPropositionSelected;
 		}
-	
-		TArray<FToken> GetTokens() const
-		{
-			return this->Board.GetTokens();
-		}
-	
-		TArray<FBlockState> GetStates() const
-		{
-			return this->Board.GetStates();
-		}
-	
+
 	#pragma endregion
 
+	#pragma region ProtectedMethods
 	protected:
 
-		virtual void BeginPlay() override
+		virtual double GetRowHeightRatio() const override
 		{
-			Super::BeginPlay();
-
-			FVector Location = this->GetActorLocation();
-
-			this->Board.SetOrigin(Location);
+			return AFormula::RowHeightRatio;
 		}
-	
-	#pragma region PrivateMethods
-	private:
-		
-		void CreateBlocks(const TArray<FToken>& Tokens)
+
+		virtual void RegisterBlock(ABlock* Block) override
 		{
-			UWorld* World = this->GetWorld();
+			Super::RegisterBlock(Block);
 
-			TArray<ABlock*> Blocks =
-				this->BlockFactory.
-					CreateBlocks(World, Tokens, this->Sentences);
+			APropositionBlock* Proposition =
+				Cast<APropositionBlock>(Block);
 
-			for (ABlock* Block : Blocks)
+			bool bIsProposition = Proposition != nullptr;
+
+			if (bIsProposition)
 			{
-				this->RegisterBlock(Block);
+				this->RegisterProposition(Proposition);
 			}
+		}
 
-			this->Board.AddBlocks(Blocks);
+		virtual void OnBlockSelectRequested(ABlock* Block)
+			override
+		{
+			this->SelectBlock(Block);
+		}
+
+		virtual void OnBlockMoveRequested(
+			ABlock* Block, const FVector& DesiredLocation
+		) override
+		{
+			this->DragBlock(Block, DesiredLocation);
 
 			this->LogTokens();
 		}
 
-		void RemoveAllBlocks()
+		virtual void OnBlockDropRequested(ABlock* Block)
+			override
 		{
-			this->DeselectBlock();
+			this->LayoutBlocks();
 
-			this->Board.RemoveAllBlocks();
+			this->NotifyChanged();
 
-			this->NotifySelectionChanged();
+			this->LogTokens();
 		}
+
+	#pragma endregion
+	
+	#pragma region PrivateMethods
+	private:
 
 		static TArray<FToken> GetStateTokens(
 			const TArray<FBlockState>& States
@@ -205,41 +203,6 @@ class THISISLOGIC_API AFormula : public AActor
 			return Tokens;
 		}
 	
-		void RegisterBlock(ABlock* Block)
-		{
-			Block->SetOwner(this);
-
-			Block->
-				SetWidthChangedListener(
-					this, &AFormula::OnBlockWidthChanged
-				);
-
-			Block->
-				SetMoveRequestedListener(
-					this, &AFormula::OnBlockMoveRequested
-				);
-
-			Block->
-				SetDropRequestedListener(
-					this, &AFormula::OnBlockDropRequested
-				);
-
-			Block->
-				SetSelectRequestedListener(
-					this, &AFormula::OnBlockSelectRequested
-				);
-
-			APropositionBlock* Proposition =
-				Cast<APropositionBlock>(Block);
-
-			bool bIsProposition = Proposition != nullptr;
-
-			if (bIsProposition)
-			{
-				this->RegisterProposition(Proposition);
-			}
-		}
-
 		void RegisterProposition(
 			APropositionBlock* Proposition
 		)
@@ -247,37 +210,8 @@ class THISISLOGIC_API AFormula : public AActor
 			Proposition->
 				SetToggleMinimizedRequestedListener(
 					this,
-					&AFormula::
-						OnPropositionToggleMinimizedRequested
+					&AFormula::OnPropositionToggleMinimizedRequested
 				);
-		}
-
-		void OnBlockMoveRequested(
-			ABlock* Block, const FVector& DesiredLocation
-		)
-		{
-			this->Board.DragBlock(Block, DesiredLocation);
-			
-			this->LogTokens();
-		}
-
-		void OnBlockDropRequested(ABlock* Block)
-		{
-			this->Board.LayoutBlocks();
-			
-			this->NotifyChanged();
-			
-			this->LogTokens();
-		}
-
-		void OnBlockWidthChanged(ABlock* Block)
-		{
-			this->Board.UpdateLayout();
-		}
-
-		void OnBlockSelectRequested(ABlock* Block)
-		{
-			this->SelectBlock(Block);
 		}
 
 		void SelectBlock(ABlock* Block)
@@ -373,24 +307,14 @@ class THISISLOGIC_API AFormula : public AActor
 	#pragma region Attributes
 	
 		UPROPERTY()
-		FBlockBoard Board;
-
-		UPROPERTY()
 		TObjectPtr<ABlock> SelectedBlock;
-
+	
 		FOnFormulaSelectionChanged OnSelectionChanged;
 	
 		FOnFormulaChanged OnChanged;
-
+	
 		bool bIsPropositionSelected = false;
 	
-		TArray<FString> Sentences;
-
-		FBlockFactory BlockFactory =
-			FBlockFactory(AFormula::BlockHeight);
-
-		static constexpr float BlockHeight = 2.f;
-		
 		static constexpr double RowHeightRatio = 1.5;
 	
 	#pragma endregion

@@ -36,7 +36,8 @@ New blocks come from two palettes: the operators, in a column on the left, and t
 - [x] Levels loaded from a data table
 - [x] Command panel to minimize or maximize propositions, remove the selected block, undo any command and restart the level
 - [x] Camera that frames the table on windows of any shape
-- [ ] Palettes to insert operators and propositions
+- [x] Operator palette: a tap inserts an operator before the selected block, or at the end of the formula
+- [ ] Proposition palette, which doubles as a legend of the sentences
 - [ ] Validity and equivalence indicators
 - [ ] Logic core: parser, evaluation and equivalence by truth table
 - [ ] Win condition and progression between levels
@@ -90,6 +91,9 @@ classDiagram
     class ABlock {
         <<abstract>>
     }
+    class AAbstractBlocksManager {
+        <<abstract>>
+    }
     class APalette {
         <<abstract>>
     }
@@ -109,15 +113,17 @@ classDiagram
     AExercise ..> FFormulaStub
     AExercise ..> UThisIsLogicSettings
 
-    AFormula --> FBlockBoard
-    AFormula --> FBlockFactory
+    AFormula --|> AAbstractBlocksManager
     AFormula --> ABlock
     AFormula ..> APropositionBlock
 
     AOperatorPalette --|> APalette
-    APalette --> FBlockBoard
-    APalette --> FBlockFactory
+    APalette --|> AAbstractBlocksManager
     APalette ..> ABlock
+
+    AAbstractBlocksManager --> FBlockBoard
+    AAbstractBlocksManager --> FBlockFactory
+    AAbstractBlocksManager ..> ABlock
 
     FBlockBoard --> FBlockRow
     FBlockBoard --> ABlock

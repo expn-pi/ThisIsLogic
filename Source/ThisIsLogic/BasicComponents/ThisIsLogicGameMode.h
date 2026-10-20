@@ -45,7 +45,7 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 
 			this->StartExercise(Exercise);
 
-			this->CreateOperatorPalette();
+			this->CreateOperatorPalette(Formula);
 		}
 
 	#pragma region PrivateMethods
@@ -116,7 +116,9 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 			return Exercise;
 		}
 
-		void CreatePanel(AFormula* Formula, AExercise* Exercise)
+		void CreatePanel(
+			AFormula* Formula, AExercise* Exercise
+		)
 		{
 			UWorld* World = this->GetWorld();
 
@@ -174,21 +176,28 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 			Exercise->FinishSpawning(Transform);
 		}
 
-		void CreateOperatorPalette()
+		void CreateOperatorPalette(AFormula* Formula)
 		{
 			UWorld* World = this->GetWorld();
 
-			FVector Location = FVector(13.0, -22.5, 0.0);
+			FVector Location =
+				FVector(13.0, -22.5, 0.0);
 
 			FTransform Transform = FTransform(Location);
 
 			UClass* PaletteClass =
 				AOperatorPalette::StaticClass();
 
-			World->
-				SpawnActor<
-					AOperatorPalette
-				>(PaletteClass, Transform);
+			AOperatorPalette* Palette =
+				World->
+					SpawnActor<
+						AOperatorPalette
+					>(PaletteClass, Transform);
+
+			Palette->
+				SetInsertRequestedListener(
+					Formula, &AFormula::InsertBlock
+				);
 		}
 	
 	#pragma endregion
