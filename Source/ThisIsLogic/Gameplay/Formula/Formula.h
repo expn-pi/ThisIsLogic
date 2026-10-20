@@ -122,16 +122,6 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 			this->LogTokens();
 		}
 
-		bool HasSelection() const
-		{
-			return this->SelectedBlock != nullptr;
-		}
-
-		bool IsPropositionSelected() const
-		{
-			return this->bIsPropositionSelected;
-		}
-
 	#pragma endregion
 
 	#pragma region ProtectedMethods
@@ -222,17 +212,19 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 
 			this->SelectedBlock->SetSelected(true);
 
-			APropositionBlock* Proposition =
-				Cast<APropositionBlock>(Block);
+			FToken Token = Block->GetToken();
 
-			this->bIsPropositionSelected = Proposition != nullptr;
+			ETokenKind Kind = Token.Kind;
+
+			this->bIsPropositionSelected =
+				Kind == ETokenKind::Proposition;
 
 			this->NotifySelectionChanged();
 		}
 
 		void DeselectBlock()
 		{
-			bool bHasSelection = this->SelectedBlock != nullptr;
+			bool bHasSelection = this->HasSelection();
 
 			if (bHasSelection)
 			{
@@ -243,7 +235,12 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 				this->bIsPropositionSelected = false;
 			}
 		}
-
+		
+		bool HasSelection() const
+		{
+			return this->SelectedBlock != nullptr;
+		}
+	
 		void NotifySelectionChanged()
 		{
 			bool bHasSelectionListener =
