@@ -72,33 +72,13 @@ class THISISLOGIC_API UCommandPanel :
 			this->OnUndoRequested.BindUObject(Listener, Callback);
 		}
 
-		void SetSelectionButtonsVisible(bool bVisible)
+		void UpdateSelection(
+			bool bHasSelection, bool bIsPropositionSelected
+		)
 		{
-			ESlateVisibility NewVisibility =
-				ESlateVisibility::Collapsed;
+			this->SetSelectionButtonsVisible(bHasSelection);
 
-			if (bVisible)
-			{
-				NewVisibility =
-					ESlateVisibility::SelfHitTestInvisible;
-			}
-
-			this->SelectionButtonsBox->
-				SetVisibility(NewVisibility);
-		}
-	
-		void SetToggleMinimizedVisible(bool bVisible)
-		{
-			ESlateVisibility NewVisibility =
-				ESlateVisibility::Collapsed;
-
-			if (bVisible)
-			{
-				NewVisibility = ESlateVisibility::Visible;
-			}
-
-			this->ToggleMinimizedButton->
-				SetVisibility(NewVisibility);
+			this->SetToggleMinimizedVisible(bIsPropositionSelected);
 		}
 
 	#pragma endregion
@@ -154,6 +134,35 @@ class THISISLOGIC_API UCommandPanel :
 
 	#pragma region PrivateMethods
 	private:
+
+		void SetSelectionButtonsVisible(bool bVisible)
+		{
+			ESlateVisibility NewVisibility =
+				ESlateVisibility::Collapsed;
+
+			if (bVisible)
+			{
+				NewVisibility =
+					ESlateVisibility::SelfHitTestInvisible;
+			}
+
+			this->SelectionButtonsBox->
+				SetVisibility(NewVisibility);
+		}
+	
+		void SetToggleMinimizedVisible(bool bVisible)
+		{
+			ESlateVisibility NewVisibility =
+				ESlateVisibility::Collapsed;
+
+			if (bVisible)
+			{
+				NewVisibility = ESlateVisibility::Visible;
+			}
+
+			this->ToggleMinimizedButton->
+				SetVisibility(NewVisibility);
+		}
 
 		UFUNCTION()
 		void OnMinimizeAllClicked()

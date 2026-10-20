@@ -15,6 +15,8 @@ Each symbol of the formula is a block, and the blocks are laid out in rows, like
 
 Proposition blocks hold a sentence and a letter, and can be minimized (letter) or maximized (whole sentence). Operator blocks cover the constants ⊤ and ⊥, ¬, ∧, ∨, ⊕, NAND (↑), NOR (↓), →, ←, ↔ and the parentheses.
 
+New blocks come from two palettes: the operators, in a column on the left, and the level's propositions, at the top, which double as a legend of their sentences.
+
 ### Example
 
 | | |
@@ -33,6 +35,8 @@ Proposition blocks hold a sentence and a letter, and can be minimized (letter) o
 - [x] Operators shown with the textbook symbols (∧, ∨, ↔...)
 - [x] Levels loaded from a data table
 - [x] Command panel to minimize or maximize propositions, remove the selected block, undo any command and restart the level
+- [x] Camera that frames the table on windows of any shape
+- [ ] Palettes to insert operators and propositions
 - [ ] Validity and equivalence indicators
 - [ ] Logic core: parser, evaluation and equivalence by truth table
 - [ ] Win condition and progression between levels
@@ -58,8 +62,8 @@ Requirements: Windows, Unreal Engine 5.8 and Visual Studio 2022 with the "Game d
 
 ```
 Source/ThisIsLogic/
-  BasicComponents/   camera, game mode and player controller
-  Gameplay/          blocks, formulas and levels
+  BasicComponents/   camera, player controller, settings, and the game mode, which assembles the table
+  Gameplay/          the exercise, the formula, the palettes, the blocks and the levels
   Input/             mouse routing interface
   Logic/             logic core, plain C++ with no engine dependencies
   UI/                UI widgets, with the logic in C++ and the layout in Widget Blueprints
@@ -72,7 +76,11 @@ Images/              pictures shown in this README
 
 ## Class diagram
 
-How the classes connect. Solid arrows are associations (the class keeps a reference to the other), dashed arrows are dependencies (it only uses the other), and hollow triangles mark inheritance and interface implementation. This diagram is kept up to date with the code.
+How the classes connect, drawn in Visual Paradigm. Colors mark the kind of each class: actor, other engine object, plain C++ class or interface. Solid arrows are associations (the class keeps a reference to the other), dashed arrows are dependencies (it only uses the other), an X marks the end of a class that does not know the other, and hollow triangles mark inheritance and interface implementation. The drawing shows the code of the latest commit in [the image's history](https://github.com/expn-pi/ThisIsLogic/commits/main/Images/ProjectClassDiagram.png), and it may lag behind the text version below.
+
+![Class diagram drawn in Visual Paradigm](Images/ProjectClassDiagram.png)
+
+The same diagram as Mermaid text, kept up to date with the code:
 
 ```mermaid
 classDiagram
@@ -82,21 +90,34 @@ classDiagram
     class ABlock {
         <<abstract>>
     }
+    class APalette {
+        <<abstract>>
+    }
+
+    AThisIsLogicGameMode ..> ACameraPawn
+    AThisIsLogicGameMode ..> AFormula
+    AThisIsLogicGameMode ..> ABackgroundTarget
+    AThisIsLogicGameMode ..> AExercise
+    AThisIsLogicGameMode ..> UCommandPanel
+    AThisIsLogicGameMode ..> AOperatorPalette
+    AThisIsLogicGameMode ..> UThisIsLogicSettings
 
     AExercise --> AFormula
-    AExercise --> UCommandPanel
     AExercise --> FLevelRow
-    AExercise --> FBlockFactory
     AExercise --> FUndoHistory
     AExercise ..> FFormulaAnalyzer
     AExercise ..> FFormulaStub
-    AExercise ..> ABlock
-    AExercise ..> ABackgroundTarget
     AExercise ..> UThisIsLogicSettings
 
     AFormula --> FBlockBoard
+    AFormula --> FBlockFactory
     AFormula --> ABlock
     AFormula ..> APropositionBlock
+
+    AOperatorPalette --|> APalette
+    APalette --> FBlockBoard
+    APalette --> FBlockFactory
+    APalette ..> ABlock
 
     FBlockBoard --> FBlockRow
     FBlockBoard --> ABlock
@@ -119,13 +140,7 @@ classDiagram
 
     UThisIsLogicSettings ..> UCommandPanel
     UCommandPanel ..> FAuxUI
-
-    AThisIsLogicGameMode ..> ACameraPawn
 ```
-
-The same diagram drawn in Visual Paradigm. It shows the code of the latest commit in [the image's history](https://github.com/expn-pi/ThisIsLogic/commits/main/Images/ProjectClassDiagram.png), and it may lag behind the diagram above.
-
-![Class diagram drawn in Visual Paradigm](Images/ProjectClassDiagram.png)
 
 ## License
 

@@ -14,6 +14,14 @@ class FNotation
 {
 	public:
 
+		FNotation() :
+			FNotation(
+				FNotation::DefaultFirstLetter,
+				FNotation::DefaultSymbolStyle
+			)
+		{
+		}
+
 		FNotation(
 			TCHAR InFirstLetter,
 			ESymbolStyle SymbolStyle
@@ -150,8 +158,13 @@ class FNotation
 
 			return Texts;
 		}
-
+	
 		TCHAR FirstLetter;
 
 		TMap<ETokenKind, FString> Symbols;
+
+		static constexpr TCHAR DefaultFirstLetter = 'P';
+
+		static constexpr ESymbolStyle DefaultSymbolStyle =
+			ESymbolStyle::Textbook;
 };

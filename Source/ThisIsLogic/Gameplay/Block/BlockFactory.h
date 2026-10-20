@@ -13,19 +13,13 @@ class FBlockFactory
 {
 	public:
 
-		FBlockFactory(
-			TCHAR InFirstLetter,
-			ESymbolStyle SymbolStyle,
-			float InBlockHeight
-		) :
-			Notation(InFirstLetter, SymbolStyle),
+		explicit FBlockFactory(float InBlockHeight) :
 			BlockHeight(InBlockHeight)
 		{
 		}
 
 		TArray<ABlock*> CreateBlocks(
-			UWorld* World,
-			const TArray<FToken>& Tokens,
+			UWorld* World, const TArray<FToken>& Tokens,
 			const TArray<FString>& Sentences
 		) const
 		{
@@ -34,9 +28,7 @@ class FBlockFactory
 			for (const FToken& Token : Tokens)
 			{
 				ABlock* Block =
-					this->CreateBlock(
-						World, Token, Sentences
-					);
+					this->CreateBlock(World, Token, Sentences);
 
 				Blocks.Add(Block);
 			}
@@ -45,8 +37,7 @@ class FBlockFactory
 		}
 
 		ABlock* CreateBlock(
-			UWorld* World,
-			const FToken& Token,
+			UWorld* World, const FToken& Token,
 			const TArray<FString>& Sentences
 		) const
 		{
@@ -62,26 +53,20 @@ class FBlockFactory
 			}
 			else
 			{
-				return
-					this->CreateOperatorBlock(
-						World, Token
-					);
+				return this->CreateOperatorBlock(World, Token);
 			}
 		}
 
 	private:
 
 		APropositionBlock* CreatePropositionBlock(
-			UWorld* World,
-			const FToken& Token,
+			UWorld* World, const FToken& Token,
 			const TArray<FString>& Sentences
 		) const
 		{
-			FTransform Transform =
-				FTransform::Identity;
+			FTransform Transform = FTransform::Identity;
 
-			UClass* BlockClass =
-				APropositionBlock::StaticClass();
+			UClass* BlockClass = APropositionBlock::StaticClass();
 
 			APropositionBlock* Block =
 				World->
@@ -91,14 +76,12 @@ class FBlockFactory
 
 			Block->SetData(this->BlockHeight, Token);
 			
-			int32 PropositionIndex =
-				Token.Index;
+			int32 PropositionIndex = Token.Index;
 
 			FString Letter =
 				this->Notation.GetLetter(PropositionIndex);
 
-			const FString& Sentence =
-				Sentences[PropositionIndex];
+			const FString& Sentence = Sentences[PropositionIndex];
 
 			Block->SetProposition(Letter, Sentence);
 
@@ -111,11 +94,9 @@ class FBlockFactory
 			UWorld* World, const FToken& Token
 		) const
 		{
-			FTransform Transform =
-				FTransform::Identity;
+			FTransform Transform = FTransform::Identity;
 
-			UClass* BlockClass =
-				AOperatorBlock::StaticClass();
+			UClass* BlockClass = AOperatorBlock::StaticClass();
 
 			AOperatorBlock* Block =
 				World->
@@ -127,8 +108,7 @@ class FBlockFactory
 
 			ETokenKind Kind = Token.Kind;
 
-			FString Symbol =
-				this->Notation.GetSymbol(Kind);
+			FString Symbol = this->Notation.GetSymbol(Kind);
 
 			Block->SetSymbol(Symbol);
 

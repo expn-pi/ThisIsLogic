@@ -3,21 +3,15 @@
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
 #include "GameFramework/Actor.h"
-#include "Blueprint/UserWidget.h"
 #include "Logging/StructuredLog.h"
 #include "Components/SceneComponent.h"
-#include "GameFramework/PlayerController.h"
 
 #include "UndoHistory.h"
-#include "../Block/Block.h"
 #include "../Level/LevelRow.h"
 #include "../Formula/Formula.h"
 #include "../Block/BlockData.h"
 // #include "../Level/FormulaStub.h"
-#include "../Block/BlockFactory.h"
-#include "../../UI/CommandPanel.h"
 #include "../../Logic/FormulaAnalyzer.h"
-#include "../../Input/BackgroundTarget.h"
 #include "../../BasicComponents/ThisIsLogicSettings.h"
 
 #include "Exercise.generated.h"
@@ -27,6 +21,7 @@ class THISISLOGIC_API AExercise : public AActor
 {
 	GENERATED_BODY()
 
+	#pragma region PublicMethods
 	public:
 
 		AExercise()
@@ -41,6 +36,33 @@ class THISISLOGIC_API AExercise : public AActor
 			this->RootComponent = Root;
 		}
 
+		void SetFormula(AFormula* NewFormula)
+		{
+			this->Formula = NewFormula;
+		}
+
+		void Restart()
+		{
+			this->Formula->SetTokens(this->StartingTokens);
+
+			this->SaveState();
+		}
+
+		void Undo()
+		{
+			bool bCanUndo = this->UndoHistory.CanUndo();
+
+			if (bCanUndo)
+			{
+				TArray<FBlockState> Snapshot =
+					this->UndoHistory.Undo();
+
+				this->Formula->SetStates(Snapshot);
+			}
+		}
+	
+	#pragma endregion
+
 	protected:
 
 		virtual void BeginPlay() override
@@ -51,15 +73,11 @@ class THISISLOGIC_API AExercise : public AActor
 
 			this->LoadFormula();
 
-			this->CreateBackground();
+			this->ConnectFormula();
 
-			this->CreateFormula();
+			this->Formula->SetTokens(this->StartingTokens);
 
-			this->CreateBlocks(this->StartingTokens);
-			
 			this->SaveState();
-
-			this->CreatePanel();
 		}
 
 	#pragma region PrivateMethods
@@ -108,78 +126,18 @@ class THISISLOGIC_API AExercise : public AActor
 				//FormulaStub.GetSentences();
 		}
 
-		void CreateBackground()
+		void ConnectFormula()
 		{
-			UWorld* World = this->GetWorld();
+			bool bHasFormula = this->Formula != nullptr;
 
-			FVector Location = this->GetActorLocation();
+			check(bHasFormula);
 
-			double ExerciseLocationZ = Location.Z;
+			this->Formula->SetSentences(this->Sentences);
 
-			Location.Z =
-				ExerciseLocationZ - AExercise::BackgroundDepth;
-
-			FTransform Transform = FTransform(Location);
-
-			UClass* BackgroundClass =
-				ABackgroundTarget::StaticClass();
-
-			ABackgroundTarget* BackgroundTarget =
-				World->
-					SpawnActor<
-						ABackgroundTarget
-					>(BackgroundClass, Transform);
-
-			BackgroundTarget->SetOwner(this);
-
-			BackgroundTarget->
-				SetTappedListener(
-					this, &AExercise::OnBackgroundTapped
-				);
-		}
-
-		void CreateFormula()
-		{
-			UWorld* World = this->GetWorld();
-
-			FVector Location = this->GetActorLocation();
-
-			FTransform Transform = FTransform(Location);
-
-			UClass* FormulaClass = AFormula::StaticClass();
-
-			this->Formula =
-				World->
-					SpawnActor<AFormula>(FormulaClass, Transform);
-
-			this->Formula->SetOwner(this);
-			
-			this->Formula->
-				SetBlockHeight(AExercise::BlockHeight);
-
-			this->Formula->
-				SetMaxRowWidth(AExercise::MaxRowWidth);
-
-			this->Formula->
-				SetSelectionChangedListener(
-					this, &AExercise::OnFormulaSelectionChanged
-				);
-			
 			this->Formula->
 				SetChangedListener(
 					this, &AExercise::OnFormulaChanged
 				);
-		}
-
-		void CreateBlocks(const TArray<FToken>& Tokens)
-		{
-			UWorld* World = this->GetWorld();
-
-			TArray<ABlock*> Blocks =
-				this->BlockFactory.
-					CreateBlocks(World, Tokens, this->Sentences);
-
-			this->Formula->AddBlocks(Blocks);
 		}
 
 		TArray<FToken> AnalyzeFormula() const
@@ -211,97 +169,6 @@ class THISISLOGIC_API AExercise : public AActor
 			return Tokens;
 		}
 
-		void CreatePanel()
-		{
-			UWorld* World = this->GetWorld();
-
-			APlayerController* PlayerController =
-				World->GetFirstPlayerController();
-
-			const UThisIsLogicSettings* Settings =
-				GetDefault<UThisIsLogicSettings>();
-
-			TSubclassOf<UCommandPanel> PanelClass =
-				Settings->GetCommandPanelClass();
-
-			this->CommandPanel =
-				CreateWidget<
-					UCommandPanel
-				>(PlayerController, PanelClass);
-
-			this->CommandPanel->
-				SetAllMinimizedRequestedListener(
-					this, &AExercise::OnAllMinimizedRequested
-				);
-
-			this->CommandPanel->
-				SetToggleMinimizedRequestedListener(
-					this, &AExercise::OnToggleMinimizedRequested
-				);
-			
-			this->CommandPanel->
-				SetRemoveRequestedListener(
-					this, &AExercise::OnRemoveRequested
-				);
-			
-			this->CommandPanel->
-				SetRestartRequestedListener(
-					this, &AExercise::OnRestartRequested
-				);
-			
-			this->CommandPanel->
-				SetUndoRequestedListener(
-					this, &AExercise::OnUndoRequested
-				);
-
-			this->UpdatePanel();
-
-			this->CommandPanel->AddToViewport();
-		}
-
-		void UpdatePanel()
-		{
-			bool bHasSelection = this->Formula->HasSelection();
-
-			bool bIsPropositionSelected =
-				this->Formula->IsPropositionSelected();
-
-			this->CommandPanel->
-				SetSelectionButtonsVisible(bHasSelection);
-
-			this->CommandPanel->
-				SetToggleMinimizedVisible(bIsPropositionSelected);
-		}
-	
-		void Restart()
-		{
-			this->Formula->RemoveAllBlocks();
-
-			this->CreateBlocks(this->StartingTokens);
-			
-			this->SaveState();
-		}
-	
-		void Undo()
-		{
-			bool bCanUndo = this->UndoHistory.CanUndo();
-
-			if (bCanUndo)
-			{
-				TArray<FBlockState> Snapshot =
-					this->UndoHistory.Undo();
-
-				TArray<FToken> Tokens =
-					AExercise::GetTokens(Snapshot);
-
-				this->Formula->RemoveAllBlocks();
-
-				this->CreateBlocks(Tokens);
-
-				this->Formula->ApplyStates(Snapshot);
-			}
-		}
-
 		void SaveState()
 		{
 			TArray<FBlockState> Snapshot =
@@ -310,60 +177,9 @@ class THISISLOGIC_API AExercise : public AActor
 			this->UndoHistory.Save(Snapshot);
 		}
 	
-		static TArray<FToken> GetTokens(
-			const TArray<FBlockState>& Snapshot
-		)
-		{
-			TArray<FToken> Tokens;
-
-			for (const FBlockState& State : Snapshot)
-			{
-				FToken Token = State.Token;
-
-				Tokens.Add(Token);
-			}
-
-			return Tokens;
-		}
-
-		void OnBackgroundTapped()
-		{
-			this->Formula->ClearSelection();
-		}
-
-		void OnFormulaSelectionChanged()
-		{
-			this->UpdatePanel();
-		}
-	
 		void OnFormulaChanged()
 		{
 			this->SaveState();
-		}
-
-		void OnAllMinimizedRequested(bool bMinimized)
-		{
-			this->Formula->SetAllMinimized(bMinimized);
-		}
-
-		void OnToggleMinimizedRequested()
-		{
-			this->Formula->ToggleSelectedMinimized();
-		}
-	
-		void OnRemoveRequested()
-		{
-			this->Formula->RemoveSelectedBlock();
-		}
-	
-		void OnRestartRequested()
-		{
-			this->Restart();
-		}
-	
-		void OnUndoRequested()
-		{
-			this->Undo();
 		}
 
 	#pragma endregion
@@ -373,9 +189,6 @@ class THISISLOGIC_API AExercise : public AActor
 		UPROPERTY()
 		TObjectPtr<AFormula> Formula;
 
-		UPROPERTY()
-		TObjectPtr<UCommandPanel> CommandPanel;
-
 		FLevelRow LevelRow;
 		
 		TArray<FToken> StartingTokens;
@@ -383,18 +196,6 @@ class THISISLOGIC_API AExercise : public AActor
 		TArray<FString> Sentences;
 	
 		FUndoHistory UndoHistory;
-	
-		FBlockFactory BlockFactory =
-			FBlockFactory(
-				'P', ESymbolStyle::Textbook,
-				AExercise::BlockHeight
-			);
-
-		static constexpr float BlockHeight = 2.f;
-	
-		static constexpr double MaxRowWidth = 40.0;
-
-		static constexpr double BackgroundDepth = 5.0;
 	
 	#pragma endregion
 };

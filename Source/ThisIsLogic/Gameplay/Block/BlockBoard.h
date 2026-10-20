@@ -23,17 +23,18 @@ struct FBlockBoard
 			this->Origin = NewOrigin;
 		}
 
-		void SetBlockHeight(float BlockHeight)
+		void SetData(
+			double NewRowHeightRatio, float BlockHeight,
+			double NewMaxRowWidth
+		)
 		{
-			this->RowHeight =
-				BlockHeight * FBlockBoard::RowHeightRatio;
+			this->RowHeightRatio = NewRowHeightRatio;
+		
+			this->RowHeight = BlockHeight * this->RowHeightRatio;
 
 			this->DragHeight =
 				BlockHeight * FBlockBoard::DragHeightRatio;
-		}
-
-		void SetMaxRowWidth(double NewMaxRowWidth)
-		{
+		
 			this->MaxRowWidth = NewMaxRowWidth;
 		}
 
@@ -143,6 +144,7 @@ struct FBlockBoard
 		{
 			this->UpdateRows();
 
+			this->LayoutBlocks();
 			this->LayoutBlocks();
 		}
 
@@ -523,11 +525,11 @@ struct FBlockBoard
 
 		double MaxRowWidth = 0.0;
 
+		double RowHeightRatio = 1.5;
+
 		double RowHeight = 0.0;
 
 		double DragHeight = 0.0;
-
-		static constexpr double RowHeightRatio = 1.5;
 
 		static constexpr double DragHeightRatio = 0.2;
 

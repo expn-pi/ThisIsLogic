@@ -1,8 +1,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "UnrealClient.h"
+#include "Engine/World.h"
 #include "GameFramework/Pawn.h"
+#include "Engine/EngineTypes.h"
+#include "Logging/StructuredLog.h"
 #include "Camera/CameraComponent.h"
+#include "Engine/GameViewportClient.h"
 
 #include "CameraPawn.generated.h"
 
@@ -31,7 +36,14 @@ class THISISLOGIC_API ACameraPawn : public APawn
 
 			this->Camera->SetProjectionMode(ProjectionMode);
 
-			this->Camera->SetOrthoWidth(30.f);
+			EAspectRatioAxisConstraint AxisConstraint =
+				AspectRatio_MaintainXFOV;
+
+			this->Camera->
+				bOverrideAspectRatioAxisConstraint = true;
+
+			this->Camera->
+				SetAspectRatioAxisConstraint(AxisConstraint);
 		}
 
 	protected:
@@ -49,10 +61,84 @@ class THISISLOGIC_API ACameraPawn : public APawn
 			this->SetActorLocationAndRotation(
 				OverheadLocation, LookDownRotation
 			);
+
+			this->FitToViewport();
+
+			FViewport::ViewportResizedEvent.
+				AddUObject(this, &ACameraPawn::OnViewportResized);
+		}
+
+		virtual void EndPlay(
+			const EEndPlayReason::Type EndPlayReason
+		)
+			override
+		{
+			FViewport::
+				ViewportResizedEvent.RemoveAll(this);
+
+			Super::EndPlay(EndPlayReason);
 		}
 
 	private:
 
+		void OnViewportResized(
+			FViewport* Viewport, uint32 Unused
+		)
+		{
+			this->FitToViewport();
+		}
+
+		void FitToViewport()
+		{
+			UWorld* World = this->GetWorld();
+
+			UGameViewportClient* ViewportClient =
+				World->GetGameViewport();
+
+			FVector2D ViewportSize = FVector2D::ZeroVector;
+
+			ViewportClient->GetViewportSize(ViewportSize);
+
+			double SizeX = ViewportSize.X;
+
+			double SizeY = ViewportSize.Y;
+
+			bool bHasHeight = SizeY > 0.0;
+
+			if (bHasHeight)
+			{
+				double AspectRatio = SizeX / SizeY;
+
+				this->FitToAspectRatio(AspectRatio);
+			}
+		}
+
+		void FitToAspectRatio(double AspectRatio)
+		{
+			double WidthForMinHeight =
+				ACameraPawn::MinViewHeight * AspectRatio;
+
+			double OrthoWidth =
+				FMath::Max(
+					ACameraPawn::MinViewWidth, 
+					WidthForMinHeight
+				);
+
+			float CameraOrthoWidth =
+				static_cast<float>(OrthoWidth);
+
+			this->Camera->SetOrthoWidth(CameraOrthoWidth);
+
+			UE_LOGFMT(
+				LogTemp, Warning,
+				"Ortho width: {0}", CameraOrthoWidth
+			);
+		}
+
 		UPROPERTY(VisibleAnywhere)
 		TObjectPtr<UCameraComponent> Camera;
+
+		static constexpr double MinViewWidth = 50.0;
+
+		static constexpr double MinViewHeight = 28.0;
 };

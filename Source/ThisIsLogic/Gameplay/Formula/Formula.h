@@ -5,6 +5,7 @@
 #include "../Block/Block.h"
 #include "../Block/BlockData.h"
 #include "../Block/BlockBoard.h"
+#include "../Block/BlockFactory.h"
 #include "../../Logic/LogicTypes.h"
 #include "../Block/PropositionBlock.h"
 
@@ -14,7 +15,7 @@
 
 #include "Formula.generated.h"
 
-DECLARE_DELEGATE(FOnFormulaSelectionChanged);
+DECLARE_DELEGATE_TwoParams(FOnFormulaSelectionChanged, bool, bool);
 
 DECLARE_DELEGATE(FOnFormulaChanged);
 
@@ -38,38 +39,40 @@ class THISISLOGIC_API AFormula : public AActor
 			this->RootComponent = Root;
 		}
 		
-		void SetBlockHeight(float BlockHeight)
-		{
-			this->Board.SetBlockHeight(BlockHeight);
-		}
-	
 		void SetMaxRowWidth(double MaxRowWidth)
 		{
-			this->Board.SetMaxRowWidth(MaxRowWidth);
-		}
-	
-		void AddBlocks(const TArray<ABlock*>& NewBlocks)
-		{
-			for (ABlock* Block : NewBlocks)
-			{
-				this->RegisterBlock(Block);
-			}
-
-			this->Board.AddBlocks(NewBlocks);
-			
-			this->LogTokens();
+			this->Board.SetData(
+				AFormula::RowHeightRatio, AFormula::BlockHeight,
+				MaxRowWidth
+			);
 		}
 
-		void AddBlock(ABlock* Block)
+		void SetSentences(const TArray<FString>& NewSentences)
 		{
-			this->RegisterBlock(Block);
+			this->Sentences = NewSentences;
+		}
 
-			this->Board.AddBlock(Block);
+		void SetTokens(const TArray<FToken>& Tokens)
+		{
+			this->RemoveAllBlocks();
+
+			this->CreateBlocks(Tokens);
+		}
+
+		void SetStates(const TArray<FBlockState>& States)
+		{
+			TArray<FToken> Tokens =
+				AFormula::GetStateTokens(States);
+
+			this->SetTokens(Tokens);
+
+			this->Board.ApplyStates(States);
 		}
 	
 		template<typename UserClass>
 		void SetSelectionChangedListener(
-			UserClass* Listener, void (UserClass::* Callback)()
+			UserClass* Listener,
+			void (UserClass::* Callback)(bool, bool)
 		)
 		{
 			this->OnSelectionChanged.
@@ -122,15 +125,6 @@ class THISISLOGIC_API AFormula : public AActor
 			
 			this->LogTokens();
 		}
-	
-		void RemoveAllBlocks()
-		{
-			this->DeselectBlock();
-
-			this->Board.RemoveAllBlocks();
-
-			this->NotifySelectionChanged();
-		}
 
 		bool HasSelection() const
 		{
@@ -151,11 +145,6 @@ class THISISLOGIC_API AFormula : public AActor
 		{
 			return this->Board.GetStates();
 		}
-
-		void ApplyStates(const TArray<FBlockState>& States)
-		{
-			this->Board.ApplyStates(States);
-		}
 	
 	#pragma endregion
 
@@ -172,7 +161,50 @@ class THISISLOGIC_API AFormula : public AActor
 	
 	#pragma region PrivateMethods
 	private:
+		
+		void CreateBlocks(const TArray<FToken>& Tokens)
+		{
+			UWorld* World = this->GetWorld();
 
+			TArray<ABlock*> Blocks =
+				this->BlockFactory.
+					CreateBlocks(World, Tokens, this->Sentences);
+
+			for (ABlock* Block : Blocks)
+			{
+				this->RegisterBlock(Block);
+			}
+
+			this->Board.AddBlocks(Blocks);
+
+			this->LogTokens();
+		}
+
+		void RemoveAllBlocks()
+		{
+			this->DeselectBlock();
+
+			this->Board.RemoveAllBlocks();
+
+			this->NotifySelectionChanged();
+		}
+
+		static TArray<FToken> GetStateTokens(
+			const TArray<FBlockState>& States
+		)
+		{
+			TArray<FToken> Tokens;
+
+			for (const FBlockState& State : States)
+			{
+				FToken Token = State.Token;
+
+				Tokens.Add(Token);
+			}
+
+			return Tokens;
+		}
+	
 		void RegisterBlock(ABlock* Block)
 		{
 			Block->SetOwner(this);
@@ -285,7 +317,12 @@ class THISISLOGIC_API AFormula : public AActor
 
 			check(bHasSelectionListener);
 
-			this->OnSelectionChanged.Execute();
+			bool bHasSelection = this->HasSelection();
+
+			this->OnSelectionChanged.
+				Execute(
+					bHasSelection, this->bIsPropositionSelected
+				);
 		}
 	
 		void NotifyChanged()
@@ -346,6 +383,15 @@ class THISISLOGIC_API AFormula : public AActor
 		FOnFormulaChanged OnChanged;
 
 		bool bIsPropositionSelected = false;
+	
+		TArray<FString> Sentences;
+
+		FBlockFactory BlockFactory =
+			FBlockFactory(AFormula::BlockHeight);
+
+		static constexpr float BlockHeight = 2.f;
+		
+		static constexpr double RowHeightRatio = 1.5;
 	
 	#pragma endregion
 };
