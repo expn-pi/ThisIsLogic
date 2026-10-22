@@ -8,5 +8,5 @@ struct FBlockState
 
 	bool bMinimized = false;
 
-	bool operator==(const FBlockState& Other) const = default;
+	bool operator == (const FBlockState& Other) const = default;
 };

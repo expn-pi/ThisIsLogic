@@ -26,5 +26,5 @@ struct FToken
 
 	int Index = -1;
 	
-	bool operator==(const FToken& Other) const = default;
+	bool operator == (const FToken& Other) const = default;
 };

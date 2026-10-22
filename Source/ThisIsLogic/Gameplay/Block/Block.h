@@ -16,13 +16,17 @@ class ABlock;
 
 DECLARE_DELEGATE_OneParam(FOnBlockWidthChanged, ABlock*);
 
+DECLARE_DELEGATE_OneParam(FOnBlockTapped, ABlock*);
+
+DECLARE_DELEGATE_OneParam(FOnBlockLongPressed, ABlock*);
+
+DECLARE_DELEGATE_OneParam(FOnBlockDragStarted, ABlock*);
+
 DECLARE_DELEGATE_TwoParams(
-	FOnBlockMoveRequested, ABlock*, const FVector&
+	FOnBlockDragged, ABlock*, const FVector&
 );
 
-DECLARE_DELEGATE_OneParam(FOnBlockDropRequested, ABlock*);
-
-DECLARE_DELEGATE_OneParam(FOnBlockSelectRequested, ABlock*);
+DECLARE_DELEGATE_OneParam(FOnBlockDragEnded, ABlock*);
 
 UCLASS(Abstract)
 class THISISLOGIC_API ABlock :
@@ -115,30 +119,48 @@ class THISISLOGIC_API ABlock :
 		}
 
 		template<typename UserClass>
-		void SetMoveRequestedListener(
+		void SetTappedListener(
+			UserClass* Listener,
+			void (UserClass::* Callback)(ABlock*)
+		)
+		{
+			this->OnTapped.BindUObject(Listener, Callback);
+		}
+
+		template<typename UserClass>
+		void SetLongPressedListener(
+			UserClass* Listener,
+			void (UserClass::* Callback)(ABlock*)
+		)
+		{
+			this->OnLongPressed.BindUObject(Listener, Callback);
+		}
+
+		template<typename UserClass>
+		void SetDragStartedListener(
+			UserClass* Listener,
+			void (UserClass::* Callback)(ABlock*)
+		)
+		{
+			this->OnDragStarted.BindUObject(Listener, Callback);
+		}
+
+		template<typename UserClass>
+		void SetDraggedListener(
 			UserClass* Listener,
 			void (UserClass::* Callback)(ABlock*, const FVector&)
 		)
 		{
-			this->OnMoveRequested.BindUObject(Listener, Callback);
+			this->OnDragged.BindUObject(Listener, Callback);
 		}
 
 		template<typename UserClass>
-		void SetDropRequestedListener(
+		void SetDragEndedListener(
 			UserClass* Listener,
 			void (UserClass::* Callback)(ABlock*)
 		)
 		{
-			this->OnDropRequested.BindUObject(Listener, Callback);
-		}
-
-		template<typename UserClass>
-		void SetSelectRequestedListener(
-			UserClass* Listener,
-			void (UserClass::* Callback)(ABlock*)
-		)
-		{
-			this->OnSelectRequested.BindUObject(Listener, Callback);
+			this->OnDragEnded.BindUObject(Listener, Callback);
 		}
 
 		void SetSelected(bool bNewSelected)
@@ -148,47 +170,59 @@ class THISISLOGIC_API ABlock :
 
 		virtual void Tapped() override
 		{
-			this->RequestSelection();
+			bool bHasTappedListener = this->OnTapped.IsBound();
+
+			check(bHasTappedListener);
+
+			this->OnTapped.Execute(this);
 		}
-	
+
 		virtual void LongPressed() override
 		{
-			this->Tapped();
+			bool bHasLongPressedListener =
+				this->OnLongPressed.IsBound();
+
+			check(bHasLongPressedListener);
+
+			this->OnLongPressed.Execute(this);
 		}
 
 		virtual void DragStarted(const FVector& PressPoint)
 			override
 		{
-			this->RequestSelection();
-
 			FVector Location = this->GetActorLocation();
 
 			this->GrabOffset = Location - PressPoint;
+
+			bool bHasDragStartedListener =
+				this->OnDragStarted.IsBound();
+
+			check(bHasDragStartedListener);
+
+			this->OnDragStarted.Execute(this);
 		}
 
 		virtual void Dragged(const FVector& Point)
 			override
 		{
-			bool bHasMoveListener =
-				this->OnMoveRequested.IsBound();
+			bool bHasDraggedListener = this->OnDragged.IsBound();
 
-			check(bHasMoveListener);
+			check(bHasDraggedListener);
 
 			FVector DesiredLocation =
 				Point + this->GrabOffset;
 
-			this->OnMoveRequested.
-				Execute(this, DesiredLocation);
+			this->OnDragged.Execute(this, DesiredLocation);
 		}
 
 		virtual void DragEnded() override
 		{
-			bool bHasDropListener =
-				this->OnDropRequested.IsBound();
+			bool bHasDragEndedListener =
+				this->OnDragEnded.IsBound();
 
-			check(bHasDropListener);
+			check(bHasDragEndedListener);
 
-			this->OnDropRequested.Execute(this);
+			this->OnDragEnded.Execute(this);
 		}
 	
 	#pragma endregion
@@ -305,19 +339,16 @@ class THISISLOGIC_API ABlock :
 			FVector LabelLocation =
 				FVector(0.f, 0.f, LayerOffset);
 
-			this->Label->
-				SetRelativeLocation(LabelLocation);
+			this->Label->SetRelativeLocation(LabelLocation);
 
-			float LabelSize =
-				this->Height * ABlock::LabelSizeRatio;
+			float LabelSize = this->Height * ABlock::LabelSizeRatio;
 
 			this->Label->SetWorldSize(LabelSize);
 
 			FVector OutlineLocation =
 				FVector(0.f, 0.f, -LayerOffset);
 
-			this->Outline->
-				SetRelativeLocation(OutlineLocation);
+			this->Outline->SetRelativeLocation(OutlineLocation);
 
 			this->TextMargin =
 				this->Height * ABlock::TextMarginRatio;
@@ -371,16 +402,6 @@ class THISISLOGIC_API ABlock :
 			this->Outline->
 				Resize(OutlineWidth, OutlineHeight);
 		}
-
-		void RequestSelection()
-		{
-			bool bHasSelectListener =
-				this->OnSelectRequested.IsBound();
-
-			check(bHasSelectListener);
-
-			this->OnSelectRequested.Execute(this);
-		}
 	
 	#pragma endregion
 
@@ -388,11 +409,15 @@ class THISISLOGIC_API ABlock :
 	
 		FOnBlockWidthChanged OnWidthChanged;
 
-		FOnBlockMoveRequested OnMoveRequested;
+		FOnBlockTapped OnTapped;
 
-		FOnBlockDropRequested OnDropRequested;
+		FOnBlockLongPressed OnLongPressed;
 
-		FOnBlockSelectRequested OnSelectRequested;
+		FOnBlockDragStarted OnDragStarted;
+
+		FOnBlockDragged OnDragged;
+
+		FOnBlockDragEnded OnDragEnded;
 
 		FVector GrabOffset = FVector::ZeroVector;
 

@@ -198,6 +198,11 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 				SetInsertRequestedListener(
 					Formula, &AFormula::InsertBlock
 				);
+			
+			Palette->
+				SetInsertAfterRequestedListener(
+					Formula, &AFormula::InsertBlockAfter
+				);
 		}
 	
 	#pragma endregion

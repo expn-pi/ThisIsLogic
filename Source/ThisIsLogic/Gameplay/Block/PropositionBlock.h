@@ -4,15 +4,8 @@
 #include "CoreMinimal.h"
 #include "PropositionBlock.generated.h"
 
-class APropositionBlock;
-
-DECLARE_DELEGATE_OneParam(
-	FOnPropositionToggleMinimizedRequested, APropositionBlock*
-);
-
 UCLASS()
-class THISISLOGIC_API APropositionBlock :
-	public ABlock
+class THISISLOGIC_API APropositionBlock : public ABlock
 {
 	GENERATED_BODY()
 	
@@ -69,23 +62,6 @@ class THISISLOGIC_API APropositionBlock :
 			this->SetMinimized(bStateMinimized);
 		}
 	
-		template<typename UserClass>
-		void SetToggleMinimizedRequestedListener(
-			UserClass* Listener,
-			void (UserClass::* Callback)(APropositionBlock*)
-		)
-		{
-			this->OnToggleMinimizedRequested.
-				BindUObject(Listener, Callback);
-		}
-
-		virtual void LongPressed() override
-		{
-			Super::LongPressed();
-
-			this->RequestToggleMinimized();
-		}
-	
 	#pragma endregion
 	
 	protected:
@@ -103,19 +79,6 @@ class THISISLOGIC_API APropositionBlock :
 		}
 
 	private:
-
-		void RequestToggleMinimized()
-		{
-			bool bHasToggleMinimizedListener =
-				this->OnToggleMinimizedRequested.IsBound();
-
-			check(bHasToggleMinimizedListener);
-
-			this->OnToggleMinimizedRequested.Execute(this);
-		}
-
-		FOnPropositionToggleMinimizedRequested
-			OnToggleMinimizedRequested;
 
 		FString Sentence;
 

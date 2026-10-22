@@ -12,8 +12,6 @@
 
 #include "BlockBoard.generated.h"
 
-DECLARE_DELEGATE_OneParam(FOnBoardToggleRequested, ABlock*);
-
 UCLASS()
 class THISISLOGIC_API UBlockBoard : public UObject
 {
@@ -38,45 +36,56 @@ class THISISLOGIC_API UBlockBoard : public UObject
 			this->BlockFactory.Emplace(BlockHeight);
 		}
 	
-		void SetSentences(const TArray<FString>& NewSentences)
+		void SetSentences(
+			const TArray<FString>& NewSentences
+		)
 		{
 			this->Sentences = NewSentences;
 		}
 	
 		template<typename UserClass>
-		void SetSelectRequestedListener(
+		void SetTappedListener(
 			UserClass* Listener,
 			void (UserClass::* Callback)(ABlock*)
 		)
 		{
-			this->OnSelectRequested.BindUObject(Listener, Callback);
+			this->OnTapped.BindUObject(Listener, Callback);
 		}
 
 		template<typename UserClass>
-		void SetMoveRequestedListener(
+		void SetLongPressedListener(
+			UserClass* Listener,
+			void (UserClass::* Callback)(ABlock*)
+		)
+		{
+			this->OnLongPressed.BindUObject(Listener, Callback);
+		}
+
+		template<typename UserClass>
+		void SetDragStartedListener(
+			UserClass* Listener,
+			void (UserClass::* Callback)(ABlock*)
+		)
+		{
+			this->OnDragStarted.BindUObject(Listener, Callback);
+		}
+
+		template<typename UserClass>
+		void SetDraggedListener(
 			UserClass* Listener,
 			void (UserClass::* Callback)(ABlock*, const FVector&)
 		)
 		{
-			this->OnMoveRequested.BindUObject(Listener, Callback);
+			this->OnDragged.BindUObject(Listener, Callback);
 		}
 
 		template<typename UserClass>
-		void SetToggleRequestedListener(
+		void SetDragEndedListener(
 			UserClass* Listener,
 			void (UserClass::* Callback)(ABlock*)
 		)
 		{
-			this->OnToggleRequested.BindUObject(Listener, Callback);
-		}
-	
-		template<typename UserClass>
-		void SetDropRequestedListener(
-			UserClass* Listener,
-			void (UserClass::* Callback)(ABlock*)
-		)
-		{
-			this->OnDropRequested.BindUObject(Listener, Callback);
+			this->OnDragEnded.BindUObject(Listener, Callback);
 		}
 
 		void CreateBlocks(const TArray<FToken>& Tokens)
@@ -89,21 +98,38 @@ class THISISLOGIC_API UBlockBoard : public UObject
 
 			this->AddBlocks(NewBlocks);
 		}
-
+	
 		void CreateBlock(const FToken& Token)
 		{
-			ABlock* Block = this->SpawnBlock(Token);
+			int32 Index = this->Blocks.Num();
 
-			this->AddBlock(Block);
+			this->CreateBlockAt(Token, Index);
 		}
 
 		void CreateBlockBefore(
 			const FToken& Token, ABlock* NextBlock
 		)
 		{
-			ABlock* Block = this->SpawnBlock(Token);
+			int32 Index = this->Blocks.Find(NextBlock);
 
-			this->AddBlockBefore(Block, NextBlock);
+			this->CreateBlockAt(Token, Index);
+		}
+
+		void CreateBlockAfter(
+			const FToken& Token, ABlock* PreviousBlock
+		)
+		{
+			int32 PreviousIndex =
+				this->Blocks.Find(PreviousBlock);
+
+			int32 Index = PreviousIndex + 1;
+
+			this->CreateBlockAt(Token, Index);
+		}
+
+		void CreateBlockAtStart(const FToken& Token)
+		{
+			this->CreateBlockAt(Token, 0);
 		}
 	
 		void RemoveBlock(ABlock* Block)
@@ -229,20 +255,11 @@ class THISISLOGIC_API UBlockBoard : public UObject
 			this->UpdateLayout();
 		}
 
-		void AddBlock(ABlock* Block)
+		void CreateBlockAt(const FToken& Token, int32 Index)
 		{
+			ABlock* Block = this->SpawnBlock(Token);
+
 			this->RegisterBlock(Block);
-
-			this->Blocks.Add(Block);
-
-			this->UpdateLayout();
-		}
-
-		void AddBlockBefore(ABlock* Block, ABlock* NextBlock)
-		{
-			this->RegisterBlock(Block);
-
-			int32 Index = this->Blocks.Find(NextBlock);
 
 			this->Blocks.Insert(Block, Index);
 
@@ -272,37 +289,28 @@ class THISISLOGIC_API UBlockBoard : public UObject
 				);
 
 			Block->
-				SetSelectRequestedListener(
-					this, &UBlockBoard::OnBlockSelectRequested
+				SetTappedListener(
+					this, &UBlockBoard::OnBlockTapped
 				);
 
 			Block->
-				SetMoveRequestedListener(
-					this, &UBlockBoard::OnBlockMoveRequested
+				SetLongPressedListener(
+					this, &UBlockBoard::OnBlockLongPressed
 				);
 
 			Block->
-				SetDropRequestedListener(
-					this, &UBlockBoard::OnBlockDropRequested
+				SetDragStartedListener(
+					this, &UBlockBoard::OnBlockDragStarted
 				);
-			
-			APropositionBlock* Proposition =
-				Cast<APropositionBlock>(Block);
 
-			bool bIsProposition = Proposition != nullptr;
+			Block->
+				SetDraggedListener(
+					this, &UBlockBoard::OnBlockDragged
+				);
 
-			if (bIsProposition)
-			{
-				this->RegisterProposition(Proposition);
-			}
-		}
-	
-		void RegisterProposition(APropositionBlock* Proposition)
-		{
-			Proposition->
-				SetToggleMinimizedRequestedListener(
-					this,
-					&UBlockBoard::OnPropositionToggleRequested
+			Block->
+				SetDragEndedListener(
+					this, &UBlockBoard::OnBlockDragEnded
 				);
 		}
 
@@ -311,48 +319,54 @@ class THISISLOGIC_API UBlockBoard : public UObject
 			this->UpdateLayout();
 		}
 
-		void OnBlockSelectRequested(ABlock* Block)
+		void OnBlockTapped(ABlock* Block)
 		{
-			bool bHasSelectListener =
-				this->OnSelectRequested.IsBound();
+			bool bHasTappedListener = this->OnTapped.IsBound();
 
-			check(bHasSelectListener);
+			check(bHasTappedListener);
 
-			this->OnSelectRequested.Execute(Block);
+			this->OnTapped.Execute(Block);
 		}
 
-		void OnBlockMoveRequested(
+		void OnBlockLongPressed(ABlock* Block)
+		{
+			bool bHasLongPressedListener =
+				this->OnLongPressed.IsBound();
+
+			check(bHasLongPressedListener);
+
+			this->OnLongPressed.Execute(Block);
+		}
+
+		void OnBlockDragStarted(ABlock* Block)
+		{
+			bool bHasDragStartedListener =
+				this->OnDragStarted.IsBound();
+
+			check(bHasDragStartedListener);
+
+			this->OnDragStarted.Execute(Block);
+		}
+
+		void OnBlockDragged(
 			ABlock* Block, const FVector& DesiredLocation
 		)
 		{
-			bool bHasMoveListener =
-				this->OnMoveRequested.IsBound();
+			bool bHasDraggedListener = this->OnDragged.IsBound();
 
-			check(bHasMoveListener);
+			check(bHasDraggedListener);
 
-			this->OnMoveRequested.Execute(Block, DesiredLocation);
+			this->OnDragged.Execute(Block, DesiredLocation);
 		}
 
-		void OnBlockDropRequested(ABlock* Block)
+		void OnBlockDragEnded(ABlock* Block)
 		{
-			bool bHasDropListener =
-				this->OnDropRequested.IsBound();
+			bool bHasDragEndedListener =
+				this->OnDragEnded.IsBound();
 
-			check(bHasDropListener);
+			check(bHasDragEndedListener);
 
-			this->OnDropRequested.Execute(Block);
-		}
-	
-		void OnPropositionToggleRequested(
-			APropositionBlock* Proposition
-		)
-		{
-			bool bHasToggleListener =
-				this->OnToggleRequested.IsBound();
-
-			check(bHasToggleListener);
-
-			this->OnToggleRequested.Execute(Proposition);
+			this->OnDragEnded.Execute(Block);
 		}
 	
 		void UpdateLayout()
@@ -364,13 +378,15 @@ class THISISLOGIC_API UBlockBoard : public UObject
 
 	#pragma region Attributes
 
-		FOnBlockSelectRequested OnSelectRequested;
+		FOnBlockTapped OnTapped;
 
-		FOnBlockMoveRequested OnMoveRequested;
+		FOnBlockLongPressed OnLongPressed;
 
-		FOnBlockDropRequested OnDropRequested;
-	
-		FOnBoardToggleRequested OnToggleRequested;
+		FOnBlockDragStarted OnDragStarted;
+
+		FOnBlockDragged OnDragged;
+
+		FOnBlockDragEnded OnDragEnded;
 	
 		UPROPERTY()
 		TArray<TObjectPtr<ABlock>> Blocks;

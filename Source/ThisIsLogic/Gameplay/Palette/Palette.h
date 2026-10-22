@@ -10,6 +10,10 @@
 
 DECLARE_DELEGATE_OneParam(FOnPaletteInsertRequested, const FToken&);
 
+DECLARE_DELEGATE_OneParam(
+	FOnPaletteInsertAfterRequested, const FToken&
+);
+
 UCLASS(Abstract)
 class THISISLOGIC_API APalette : public AAbstractBlocksManager
 {
@@ -25,7 +29,18 @@ class THISISLOGIC_API APalette : public AAbstractBlocksManager
 		{
 			this->OnInsertRequested.BindUObject(Listener, Callback);
 		}
+	
+		template<typename UserClass>
+		void SetInsertAfterRequestedListener(
+			UserClass* Listener,
+			void (UserClass::* Callback)(const FToken&)
+		)
+		{
+			this->OnInsertAfterRequested.
+				BindUObject(Listener, Callback);
+		}
 
+	#pragma region ProtectedMethods
 	protected:
 
 		virtual void BeginPlay() override
@@ -60,7 +75,22 @@ class THISISLOGIC_API APalette : public AAbstractBlocksManager
 			return APalette::RowHeightRatio;
 		}
 
-		virtual void OnBlockSelectRequested(ABlock* Block) override
+		virtual void OnBlockTapped(ABlock* Block) override
+		{
+			this->RequestInsert(Block);
+		}
+
+		virtual void OnBlockLongPressed(ABlock* Block)
+			override
+		{
+			this->RequestInsertAfter(Block);
+		}
+	
+	#pragma endregion
+	
+	private:
+
+		void RequestInsert(ABlock* Block)
 		{
 			bool bHasInsertListener =
 				this->OnInsertRequested.IsBound();
@@ -72,9 +102,21 @@ class THISISLOGIC_API APalette : public AAbstractBlocksManager
 			this->OnInsertRequested.Execute(Token);
 		}
 
-	private:
+		void RequestInsertAfter(ABlock* Block)
+		{
+			bool bHasInsertAfterListener =
+				this->OnInsertAfterRequested.IsBound();
+
+			check(bHasInsertAfterListener);
+
+			FToken Token = Block->GetToken();
+
+			this->OnInsertAfterRequested.Execute(Token);
+		}
 
 		FOnPaletteInsertRequested OnInsertRequested;
+
+		FOnPaletteInsertAfterRequested OnInsertAfterRequested;
 
 		static constexpr double RowHeightRatio = 1.1;
 };

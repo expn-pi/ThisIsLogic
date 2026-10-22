@@ -36,7 +36,7 @@ New blocks come from two palettes: the operators, in a column on the left, and t
 - [x] Levels loaded from a data table
 - [x] Command panel to minimize or maximize propositions, remove the selected block, undo any command and restart the level
 - [x] Camera that frames the table on windows of any shape
-- [x] Operator palette: a tap inserts an operator before the selected block, or at the end of the formula
+- [x] Operator palette: a tap inserts an operator before the selected block, or at the end of the formula; a long press inserts it after the selected block, or at the start
 - [ ] Proposition palette, which doubles as a legend of the sentences
 - [ ] Validity and equivalence indicators
 - [ ] Logic core: parser, evaluation and equivalence by truth table

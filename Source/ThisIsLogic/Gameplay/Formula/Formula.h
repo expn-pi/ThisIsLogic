@@ -115,6 +115,26 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 			this->LogTokens();
 		}
 
+		void InsertBlockAfter(const FToken& Token)
+		{
+			bool bHasSelection = this->HasSelection();
+
+			if (bHasSelection)
+			{
+				ABlock* Selected = this->SelectedBlock;
+
+				this->Board->CreateBlockAfter(Token, Selected);
+			}
+			else
+			{
+				this->Board->CreateBlockAtStart(Token);
+			}
+
+			this->NotifyChanged();
+
+			this->LogTokens();
+		}
+	
 		void RemoveSelectedBlock()
 		{
 			ABlock* Block = this->SelectedBlock;
@@ -140,41 +160,45 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 			return AFormula::RowHeightRatio;
 		}
 	
-		virtual void OnBlockSelectRequested(ABlock* Block)
+		virtual void OnBlockTapped(ABlock* Block) override
+		{
+			this->SelectBlock(Block);
+		}
+
+		virtual void OnBlockLongPressed(ABlock* Block)
+			override
+		{
+			this->SelectBlock(Block);
+
+			if (this->bIsPropositionSelected)
+			{
+				this->ToggleSelectedMinimized();
+			}
+		}
+
+		virtual void OnBlockDragStarted(ABlock* Block)
 			override
 		{
 			this->SelectBlock(Block);
 		}
 
-		virtual void OnBlockMoveRequested(
+		virtual void OnBlockDragged(
 			ABlock* Block, const FVector& DesiredLocation
-		) override
+		)
+			override
 		{
 			this->Board->DragBlock(Block, DesiredLocation);
 
 			this->LogTokens();
 		}
 
-		virtual void OnBlockDropRequested(ABlock* Block)
-			override
+		virtual void OnBlockDragEnded(ABlock* Block) override
 		{
 			this->Board->LayoutBlocks();
 
 			this->NotifyChanged();
 
 			this->LogTokens();
-		}
-	
-		virtual void OnBlockToggleRequested(ABlock* Block)
-			override
-		{
-			ABlock* Selected = this->SelectedBlock;
-
-			bool bIsSelected = Block == Selected;
-
-			check(bIsSelected);
-
-			this->ToggleSelectedMinimized();
 		}
 
 	#pragma endregion

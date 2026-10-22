@@ -69,22 +69,27 @@ class THISISLOGIC_API AAbstractBlocksManager : public AActor
 			return 0.0;
 		}
 	
-		virtual void OnBlockToggleRequested(ABlock* Block)
-		{
-		}
-	
-		virtual void OnBlockSelectRequested(ABlock* Block)
+		virtual void OnBlockTapped(ABlock* Block)
 		{
 			unimplemented();
 		}
 
-		virtual void OnBlockMoveRequested(
+		virtual void OnBlockLongPressed(ABlock* Block)
+		{
+			unimplemented();
+		}
+
+		virtual void OnBlockDragStarted(ABlock* Block)
+		{
+		}
+
+		virtual void OnBlockDragged(
 			ABlock* Block, const FVector& DesiredLocation
 		)
 		{
 		}
 
-		virtual void OnBlockDropRequested(ABlock* Block)
+		virtual void OnBlockDragEnded(ABlock* Block)
 		{
 		}
 
@@ -104,27 +109,33 @@ class THISISLOGIC_API AAbstractBlocksManager : public AActor
 		void ConnectBoard()
 		{
 			this->Board->
-				SetSelectRequestedListener(
+				SetTappedListener(
 					this,
-					&AAbstractBlocksManager::OnBlockSelectRequested
+					&AAbstractBlocksManager::OnBlockTapped
 				);
 
 			this->Board->
-				SetMoveRequestedListener(
+				SetLongPressedListener(
 					this,
-					&AAbstractBlocksManager::OnBlockMoveRequested
+					&AAbstractBlocksManager::OnBlockLongPressed
 				);
 
 			this->Board->
-				SetDropRequestedListener(
+				SetDragStartedListener(
 					this,
-					&AAbstractBlocksManager::OnBlockDropRequested
+					&AAbstractBlocksManager::OnBlockDragStarted
 				);
-			
+
 			this->Board->
-				SetToggleRequestedListener(
+				SetDraggedListener(
 					this,
-					&AAbstractBlocksManager::OnBlockToggleRequested
+					&AAbstractBlocksManager::OnBlockDragged
+				);
+
+			this->Board->
+				SetDragEndedListener(
+					this,
+					&AAbstractBlocksManager::OnBlockDragEnded
 				);
 		}
 };
