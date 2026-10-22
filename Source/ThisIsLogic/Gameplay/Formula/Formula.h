@@ -5,7 +5,6 @@
 #include "../Block/Block.h"
 #include "../Block/BlockData.h"
 #include "../../Logic/LogicTypes.h"
-#include "../Block/PropositionBlock.h"
 #include "../Block/AbstractBlocksManager.h"
 
 #include "Logging/StructuredLog.h"
@@ -24,13 +23,18 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 	#pragma region PublicMethods
 	public:
 
+		void SetSentences(const TArray<FString>& Sentences)
+		{
+			this->Board->SetSentences(Sentences);
+		}
+	
 		void SetTokens(const TArray<FToken>& Tokens)
 		{
 			this->ClearSelection();
 
-			this->RemoveAllBlocks();
+			this->Board->RemoveAllBlocks();
 
-			this->CreateBlocks(Tokens);
+			this->Board->CreateBlocks(Tokens);
 
 			this->LogTokens();
 		}
@@ -42,9 +46,14 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 
 			this->SetTokens(Tokens);
 
-			this->ApplyStates(States);
+			this->Board->ApplyStates(States);
 		}
 
+		TArray<FBlockState> GetStates() const
+		{
+			return this->Board->GetStates();
+		}
+	
 		template<typename UserClass>
 		void SetSelectionChangedListener(
 			UserClass* Listener,
@@ -72,17 +81,16 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 
 		void SetAllMinimized(bool bMinimized)
 		{
-			this->SetPropositionsMinimized(bMinimized);
+			this->Board->SetAllMinimized(bMinimized);
 
 			this->NotifyChanged();
 		}
 
 		void ToggleSelectedMinimized()
 		{
-			APropositionBlock* Proposition =
-				CastChecked<APropositionBlock>(this->SelectedBlock);
+			ABlock* Selected = this->SelectedBlock;
 
-			Proposition->ToggleMinimized();
+			this->Board->ToggleMinimized(Selected);
 
 			this->NotifyChanged();
 		}
@@ -95,11 +103,11 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 			{
 				ABlock* Selected = this->SelectedBlock;
 
-				this->CreateBlockBefore(Token, Selected);
+				this->Board->CreateBlockBefore(Token, Selected);
 			}
 			else
 			{
-				this->CreateBlock(Token);
+				this->Board->CreateBlock(Token);
 			}
 
 			this->NotifyChanged();
@@ -113,7 +121,7 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 
 			this->DeselectBlock();
 
-			this->RemoveBlock(Block);
+			this->Board->RemoveBlock(Block);
 
 			this->NotifySelectionChanged();
 
@@ -131,22 +139,7 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 		{
 			return AFormula::RowHeightRatio;
 		}
-
-		virtual void RegisterBlock(ABlock* Block) override
-		{
-			Super::RegisterBlock(Block);
-
-			APropositionBlock* Proposition =
-				Cast<APropositionBlock>(Block);
-
-			bool bIsProposition = Proposition != nullptr;
-
-			if (bIsProposition)
-			{
-				this->RegisterProposition(Proposition);
-			}
-		}
-
+	
 		virtual void OnBlockSelectRequested(ABlock* Block)
 			override
 		{
@@ -157,7 +150,7 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 			ABlock* Block, const FVector& DesiredLocation
 		) override
 		{
-			this->DragBlock(Block, DesiredLocation);
+			this->Board->DragBlock(Block, DesiredLocation);
 
 			this->LogTokens();
 		}
@@ -165,11 +158,23 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 		virtual void OnBlockDropRequested(ABlock* Block)
 			override
 		{
-			this->LayoutBlocks();
+			this->Board->LayoutBlocks();
 
 			this->NotifyChanged();
 
 			this->LogTokens();
+		}
+	
+		virtual void OnBlockToggleRequested(ABlock* Block)
+			override
+		{
+			ABlock* Selected = this->SelectedBlock;
+
+			bool bIsSelected = Block == Selected;
+
+			check(bIsSelected);
+
+			this->ToggleSelectedMinimized();
 		}
 
 	#pragma endregion
@@ -193,17 +198,6 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 			return Tokens;
 		}
 	
-		void RegisterProposition(
-			APropositionBlock* Proposition
-		)
-		{
-			Proposition->
-				SetToggleMinimizedRequestedListener(
-					this,
-					&AFormula::OnPropositionToggleMinimizedRequested
-				);
-		}
-
 		void SelectBlock(ABlock* Block)
 		{
 			this->DeselectBlock();
@@ -264,23 +258,10 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 
 			this->OnChanged.Execute();
 		}
-	
-		void OnPropositionToggleMinimizedRequested(
-			APropositionBlock* Proposition
-		)
-		{
-			ABlock* Selected = this->SelectedBlock;
-
-			bool bIsSelected = Proposition == Selected;
-
-			check(bIsSelected);
-
-			this->ToggleSelectedMinimized();
-		}
 
 		void LogTokens() const
 		{
-			TArray<FToken> Tokens = this->GetTokens();
+			TArray<FToken> Tokens = this->Board->GetTokens();
 
 			UE_LOGFMT(LogTemp, Warning, "Tokens:");
 

@@ -1,67 +1,109 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "UObject/Object.h"
 
 #include "Block.h"
-#include "BlockRow.h"
 #include "BlockData.h"
+#include "BlockFactory.h"
+#include "BlockBoardRows.h"
 #include "PropositionBlock.h"
 #include "../../Logic/LogicTypes.h"
 
 #include "BlockBoard.generated.h"
 
-USTRUCT()
-struct FBlockBoard
+DECLARE_DELEGATE_OneParam(FOnBoardToggleRequested, ABlock*);
+
+UCLASS()
+class THISISLOGIC_API UBlockBoard : public UObject
 {
 	GENERATED_BODY()
 
 	#pragma region PublicMethods
 	public:
 
-		void SetOrigin(const FVector& NewOrigin)
+		void SetOrigin(const FVector& Origin)
 		{
-			this->Origin = NewOrigin;
+			this->Rows.SetOrigin(Origin);
 		}
 
 		void SetData(
-			double NewRowHeightRatio, float BlockHeight,
-			double NewMaxRowWidth
+			double RowHeightRatio, float BlockHeight,
+			double MaxRowWidth
 		)
 		{
-			this->RowHeightRatio = NewRowHeightRatio;
-		
-			this->RowHeight = BlockHeight * this->RowHeightRatio;
+			this->Rows.
+				SetData(RowHeightRatio, BlockHeight, MaxRowWidth);
 
-			this->DragHeight =
-				BlockHeight * FBlockBoard::DragHeightRatio;
-		
-			this->MaxRowWidth = NewMaxRowWidth;
+			this->BlockFactory.Emplace(BlockHeight);
+		}
+	
+		void SetSentences(const TArray<FString>& NewSentences)
+		{
+			this->Sentences = NewSentences;
+		}
+	
+		template<typename UserClass>
+		void SetSelectRequestedListener(
+			UserClass* Listener,
+			void (UserClass::* Callback)(ABlock*)
+		)
+		{
+			this->OnSelectRequested.BindUObject(Listener, Callback);
 		}
 
-		void AddBlocks(const TArray<ABlock*>& NewBlocks)
+		template<typename UserClass>
+		void SetMoveRequestedListener(
+			UserClass* Listener,
+			void (UserClass::* Callback)(ABlock*, const FVector&)
+		)
 		{
-			for (ABlock* Block : NewBlocks)
-			{
-				this->Blocks.Add(Block);
-			}
-
-			this->UpdateLayout();
+			this->OnMoveRequested.BindUObject(Listener, Callback);
 		}
 
-		void AddBlock(ABlock* Block)
+		template<typename UserClass>
+		void SetToggleRequestedListener(
+			UserClass* Listener,
+			void (UserClass::* Callback)(ABlock*)
+		)
 		{
-			this->Blocks.Add(Block);
-
-			this->UpdateLayout();
+			this->OnToggleRequested.BindUObject(Listener, Callback);
 		}
-		
-		void AddBlockBefore(ABlock* Block, ABlock* NextBlock)
+	
+		template<typename UserClass>
+		void SetDropRequestedListener(
+			UserClass* Listener,
+			void (UserClass::* Callback)(ABlock*)
+		)
 		{
-			int32 Index = this->Blocks.Find(NextBlock);
+			this->OnDropRequested.BindUObject(Listener, Callback);
+		}
 
-			this->Blocks.Insert(Block, Index);
+		void CreateBlocks(const TArray<FToken>& Tokens)
+		{
+			UWorld* World = this->GetWorld();
 
-			this->UpdateLayout();
+			TArray<ABlock*> NewBlocks =
+				this->BlockFactory->
+					CreateBlocks(World, Tokens, this->Sentences);
+
+			this->AddBlocks(NewBlocks);
+		}
+
+		void CreateBlock(const FToken& Token)
+		{
+			ABlock* Block = this->SpawnBlock(Token);
+
+			this->AddBlock(Block);
+		}
+
+		void CreateBlockBefore(
+			const FToken& Token, ABlock* NextBlock
+		)
+		{
+			ABlock* Block = this->SpawnBlock(Token);
+
+			this->AddBlockBefore(Block, NextBlock);
 		}
 	
 		void RemoveBlock(ABlock* Block)
@@ -99,6 +141,14 @@ struct FBlockBoard
 					Proposition->SetMinimized(bMinimized);
 				}
 			}
+		}
+	
+		void ToggleMinimized(ABlock* Block)
+		{
+			APropositionBlock* Proposition =
+				CastChecked<APropositionBlock>(Block);
+
+			Proposition->ToggleMinimized();
 		}
 
 		TArray<FToken> GetTokens() const
@@ -149,398 +199,187 @@ struct FBlockBoard
 			}
 		}
 
-		void UpdateLayout()
-		{
-			this->UpdateRows();
-
-			this->LayoutBlocks();
-			this->LayoutBlocks();
-		}
-
 		void LayoutBlocks()
 		{
-			for (const FBlockRow& Row : this->Rows)
-			{
-				Row.LayoutBlocks(this->Blocks);
-			}
+			this->Rows.LayoutBlocks(this->Blocks);
 		}
 
 		void DragBlock(
 			ABlock* Block, const FVector& DesiredLocation
 		)
 		{
-			FVector Location =
-				this->ClampToArea(Block, DesiredLocation);
-
-			double CenterX = Location.X;
-
-			double CenterY = Location.Y;
-
-			int32 BlockRowIndex = this->GetRowIndexOf(Block);
-
-			int32 TargetRowIndex = this->GetRowIndexAt(CenterX);
-
-			FBlockRow TargetRow = this->Rows[TargetRowIndex];
-
-			bool bIsSameRow = BlockRowIndex == TargetRowIndex;
-
-			if (bIsSameRow)
-			{
-				this->ReorderBlock(Block, TargetRow, CenterY);
-			}
-			else
-			{
-				this->EnterRow(Block, TargetRow, CenterY);
-			}
-
-			this->MoveBlock(Block, Location);
+			this->Rows.
+				DragBlock(this->Blocks, Block, DesiredLocation);
 		}
 
 	#pragma endregion
-
+	
 	#pragma region PrivateMethods
 	private:
 
-		void UpdateRows()
+		void AddBlocks(const TArray<ABlock*>& NewBlocks)
 		{
-			this->Rows.Reset();
-
-			int32 BlockCount = this->Blocks.Num();
-
-			for (int32 Index=0; Index<BlockCount; Index++)
+			for (ABlock* Block : NewBlocks)
 			{
-				this->PlaceInRows(Index);
+				this->RegisterBlock(Block);
+
+				this->Blocks.Add(Block);
 			}
+
+			this->UpdateLayout();
 		}
 
-		void PlaceInRows(int32 Index)
+		void AddBlock(ABlock* Block)
 		{
-			const ABlock* Block = this->Blocks[Index];
+			this->RegisterBlock(Block);
 
-			double BlockWidth = Block->GetWidth();
+			this->Blocks.Add(Block);
 
-			bool bFits = this->FitsInLastRow(BlockWidth);
-
-			if (bFits)
-			{
-				this->ExtendLastRow(Index, BlockWidth);
-			}
-			else
-			{
-				this->AddRow(Index, BlockWidth);
-			}
+			this->UpdateLayout();
 		}
 
-		bool FitsInLastRow(double BlockWidth) const
+		void AddBlockBefore(ABlock* Block, ABlock* NextBlock)
 		{
-			bool bFits = false;
+			this->RegisterBlock(Block);
 
-			bool bIsEmpty = this->Rows.IsEmpty();
+			int32 Index = this->Blocks.Find(NextBlock);
+
+			this->Blocks.Insert(Block, Index);
+
+			this->UpdateLayout();
+		}
+	
+		ABlock* SpawnBlock(const FToken& Token)
+		{
+			UWorld* World = this->GetWorld();
+
+			ABlock* Block =
+				this->BlockFactory->
+					CreateBlock(World, Token, this->Sentences);
+
+			return Block;
+		}
+	
+		void RegisterBlock(ABlock* Block)
+		{
+			AActor* Manager = this->GetTypedOuter<AActor>();
+
+			Block->SetOwner(Manager);
 			
-			bool bHasRow = !bIsEmpty;
-
-			if (bHasRow)
-			{
-				const FBlockRow& LastRow = this->Rows.Last();
-
-				bFits = LastRow.Fits(BlockWidth);
-			}
-
-			return bFits;
-		}
-
-		void ExtendLastRow(int32 Index, double BlockWidth)
-		{
-			FBlockRow& LastRow = this->Rows.Last();
-
-			LastRow.AddBlock(Index, BlockWidth);
-		}
-
-		void AddRow(int32 Index, double BlockWidth)
-		{
-			int32 RowIndex = this->Rows.Num();
-
-			FVector Start = this->Origin;
-
-			Start.X = this->GetRowCenterX(RowIndex);
-
-			Start.Y = this->GetLeftEdgeY();
-
-			FBlockRow Row =
-				FBlockRow(
-					Index, BlockWidth,
-					Start, this->MaxRowWidth
+			Block->
+				SetWidthChangedListener(
+					this, &UBlockBoard::OnBlockWidthChanged
 				);
 
-			this->Rows.Add(Row);
-		}
-
-		double GetRowCenterX(int32 RowIndex) const
-		{
-			double RowOffset = this->RowHeight * RowIndex;
-
-			double OriginX = this->Origin.X;
-
-			return OriginX - RowOffset;
-		}
-
-		double GetLeftEdgeY() const
-		{
-			double HalfMaxRowWidth = this->MaxRowWidth * 0.5;
-
-			double OriginY = this->Origin.Y;
-
-			return OriginY - HalfMaxRowWidth;
-		}
-
-		double GetRightEdgeY() const
-		{
-			double HalfMaxRowWidth = this->MaxRowWidth * 0.5;
-
-			double OriginY = this->Origin.Y;
-
-			return OriginY + HalfMaxRowWidth;
-		}
-
-		FVector ClampToArea(
-			const ABlock* Block, const FVector& DesiredLocation
-		) const
-		{
-			double DesiredX = DesiredLocation.X;
-
-			double DesiredY = DesiredLocation.Y;
-
-			FVector Location = DesiredLocation;
-
-			Location.X = this->ClampX(DesiredX);
-
-			Location.Y = this->ClampY(Block, DesiredY);
-
-			return Location;
-		}
-
-		double ClampX(double DesiredX) const
-		{
-			int32 RowCount = this->Rows.Num();
-
-			int32 LastRowIndex = RowCount - 1;
-
-			double MaxX = this->GetRowCenterX(0);
-
-			double MinX = this->GetRowCenterX(LastRowIndex);
-
-			return FMath::Clamp(DesiredX, MinX, MaxX);
-		}
-
-		double ClampY(const ABlock* Block, double DesiredY)
-			const
-		{
-			double MinY = this->GetMinY(Block);
-			double MaxY = this->GetMaxY(Block);
-
-			return FMath::Clamp(DesiredY, MinY, MaxY);
-		}
-
-		double GetMinY(const ABlock* Block) const
-		{
-			double LeftEdgeY = this->GetLeftEdgeY();
-
-			double BlockWidth = Block->GetWidth();
-
-			double HalfWidth = BlockWidth * 0.5;
-
-			return LeftEdgeY + HalfWidth;
-		}
-
-		double GetMaxY(const ABlock* Block) const
-		{
-			double RightEdgeY = this->GetRightEdgeY();
-
-			double BlockWidth = Block->GetWidth();
-
-			double HalfWidth = BlockWidth * 0.5;
-
-			return RightEdgeY - HalfWidth;
-		}
-
-		int32 GetRowIndexOf(ABlock* Block) const
-		{
-			int32 BlockIndex = this->Blocks.Find(Block);
-
-			int32 FoundRowIndex = 0;
-
-			int32 RowCount = this->Rows.Num();
-
-			for (int32 RowIndex=0; RowIndex<RowCount; RowIndex++)
-			{
-				const FBlockRow& Row = this->Rows[RowIndex];
-
-				bool bContains = Row.Contains(BlockIndex);
-
-				if (bContains)
-				{
-					FoundRowIndex = RowIndex;
-				}
-			}
-
-			return FoundRowIndex;
-		}
-
-		int32 GetRowIndexAt(double CenterX) const
-		{
-			double OriginX = this->Origin.X;
-
-			double Offset = OriginX - CenterX;
-
-			double RowPosition = Offset / this->RowHeight;
-
-			return FMath::RoundToInt32(RowPosition);
-		}
-
-		void EnterRow(
-			ABlock* Block, const FBlockRow& Row, double CenterY
-		)
-		{
-			int32 Index = this->Blocks.Find(Block);
-
-			int32 EntryIndex =
-				Row.GetEntryIndex(this->Blocks, CenterY);
-
-			bool bComesFromBefore = Index < EntryIndex;
-
-			if (bComesFromBefore)
-			{
-				EntryIndex = EntryIndex - 1;
-			}
-
-			bool bMoves = EntryIndex != Index;
-
-			if (bMoves)
-			{
-				this->Blocks.RemoveAt(Index);
-
-				this->Blocks.Insert(Block, EntryIndex);
-
-				this->UpdateLayout();
-			}
-		}
-
-		void ReorderBlock(
-			ABlock* Block, const FBlockRow& Row, double CenterY
-		)
-		{
-			double BlockWidth = Block->GetWidth();
-
-			double HalfWidth = BlockWidth * 0.5;
-
-			double LeftEdgeY = CenterY - HalfWidth;
-
-			double RightEdgeY = CenterY + HalfWidth;
-
-			int32 Index = this->Blocks.Find(Block);
-
-			Index = this->ReorderIncreasing(Row, Index, RightEdgeY);
-
-			this->ReorderDecreasing(Row, Index, LeftEdgeY);
-		}
-
-		int32 ReorderIncreasing(
-			const FBlockRow& Row, int32 Index, double RightEdgeY
-		)
-		{
-			bool bIsPastNext =
-				Row.IsPastNextBlock(
-					this->Blocks, Index, RightEdgeY
+			Block->
+				SetSelectRequestedListener(
+					this, &UBlockBoard::OnBlockSelectRequested
 				);
 
-			while (bIsPastNext)
-			{
-				int32 NextIndex = Index + 1;
-
-				this->Blocks.
-					Swap(
-						Index,
-						NextIndex
-					);
-
-				Row.LayoutBlocks(this->Blocks);
-
-				Index = NextIndex;
-
-				bIsPastNext =
-					Row.
-						IsPastNextBlock(
-							this->Blocks, Index, RightEdgeY
-						);
-			}
-
-			return Index;
-		}
-
-		void ReorderDecreasing(
-			const FBlockRow& Row, int32 Index, double LeftEdgeY
-		)
-		{
-			bool bIsPastPrevious =
-				Row.IsPastPreviousBlock(
-					this->Blocks, Index, LeftEdgeY
+			Block->
+				SetMoveRequestedListener(
+					this, &UBlockBoard::OnBlockMoveRequested
 				);
 
-			while (bIsPastPrevious)
+			Block->
+				SetDropRequestedListener(
+					this, &UBlockBoard::OnBlockDropRequested
+				);
+			
+			APropositionBlock* Proposition =
+				Cast<APropositionBlock>(Block);
+
+			bool bIsProposition = Proposition != nullptr;
+
+			if (bIsProposition)
 			{
-				int32 PreviousIndex = Index - 1;
-
-				this->Blocks.
-					Swap(
-						Index,
-						PreviousIndex
-					);
-
-				Row.LayoutBlocks(this->Blocks);
-
-				Index = PreviousIndex;
-
-				bIsPastPrevious =
-					Row.
-						IsPastPreviousBlock(
-							this->Blocks, Index, LeftEdgeY
-						);
+				this->RegisterProposition(Proposition);
 			}
 		}
+	
+		void RegisterProposition(APropositionBlock* Proposition)
+		{
+			Proposition->
+				SetToggleMinimizedRequestedListener(
+					this,
+					&UBlockBoard::OnPropositionToggleRequested
+				);
+		}
 
-		void MoveBlock(
-			ABlock* Block, const FVector& Location
+		void OnBlockWidthChanged(ABlock* Block)
+		{
+			this->UpdateLayout();
+		}
+
+		void OnBlockSelectRequested(ABlock* Block)
+		{
+			bool bHasSelectListener =
+				this->OnSelectRequested.IsBound();
+
+			check(bHasSelectListener);
+
+			this->OnSelectRequested.Execute(Block);
+		}
+
+		void OnBlockMoveRequested(
+			ABlock* Block, const FVector& DesiredLocation
 		)
 		{
-			FVector LiftedLocation = Location;
+			bool bHasMoveListener =
+				this->OnMoveRequested.IsBound();
 
-			double OriginZ = this->Origin.Z;
+			check(bHasMoveListener);
 
-			LiftedLocation.Z = OriginZ + this->DragHeight;
+			this->OnMoveRequested.Execute(Block, DesiredLocation);
+		}
 
-			Block->SetActorLocation(LiftedLocation);
+		void OnBlockDropRequested(ABlock* Block)
+		{
+			bool bHasDropListener =
+				this->OnDropRequested.IsBound();
+
+			check(bHasDropListener);
+
+			this->OnDropRequested.Execute(Block);
+		}
+	
+		void OnPropositionToggleRequested(
+			APropositionBlock* Proposition
+		)
+		{
+			bool bHasToggleListener =
+				this->OnToggleRequested.IsBound();
+
+			check(bHasToggleListener);
+
+			this->OnToggleRequested.Execute(Proposition);
+		}
+	
+		void UpdateLayout()
+		{
+			this->Rows.UpdateLayout(this->Blocks);
 		}
 
 	#pragma endregion
 
 	#pragma region Attributes
 
+		FOnBlockSelectRequested OnSelectRequested;
+
+		FOnBlockMoveRequested OnMoveRequested;
+
+		FOnBlockDropRequested OnDropRequested;
+	
+		FOnBoardToggleRequested OnToggleRequested;
+	
 		UPROPERTY()
 		TArray<TObjectPtr<ABlock>> Blocks;
+	
+		TArray<FString> Sentences;
 
-		TArray<FBlockRow> Rows;
+		TOptional<FBlockFactory> BlockFactory;
 
-		FVector Origin = FVector::ZeroVector;
-
-		double MaxRowWidth = 0.0;
-
-		double RowHeightRatio = 1.5;
-
-		double RowHeight = 0.0;
-
-		double DragHeight = 0.0;
-
-		static constexpr double DragHeightRatio = 0.2;
+		FBlockBoardRows Rows;
 
 	#pragma endregion
 };

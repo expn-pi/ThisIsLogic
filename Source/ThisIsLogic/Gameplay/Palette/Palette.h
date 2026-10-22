@@ -38,7 +38,7 @@ class THISISLOGIC_API APalette : public AAbstractBlocksManager
 
 			TArray<FToken> Tokens = this->GetItemTokens();
 
-			this->CreateBlocks(Tokens);
+			this->Board->CreateBlocks(Tokens);
 		}
 
 		virtual TArray<FToken> GetItemTokens() const

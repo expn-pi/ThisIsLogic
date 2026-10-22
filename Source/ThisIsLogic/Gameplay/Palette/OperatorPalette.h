@@ -36,9 +36,7 @@ class THISISLOGIC_API AOperatorPalette : public APalette
 
 			for (ETokenKind Kind : Kinds)
 			{
-				FToken Token = {
-					.Kind = Kind
-				};
+				FToken Token = { .Kind = Kind };
 
 				Tokens.Add(Token);
 			}

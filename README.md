@@ -115,19 +115,20 @@ classDiagram
 
     AFormula --|> AAbstractBlocksManager
     AFormula --> ABlock
-    AFormula ..> APropositionBlock
 
     AOperatorPalette --|> APalette
     APalette --|> AAbstractBlocksManager
     APalette ..> ABlock
 
-    AAbstractBlocksManager --> FBlockBoard
-    AAbstractBlocksManager --> FBlockFactory
+    AAbstractBlocksManager --> UBlockBoard
     AAbstractBlocksManager ..> ABlock
 
-    FBlockBoard --> FBlockRow
-    FBlockBoard --> ABlock
-    FBlockBoard ..> APropositionBlock
+    UBlockBoard --> FBlockBoardRows
+    UBlockBoard --> FBlockFactory
+    UBlockBoard --> ABlock
+    UBlockBoard ..> APropositionBlock
+    FBlockBoardRows --> FBlockRow
+    FBlockBoardRows ..> ABlock
     FBlockRow ..> ABlock
 
     FBlockFactory --> FNotation
