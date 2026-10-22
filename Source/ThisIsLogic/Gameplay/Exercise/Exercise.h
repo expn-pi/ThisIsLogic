@@ -1,18 +1,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Engine/DataTable.h"
 #include "GameFramework/Actor.h"
 #include "Logging/StructuredLog.h"
 #include "Components/SceneComponent.h"
 
 #include "UndoHistory.h"
-#include "../Level/LevelRow.h"
 #include "../Formula/Formula.h"
 #include "../Block/BlockData.h"
-// #include "../Level/FormulaStub.h"
 #include "../../Logic/FormulaAnalyzer.h"
-#include "../../BasicComponents/ThisIsLogicSettings.h"
 
 #include "Exercise.generated.h"
 
@@ -39,6 +35,11 @@ class THISISLOGIC_API AExercise : public AActor
 		void SetFormula(AFormula* NewFormula)
 		{
 			this->Formula = NewFormula;
+		}
+
+		void SetStartingFormula(const FString& Text)
+		{
+			this->StartingTokens = this->AnalyzeFormula(Text);
 		}
 
 		void Restart()
@@ -69,10 +70,6 @@ class THISISLOGIC_API AExercise : public AActor
 		{
 			Super::BeginPlay();
 
-			this->LoadLevel();
-
-			this->LoadFormula();
-
 			this->ConnectFormula();
 
 			this->Formula->SetTokens(this->StartingTokens);
@@ -83,56 +80,11 @@ class THISISLOGIC_API AExercise : public AActor
 	#pragma region PrivateMethods
 	private:
 
-		void LoadLevel()
-		{
-			const UThisIsLogicSettings* Settings =
-				GetDefault<UThisIsLogicSettings>();
-
-			UDataTable* LevelTable = Settings->GetLevelTable();
-
-			TArray<FName> RowNames = LevelTable->GetRowNames();
-
-			FName FirstRowName = RowNames[0];
-
-			const TCHAR* ContextString = TEXT("AExercise");
-
-			const FLevelRow* Row =
-				LevelTable->
-					FindRow<FLevelRow>(FirstRowName, ContextString);
-
-			bool bHasRow = Row != nullptr;
-
-			check(bHasRow);
-
-			this->LevelRow = *Row;
-		}
-	
-		void LoadFormula()
-		{
-			// For quick tests, change below:
-			//		AnalyzeFormula with
-			//			FormulaStub.GetTokens
-			//		And this->LevelRow.Sentences with
-			//			FormulaStub.GetSentences();
-
-			//FFormulaStub FormulaStub;
-
-			this->StartingTokens =
-				this->AnalyzeFormula();
-				//FormulaStub.GetTokens();
-
-			this->Sentences =
-				this->LevelRow.Sentences;
-				//FormulaStub.GetSentences();
-		}
-
 		void ConnectFormula()
 		{
 			bool bHasFormula = this->Formula != nullptr;
 
 			check(bHasFormula);
-
-			this->Formula->SetSentences(this->Sentences);
 
 			this->Formula->
 				SetChangedListener(
@@ -140,9 +92,10 @@ class THISISLOGIC_API AExercise : public AActor
 				);
 		}
 
-		TArray<FToken> AnalyzeFormula() const
+		TArray<FToken> AnalyzeFormula(const FString& Text)
+			const
 		{
-			const TCHAR* FormulaChars = *this->LevelRow.Formula;
+			const TCHAR* FormulaChars = *Text;
 
 			std::string FormulaText = TCHAR_TO_UTF8(FormulaChars);
 
@@ -189,11 +142,7 @@ class THISISLOGIC_API AExercise : public AActor
 		UPROPERTY()
 		TObjectPtr<AFormula> Formula;
 
-		FLevelRow LevelRow;
-		
 		TArray<FToken> StartingTokens;
-
-		TArray<FString> Sentences;
 	
 		FUndoHistory UndoHistory;
 	

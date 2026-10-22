@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/World.h"
+#include "Engine/DataTable.h"
 #include "Blueprint/UserWidget.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/PlayerController.h"
@@ -10,9 +11,12 @@
 #include "../UI/CommandPanel.h"
 #include "ThisIsLogicSettings.h"
 #include "../Input/BackgroundTarget.h"
+#include "../Gameplay/Level/LevelRow.h"
 #include "../Gameplay/Formula/Formula.h"
 #include "../Gameplay/Exercise/Exercise.h"
+//#include "../Gameplay/Level/QuickTestLevel.h"
 #include "../Gameplay/Palette/OperatorPalette.h"
+#include "../Gameplay/Palette/PropositionPalette.h"
 
 #include "ThisIsLogicGameMode.generated.h"
 
@@ -35,23 +39,69 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 		{
 			Super::BeginPlay();
 
-			AFormula* Formula = this->CreateFormula();
+			FLevelRow LevelRow = this->ReadLevelRow();
+
+			// For quick tests, change below:
+			//		LevelRow.Formula with
+			//			FQuickTestLevel::GetFormula();
+			//		And LevelRow.Sentences with
+			//			FQuickTestLevel::GetSentences();
+
+			FString StartingFormula =
+				LevelRow.Formula;
+				//FQuickTestLevel::GetFormula();
+
+			TArray<FString> Sentences =
+				LevelRow.Sentences;
+				//FQuickTestLevel::GetSentences();
+
+			AFormula* Formula = this->CreateFormula(Sentences);
 
 			this->CreateBackground(Formula);
 
-			AExercise* Exercise = this->SpawnExercise(Formula);
+			AExercise* Exercise =
+				this->SpawnExercise(Formula, StartingFormula);
 
 			this->CreatePanel(Formula, Exercise);
 
 			this->StartExercise(Exercise);
 
 			this->CreateOperatorPalette(Formula);
+			
+			this->CreatePropositionPalette(Formula, Sentences);
 		}
 
 	#pragma region PrivateMethods
 	private:
 
-		AFormula* CreateFormula()
+		FLevelRow ReadLevelRow() const
+		{
+			const UThisIsLogicSettings* Settings =
+				GetDefault<UThisIsLogicSettings>();
+
+			UDataTable* LevelTable = Settings->GetLevelTable();
+
+			TArray<FName> RowNames = LevelTable->GetRowNames();
+
+			FName FirstRowName = RowNames[0];
+
+			const TCHAR* ContextString =
+				TEXT("AThisIsLogicGameMode");
+
+			const FLevelRow* Row =
+				LevelTable->
+					FindRow<FLevelRow>(FirstRowName, ContextString);
+
+			bool bHasRow = Row != nullptr;
+
+			check(bHasRow);
+
+			return *Row;
+		}
+
+		AFormula* CreateFormula(
+			const TArray<FString>& Sentences
+		)
 		{
 			UWorld* World = this->GetWorld();
 
@@ -67,6 +117,8 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 
 			Formula->
 				SetMaxRowWidth(AThisIsLogicGameMode::MaxRowWidth);
+
+			Formula->SetSentences(Sentences);
 
 			return Formula;
 		}
@@ -97,7 +149,9 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 				);
 		}
 
-		AExercise* SpawnExercise(AFormula* Formula)
+		AExercise* SpawnExercise(
+			AFormula* Formula, const FString& StartingFormula
+		)
 		{
 			UWorld* World = this->GetWorld();
 
@@ -112,6 +166,8 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 					>(ExerciseClass, Transform);
 
 			Exercise->SetFormula(Formula);
+
+			Exercise->SetStartingFormula(StartingFormula);
 
 			return Exercise;
 		}
@@ -185,8 +241,7 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 
 			FTransform Transform = FTransform(Location);
 
-			UClass* PaletteClass =
-				AOperatorPalette::StaticClass();
+			UClass* PaletteClass = AOperatorPalette::StaticClass();
 
 			AOperatorPalette* Palette =
 				World->
@@ -203,6 +258,40 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 				SetInsertAfterRequestedListener(
 					Formula, &AFormula::InsertBlockAfter
 				);
+		}
+	
+		void CreatePropositionPalette(
+			AFormula* Formula, const TArray<FString>& Sentences
+		)
+		{
+			UWorld* World = this->GetWorld();
+
+			FVector Location = FVector(13.0, 0.0, 0.0);
+
+			FTransform Transform = FTransform(Location);
+
+			UClass* PaletteClass =
+				APropositionPalette::StaticClass();
+
+			APropositionPalette* Palette =
+				World->
+					SpawnActorDeferred<
+						APropositionPalette
+					>(PaletteClass, Transform);
+
+			Palette->SetSentences(Sentences);
+
+			Palette->
+				SetInsertRequestedListener(
+					Formula, &AFormula::InsertBlock
+				);
+
+			Palette->
+				SetInsertAfterRequestedListener(
+					Formula, &AFormula::InsertBlockAfter
+				);
+
+			Palette->FinishSpawning(Transform);
 		}
 	
 	#pragma endregion

@@ -11,7 +11,7 @@ class THISISLOGIC_API APropositionBlock : public ABlock
 	
 	#pragma region PublicMethods
 	public:
-	
+		
 		APropositionBlock()
 		{
 			FLinearColor BlockColor =
@@ -24,9 +24,12 @@ class THISISLOGIC_API APropositionBlock : public ABlock
 			const FString& NewLetter, const FString& NewSentence
 		)
 		{
+			FString Separator = ": ";
+
 			this->Letter = NewLetter;
-			
-			this->Sentence = NewSentence;
+
+			this->MaximizedText =
+				NewLetter + Separator + NewSentence;
 		}
 
 		void SetMinimized(bool bNewMinimized)
@@ -56,12 +59,12 @@ class THISISLOGIC_API APropositionBlock : public ABlock
 			override
 		{
 			Super::ApplyState(State);
-			
+				
 			bool bStateMinimized = State.bMinimized;
-			
+				
 			this->SetMinimized(bStateMinimized);
 		}
-	
+		
 	#pragma endregion
 	
 	protected:
@@ -74,15 +77,15 @@ class THISISLOGIC_API APropositionBlock : public ABlock
 			}
 			else
 			{
-				return this->Sentence;
+				return this->MaximizedText;
 			}
 		}
 
 	private:
 
-		FString Sentence;
-
 		FString Letter;
+
+		FString MaximizedText;
 
 		bool bMinimized = false;
 };

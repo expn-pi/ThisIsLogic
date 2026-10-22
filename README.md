@@ -13,7 +13,7 @@ Each symbol of the formula is a block, and the blocks are laid out in rows, like
 - **Validity:** is the sequence of blocks a well-formed formula?
 - **Equivalence:** is it still equivalent to the level's starting formula? Cyan if it is, red if it is not, gray while the formula is invalid.
 
-Proposition blocks hold a sentence and a letter, and can be minimized (letter) or maximized (whole sentence). Operator blocks cover the constants ⊤ and ⊥, ¬, ∧, ∨, ⊕, NAND (↑), NOR (↓), →, ←, ↔ and the parentheses.
+Proposition blocks hold a sentence and a letter, and can be minimized (letter) or maximized (letter and sentence, as in "P: Alarm on"). Operator blocks cover the constants ⊤ and ⊥, ¬, ∧, ∨, ⊕, NAND (↑), NOR (↓), →, ←, ↔ and the parentheses.
 
 New blocks come from two palettes: the operators, in a column on the left, and the level's propositions, at the top, which double as a legend of their sentences.
 
@@ -37,7 +37,7 @@ New blocks come from two palettes: the operators, in a column on the left, and t
 - [x] Command panel to minimize or maximize propositions, remove the selected block, undo any command and restart the level
 - [x] Camera that frames the table on windows of any shape
 - [x] Operator palette: a tap inserts an operator before the selected block, or at the end of the formula; a long press inserts it after the selected block, or at the start
-- [ ] Proposition palette, which doubles as a legend of the sentences
+- [x] Proposition palette, which doubles as a legend of the sentences and inserts propositions as the operator palette inserts operators
 - [ ] Validity and equivalence indicators
 - [ ] Logic core: parser, evaluation and equivalence by truth table
 - [ ] Win condition and progression between levels
@@ -104,19 +104,20 @@ classDiagram
     AThisIsLogicGameMode ..> AExercise
     AThisIsLogicGameMode ..> UCommandPanel
     AThisIsLogicGameMode ..> AOperatorPalette
+    AThisIsLogicGameMode ..> APropositionPalette
     AThisIsLogicGameMode ..> UThisIsLogicSettings
+    AThisIsLogicGameMode ..> FLevelRow
+    AThisIsLogicGameMode ..> FQuickTestLevel
 
     AExercise --> AFormula
-    AExercise --> FLevelRow
     AExercise --> FUndoHistory
     AExercise ..> FFormulaAnalyzer
-    AExercise ..> FFormulaStub
-    AExercise ..> UThisIsLogicSettings
 
     AFormula --|> AAbstractBlocksManager
     AFormula --> ABlock
 
     AOperatorPalette --|> APalette
+    APropositionPalette --|> APalette
     APalette --|> AAbstractBlocksManager
     APalette ..> ABlock
 
