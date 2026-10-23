@@ -47,7 +47,7 @@ Boolean logic puzzle game in Unreal Engine 5.8.3, built as a public portfolio pr
 - No method chaining or fluent interfaces.
 - Keep suggestions small and testable in the editor. Prefer increments that show something on screen, and stub whatever depends on unfinished systems.
 - The quick test level (`FQuickTestLevel`) is a convenience for the author's manual tests, not part of the design: it does not weigh in design decisions, and the rules for it are looser than for permanent code, such as automated tests (see `Docs/Levels.md`).
-- The logic core (`Logic/`) has no engine dependencies, only standard C++, so it can be tested and reused on its own. Conversions to engine types happen where gameplay code calls it.
+- The logic core (`Logic/`) has no engine dependencies, only standard C++, so it can be tested and reused on its own. Conversions to engine types happen where gameplay code calls it. The one exception is logging during development: a file of the core may include `CoreMinimal.h` and `Logging/StructuredLog.h`, in a group of their own after its other includes, to log with `UE_LOGFMT`; the logs and those includes leave the core once it no longer needs them.
 - Calls go down, events go up: a class calls the objects it holds directly; a part only notifies through an event and never knows who listens. The listener is bound by whoever connects them: the part's owner, or the GameMode, which assembles the table (see `Docs/Assembly.md`).
 - Two levels of abstraction: the problem, a sequence of tokens (the exercise and the logic core), and the blocks, the actors the player handles (the formula, the palettes and their parts). The exercise talks to the formula in tokens and block states and never touches a block; the formula and the palettes share a base, `AAbstractBlocksManager`, which keeps their board, binds its events and gives every block the same height (see `Docs/BlocksManager.md`).
 - Only the factory and the board know the concrete block classes (`APropositionBlock`, `AOperatorBlock`); the other classes know at most `ABlock`, the abstraction, and plain data (`FBlockState`, `FToken`), so they depend on abstractions rather than on concrete classes (Dependency Inversion). In the class diagram, many arrows to `ABlock` are fine, while arrows to the concrete classes from outside the factory and the board are not.
@@ -75,6 +75,7 @@ Boolean logic puzzle game in Unreal Engine 5.8.3, built as a public portfolio pr
 - A method that subclasses must override gets a normal body with `unimplemented()` and a placeholder return, since a `UCLASS` cannot have pure virtual methods (`= 0`); `PURE_VIRTUAL` is avoided because its notation is confusing.
 - A subclass never declares a method with the name of one of its base's, except to override a virtual one: in C++ it hides the base's, usually without a warning (C# warns and asks for `new`), and a call by that name inside the subclass reaches its own method. Choose another name.
 - Few comments.
+- A method that logs starts with a local `bool bIsDebug = false;`, and each of its `UE_LOGFMT` calls goes inside an `if (bIsDebug)`, together with any variable that only the log uses, so the author can turn on the logs of each method on its own. This is still in progress: some logs do not follow it yet (see Pending).
 - Follow this style in every detail when suggesting code; when in doubt, mirror the existing files.
 - Markdown and text files (`CLAUDE.md`, `Docs/`, `README.md`, `LICENSE`): one line per paragraph or list item, never wrapped by hand.
 
@@ -93,8 +94,9 @@ Boolean logic puzzle game in Unreal Engine 5.8.3, built as a public portfolio pr
 
 - In the style of logic course exercises: the player simplifies "complex" boolean expressions.
 - Each symbol of the expression is a block, and the blocks are laid out in rows, like the lines of a text. Proposition blocks hold a sentence (e.g. "John eats tofu") and a letter, which the notation (below) derives from the proposition's number; each can be minimized (the letter) or maximized (the letter and the sentence, as in "P: John eats tofu"). Operator blocks: the constants ⊤ and ⊥, ¬, ∧, ∨, ⊕, NAND (↑), NOR (↓), →, ← and ↔, and the parentheses.
-- A level has four parts, all in English: the statement in natural language shown to the player; the starting formula, with each proposition written as a number (`1 = ( 2 AND 3 ) OR ( 2 AND NOT 3 )`); the sentences of the propositions, in order (the first one is proposition 1); and the solution, the minimal formula, written the same way. In a formula, the pieces are separated by spaces, and each operator has a single text: `TRUE`, `FALSE`, `NOT`, `AND`, `OR`, `XOR`, `NAND`, `NOR`, `THEN` (→), `IF` (←), `=` (↔) and the parentheses. A piece that is neither one of them nor a proposition number is an error that stops the game. A result variable, as in `1 = ...`, is part of the formula and becomes ordinary blocks, so each level is shown in the form it was written. Levels live in a DataTable imported from a CSV file, one level per row; more columns (difficulty, move or time limits) may come later.
+- A level has four parts, all in English: the statement in natural language shown to the player; the starting formula, with each proposition written as a number (`1 = ( 2 AND 3 ) OR ( 2 AND NOT 3 )`); the sentences of the propositions, in order (the first one is proposition 1); and the solution, the minimal formula, written the same way. In a formula, the pieces are separated by spaces, and each operator has a single text: `TRUE`, `FALSE`, `NOT`, `AND`, `OR`, `XOR`, `NAND`, `NOR`, `THEN` (→), `IF` (←), `=` (↔) and the parentheses. A piece that is neither one of them nor a proposition number is an error that stops the game, and so are a starting formula or solution that is not well formed and a solution that is not equivalent to the starting formula. A result variable, as in `1 = ...`, is part of the formula and becomes ordinary blocks, so each level is shown in the form it was written. Levels live in a DataTable imported from a CSV file, one level per row; more columns (difficulty, move or time limits) may come later.
 - The notation changes only what the screen shows, never the levels: the letters, a run of consecutive letters from a first letter (P, Q, R...), and the text of each operator, in a symbol style: the textbook symbols (∧, ∨, ↔...) or ASCII texts. The player will choose it, to match the course they follow. For now there is one, from P, with the textbook symbols.
+- Formulas are read with a single convention of precedence and grouping, the most common one in logic courses, with the gaps filled from the Wolfram Language (see `Docs/Logic.md`): from tightest to loosest, ¬, ∧, ↑, ⊕, ∨, ↓, → and ← together, and ↔; a chain of ∧, ↑, ⊕, ∨ or ↓ is one operation, and a chain of →, ← or ↔ groups from the right. Unlike the notation, a convention changes what a formula without parentheses means, so the levels are written for this one.
 - The player moves, adds and removes blocks freely. New blocks come from two palettes: the operators, in a column on the left of the table, and the level's propositions, at the top, laid out in rows like the formula and doubling as the legend of their sentences (see `Docs/Palette.md`). The game does almost nothing for the player (a choice for simplicity, open to revision).
 - Two indicators:
   - Validity: is the sequence a well-formed formula?
@@ -120,14 +122,14 @@ Each area's decisions, with their reasons and the alternatives already rejected,
 - `Docs/Input.md`: how presses reach the elements (the controller as a router, tap, drag or long press, the background target, UMG and the world).
 - `Docs/Commands.md`: what the player can do and how (single pointer, selection, panel, palette, inserting, removing, undo, laws).
 - `Docs/Assembly.md`: the GameMode as the Composition Root (the level it reads and hands out, what it creates, in which order, how it connects the pieces, and the selection event that reaches the panel).
-- `Docs/Exercise.md`: `AExercise`, the problem level: its starting formula, analyzed into tokens, its undo history, Restart and Undo.
+- `Docs/Exercise.md`: `AExercise`, the problem level: the level's starting formula and solution, analyzed and checked, the solution's tree, against which each change is compared, its undo history, Restart and Undo.
 - `Docs/BlocksManager.md`: the abstract base of the formula and the palettes (`AAbstractBlocksManager`): the board it keeps as a protected attribute, the events it binds, what it asks of its subclasses (Template Method and hooks), the single block height, and the requests that live in the subclasses.
 - `Docs/Layout.md`: the board, the blocks' facade (`UBlockBoard`), and its rows (`FBlockBoardRows` and `FBlockRow`), shared by the formula and the palettes: creating, registering and removing the blocks, their order, spacing and line breaks, and dragging within and between rows.
 - `Docs/Palette.md`: the palettes (`APalette` and its subclasses, the operator column, the proposition rows, and why they are actors in the world).
-- `Docs/Levels.md`: the level format (statement, formula with numbered propositions and operator words, sentences, solution), the result variable, the levels' file and DataTable, and the quick test level.
+- `Docs/Levels.md`: the level format (statement, formula with numbered propositions and operator words, sentences, solution), the errors that stop the game, the result variable, the levels' file and DataTable, and the quick test level.
 - `Docs/BlockCreation.md`: from tokens to blocks (the flow, the factory in the board, deferred spawn, the notation and the text of each block).
 - `Docs/Font.md`: the blocks' font (why an offline distance field font, DejaVu Sans, its import options and how to regenerate it).
-- `Docs/Logic.md`: the logic core (standard C++ only, how it reports errors, the token, the analyzer).
+- `Docs/Logic.md`: the logic core (standard C++ only, apart from development logs, how it reports errors, the token, the analyzer, the expression tree, the parser and its convention of precedence and grouping, evaluation and equivalence by truth table).
 - `Docs/Background.md`: the rounded background mesh (triangle fan, corners, radius, collision).
 - `Docs/Scale.md`: the real-world scale (the unit, the blocks' single height and the sizes derived from it, the table's arrangement in the GameMode, the background's depth and the camera's framing).
 - `Docs/Data.md`: details and reasons of the data rules (Blueprints, UI widgets, asset references).
@@ -154,7 +156,7 @@ Source/ThisIsLogic/
   Gameplay/Notation/ the notation: letters and operator texts shown to the player
   Gameplay/Palette/  the palettes: a base that shows blocks from tokens, the operator palette and the proposition palette
   Input/             pointer interface and background target
-  Logic/             logic core (no engine dependencies)
+  Logic/             logic core (standard C++; the engine only for development logs)
   UI/                UMG widgets (C++ classes) and their helpers
   Visuals/           reusable visual components
 Content/             folders by feature
@@ -174,15 +176,14 @@ Items are numbered in order. A new item takes its place in the sequence, and the
 
 **1 Blocks**
 - [x] 1.1 to 1.26, summarized (the git history has the details): drag and drop, input routing, the row and its reordering, text and width, blocks from tokens through a factory, rounded corners, proposition and operator blocks, minimize and maximize, selection, `AExercise`, the panel (a UMG widget with Minimize all and Maximize all, always visible, and Minimize/Maximize for a selected proposition, replacing the temporary trigger), the long press (a third gesture, recognized by the controller; on a proposition, a shortcut for Minimize/Maximize), propositions by number, with the letters and the operator texts from the notation, the levels in a DataTable imported from CSV, the analyzer, the first piece of the logic core, which turns the level's formula into tokens and stays apart from the formula, the rows (the blocks wrap like the lines of a text, and a dragged block can move to another row), the textbook symbols (an offline distance field font made in the editor from DejaVu Sans, and a symbol style passed to the notation, like its first letter), the decision not to save precomputed levels (see `Docs/Levels.md`), removing blocks, with Restart and Undo (a history of the blocks' states; see `Docs/Commands.md`), the camera's framing, which keeps a minimum area of the table in view on windows of any shape (see `Docs/Scale.md`), the GameMode assembling the table, with the exercise speaking only in tokens (see `Docs/Assembly.md`), the operator palette, a column on the left of the table whose tap inserts the operator before the selected block, or at the end of the formula with nothing selected, keeping the selection like a text cursor (see `Docs/Palette.md` and `Docs/Commands.md`), the abstract base of the formula and the palettes, `AAbstractBlocksManager` (see `Docs/BlocksManager.md`), the formula telling a selected proposition by its token's kind, instead of a cast to `APropositionBlock`, the board as the blocks' facade: a `UObject` that keeps the factory and the sentences, creates the blocks, registers their events and relays them to the manager, with the rows and dragging in `FBlockBoardRows`, while the base keeps only what every subclass uses and the subclasses use the board directly (see `Docs/Layout.md` and `Docs/BlocksManager.md`), the gestures: the blocks only report them, the board relays them and each subclass of the manager decides what they mean, so the propositions' own long-press event is gone, and a long press on a palette item inserts after the selected block, or at the start with nothing selected (see `Docs/BlocksManager.md` and `Docs/Commands.md`), the level read by the GameMode, which gives the starting formula to the exercise and the sentences to the formula and the proposition palette (see `Docs/Assembly.md`), the quick test level, a level written in code in place of the formula stub (see `Docs/Levels.md`), and the proposition palette: the level's propositions in rows at the top of the table, shown with their letters and sentences ("P: Alarm on"), as the maximized propositions of the formula now are, so it doubles as the legend (see `Docs/Palette.md`).
-- [ ] 1.27 Equivalence indicator (cyan / red / gray), with a stub.
-- [ ] 1.28 Validity indicator, with a stub.
 
-**2 Logic core (plain C++)**
-- [ ] 2.1 Represent boolean expressions as a tree: propositions, constants and the operators of `ETokenKind`.
-- [ ] 2.2 Parse the tokens into a tree, with precedence and parentheses; this also decides validity.
-- [ ] 2.3 Evaluate expressions and check equivalence with a truth table.
-- [ ] 2.4 Measure the size of an expression (basis for goals and scoring).
-- [ ] 2.5 Automated tests for the core.
+**2 Logic core and indicators**
+- [x] 2.1 Represent boolean expressions as a tree: propositions, constants and the operators of `ETokenKind`.
+- [x] 2.2 Parse the tokens into a tree, with precedence and parentheses; this also decides validity.
+- [x] 2.3 Evaluate expressions and check equivalence with a truth table.
+- [ ] 2.4 Validity and equivalence indicators (cyan / red / gray), built on the core, with no stubs.
+- [ ] 2.5 Measure the size of an expression (basis for goals and scoring).
+- [ ] 2.6 Automated tests for the core.
 
 **3 Game rules**
 - [ ] 3.1 Win condition.
@@ -204,6 +205,7 @@ Items are numbered in order. A new item takes its place in the sequence, and the
 - Recognize the law the player has just applied by hand ("De Morgan").
 - Laws as molds to fit blocks into. High cost: blocks inside blocks, against `Blocks` as the only source of the order.
 - Drag from a palette to insert, and drop a block on a palette to remove it (see `Docs/Commands.md`).
+- The player chooses the convention of precedence and grouping of their course, as with the notation; the formula is then rewritten from its tree, with the parentheses the new convention needs (see `Docs/Logic.md`).
 
 ## Pending
 
@@ -212,6 +214,7 @@ Items are numbered in order. A new item takes its place in the sequence, and the
 - `UCommandPanel` binds its buttons by name, written as text, through `FAuxUI::AssignButtonClick`, which uses `FScriptDelegate::BindUFunction`: a typo or a renamed handler still compiles and leaves its button silent, where `AddDynamic` or a name from `GET_FUNCTION_NAME_CHECKED` would break the build. Kept for now, to be investigated.
 - The proposition palette grows downward from a fixed place at the top of the table, so a level with many or long sentences would reach the formula's first row. No level has that yet.
 - Code against the inheritance rule (see Engineering principles): `ABlock::FitToText` is used only by `APropositionBlock`.
+- Logs that do not follow the `bIsDebug` pattern yet (see Code style): `AExercise::LogIndicators`, the gesture logs of `AThisIsLogicPlayerController` and the ortho width log of `ACameraPawn`.
 
 ## Maintaining this file
 

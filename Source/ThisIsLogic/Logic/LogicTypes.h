@@ -28,3 +28,16 @@ struct FToken
 	
 	bool operator == (const FToken& Other) const = default;
 };
+
+enum class EGrouping : std::uint8_t
+{
+	Flat,
+	Right
+};
+
+struct FOperatorRule
+{
+	int Precedence;
+
+	EGrouping Grouping;
+};

@@ -38,18 +38,24 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 		virtual void BeginPlay() override
 		{
 			Super::BeginPlay();
-
+			
 			FLevelRow LevelRow = this->ReadLevelRow();
 
 			// For quick tests, change below:
 			//		LevelRow.Formula with
 			//			FQuickTestLevel::GetFormula();
+			//		LevelRow.Solution with
+			//			FQuickTestLevel::GetSolution();
 			//		And LevelRow.Sentences with
 			//			FQuickTestLevel::GetSentences();
 
-			FString StartingFormula =
+			FString StartingText =
 				LevelRow.Formula;
 				//FQuickTestLevel::GetFormula();
+
+			FString SolutionText =
+				LevelRow.Solution;
+				//FQuickTestLevel::GetSolution();
 
 			TArray<FString> Sentences =
 				LevelRow.Sentences;
@@ -60,20 +66,22 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 			this->CreateBackground(Formula);
 
 			AExercise* Exercise =
-				this->SpawnExercise(Formula, StartingFormula);
+				this->SpawnExercise(
+					Formula, StartingText, SolutionText
+				);
 
 			this->CreatePanel(Formula, Exercise);
 
 			this->StartExercise(Exercise);
 
 			this->CreateOperatorPalette(Formula);
-			
+
 			this->CreatePropositionPalette(Formula, Sentences);
 		}
 
 	#pragma region PrivateMethods
 	private:
-
+	
 		FLevelRow ReadLevelRow() const
 		{
 			const UThisIsLogicSettings* Settings =
@@ -150,7 +158,8 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 		}
 
 		AExercise* SpawnExercise(
-			AFormula* Formula, const FString& StartingFormula
+			AFormula* Formula, const FString& StartingText,
+			const FString& SolutionText
 		)
 		{
 			UWorld* World = this->GetWorld();
@@ -167,7 +176,11 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 
 			Exercise->SetFormula(Formula);
 
-			Exercise->SetStartingFormula(StartingFormula);
+			Exercise->
+				SetFormulasTexts(
+					StartingText,
+					SolutionText
+				);
 
 			return Exercise;
 		}

@@ -7,11 +7,11 @@
 #include "../../Logic/LogicTypes.h"
 #include "../Block/AbstractBlocksManager.h"
 
-#include "Logging/StructuredLog.h"
-
 #include "Formula.generated.h"
 
-DECLARE_DELEGATE_TwoParams(FOnFormulaSelectionChanged, bool, bool);
+DECLARE_DELEGATE_TwoParams(
+	FOnFormulaSelectionChanged, bool, bool
+);
 
 DECLARE_DELEGATE(FOnFormulaChanged);
 
@@ -23,7 +23,9 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 	#pragma region PublicMethods
 	public:
 
-		void SetSentences(const TArray<FString>& Sentences)
+		void SetSentences(
+			const TArray<FString>& Sentences
+		)
 		{
 			this->Board->SetSentences(Sentences);
 		}
@@ -35,8 +37,6 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 			this->Board->RemoveAllBlocks();
 
 			this->Board->CreateBlocks(Tokens);
-
-			this->LogTokens();
 		}
 
 		void SetStates(const TArray<FBlockState>& States)
@@ -52,6 +52,11 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 		TArray<FBlockState> GetStates() const
 		{
 			return this->Board->GetStates();
+		}
+	
+		TArray<FToken> GetTokens() const
+		{
+			return this->Board->GetTokens();
 		}
 	
 		template<typename UserClass>
@@ -111,8 +116,6 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 			}
 
 			this->NotifyChanged();
-
-			this->LogTokens();
 		}
 
 		void InsertBlockAfter(const FToken& Token)
@@ -131,8 +134,6 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 			}
 
 			this->NotifyChanged();
-
-			this->LogTokens();
 		}
 	
 		void RemoveSelectedBlock()
@@ -146,8 +147,6 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 			this->NotifySelectionChanged();
 
 			this->NotifyChanged();
-
-			this->LogTokens();
 		}
 
 	#pragma endregion
@@ -160,7 +159,8 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 			return AFormula::RowHeightRatio;
 		}
 	
-		virtual void OnBlockTapped(ABlock* Block) override
+		virtual void OnBlockTapped(ABlock* Block)
+			override
 		{
 			this->SelectBlock(Block);
 		}
@@ -188,17 +188,14 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 			override
 		{
 			this->Board->DragBlock(Block, DesiredLocation);
-
-			this->LogTokens();
 		}
 
-		virtual void OnBlockDragEnded(ABlock* Block) override
+		virtual void OnBlockDragEnded(ABlock* Block)
+			override
 		{
 			this->Board->LayoutBlocks();
 
 			this->NotifyChanged();
-
-			this->LogTokens();
 		}
 
 	#pragma endregion
@@ -281,27 +278,6 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 			check(bHasChangedListener);
 
 			this->OnChanged.Execute();
-		}
-
-		void LogTokens() const
-		{
-			TArray<FToken> Tokens = this->Board->GetTokens();
-
-			UE_LOGFMT(LogTemp, Warning, "Tokens:");
-
-			for (const FToken& Token : Tokens)
-			{
-				ETokenKind Kind = Token.Kind;
-				
-				int32 KindIndex = static_cast<int32>(Kind);
-
-				int32 Index = Token.Index;
-
-				UE_LOGFMT(
-					LogTemp, Warning,
-					"Kind {0}, index {1}", KindIndex, Index
-				);
-			}
 		}
 	
 	#pragma endregion

@@ -8,6 +8,7 @@
 #include "UndoHistory.h"
 #include "../Formula/Formula.h"
 #include "../Block/BlockData.h"
+#include "../../Logic/FormulaParser.h"
 #include "../../Logic/FormulaAnalyzer.h"
 
 #include "Exercise.generated.h"
@@ -37,9 +38,28 @@ class THISISLOGIC_API AExercise : public AActor
 			this->Formula = NewFormula;
 		}
 
-		void SetStartingFormula(const FString& Text)
+		void SetFormulasTexts(
+			const FString& StartingText,
+			const FString& SolutionText
+		)
 		{
-			this->StartingTokens = this->AnalyzeFormula(Text);
+			this->StartingTokens =
+				this->AnalyzeFormula(StartingText);
+		
+			TArray<FToken> SolutionTokens =
+				this->AnalyzeFormula(SolutionText);
+
+			FExpression Starting =
+				AExercise::ParseLevelFormula(this->StartingTokens);
+
+			FExpression Solution =
+				AExercise::ParseLevelFormula(SolutionTokens);
+
+			bool bIsEquivalent = Solution.IsEquivalentTo(Starting);
+
+			check(bIsEquivalent);
+
+			this->SolutionExpression = Solution;
 		}
 
 		void Restart()
@@ -122,6 +142,46 @@ class THISISLOGIC_API AExercise : public AActor
 			return Tokens;
 		}
 
+		static std::optional<FExpression> ParseTokens(
+			const TArray<FToken>& Tokens
+		)
+		{
+			std::vector<FToken> StandardTokens =
+				AExercise::ToStandardTokens(Tokens);
+
+			return FFormulaParser::Parse(StandardTokens);
+		}
+
+		static FExpression ParseLevelFormula(
+			const TArray<FToken>& Tokens
+		)
+		{
+			std::optional<FExpression> Expression =
+				AExercise::ParseTokens(Tokens);
+
+			bool bIsWellFormed = Expression.has_value();
+
+			check(bIsWellFormed);
+
+			return Expression.value();
+		}
+	
+		static std::vector<FToken> ToStandardTokens(
+			const TArray<FToken>& Tokens
+		)
+		{
+			const FToken* TokenData = Tokens.GetData();
+
+			int32 TokenNum = Tokens.Num();
+
+			const FToken* TokenEnd = TokenData + TokenNum;
+
+			std::vector<FToken> StandardTokens =
+				std::vector<FToken>(TokenData, TokenEnd);
+
+			return StandardTokens;
+		}
+	
 		void SaveState()
 		{
 			TArray<FBlockState> Snapshot =
@@ -133,18 +193,54 @@ class THISISLOGIC_API AExercise : public AActor
 		void OnFormulaChanged()
 		{
 			this->SaveState();
+
+			this->LogIndicators();
+		}
+
+		void LogIndicators() const
+		{
+			TArray<FToken> Tokens = this->Formula->GetTokens();
+
+			std::optional<FExpression> Expression =
+				AExercise::ParseTokens(Tokens);
+
+			bool bIsWellFormed = Expression.has_value();
+
+			UE_LOGFMT(
+				LogTemp, Warning,
+				"Well-formed: {0}", bIsWellFormed
+			);
+
+			if (bIsWellFormed)
+			{
+				const FExpression& ValidExpression =
+					Expression.value();
+
+				const FExpression& Solution =
+					this->SolutionExpression.value();
+
+				bool bIsEquivalent =
+					ValidExpression.IsEquivalentTo(Solution);
+
+				UE_LOGFMT(
+					LogTemp, Warning,
+					"Equivalent: {0}", bIsEquivalent
+				);
+			}
 		}
 
 	#pragma endregion
 
 	#pragma region Attributes
-	
+
 		UPROPERTY()
 		TObjectPtr<AFormula> Formula;
 
 		TArray<FToken> StartingTokens;
-	
+
+		std::optional<FExpression> SolutionExpression;
+
 		FUndoHistory UndoHistory;
-	
+
 	#pragma endregion
 };

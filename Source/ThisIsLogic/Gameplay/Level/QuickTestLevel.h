@@ -29,4 +29,13 @@ class FQuickTestLevel
 
 			return Sentences;
 		}
+	
+		static FString GetSolution()
+		{
+			FString Solution =
+				"1 = 2 AND 3";
+				//"1 = 2";
+
+			return Solution;
+		}
 };

@@ -38,8 +38,8 @@ New blocks come from two palettes: the operators, in a column on the left, and t
 - [x] Camera that frames the table on windows of any shape
 - [x] Operator palette: a tap inserts an operator before the selected block, or at the end of the formula; a long press inserts it after the selected block, or at the start
 - [x] Proposition palette, which doubles as a legend of the sentences and inserts propositions as the operator palette inserts operators
+- [x] Logic core: parser with the usual precedence of logic courses, evaluation and equivalence by truth table
 - [ ] Validity and equivalence indicators
-- [ ] Logic core: parser, evaluation and equivalence by truth table
 - [ ] Win condition and progression between levels
 - [ ] Menu, level select and saved progress
 
@@ -66,7 +66,7 @@ Source/ThisIsLogic/
   BasicComponents/   camera, player controller, settings, and the game mode, which assembles the table
   Gameplay/          the exercise, the formula, the palettes, the blocks and the levels
   Input/             mouse routing interface
-  Logic/             logic core, plain C++ with no engine dependencies
+  Logic/             logic core, in standard C++, with the engine only for development logs
   UI/                UI widgets, with the logic in C++ and the layout in Widget Blueprints
   Visuals/           reusable visual components
 Content/             assets, in folders by feature
@@ -111,7 +111,12 @@ classDiagram
 
     AExercise --> AFormula
     AExercise --> FUndoHistory
+    AExercise --> FExpression
     AExercise ..> FFormulaAnalyzer
+    AExercise ..> FFormulaParser
+
+    FFormulaParser ..> FExpression
+    FExpression --> FExpression
 
     AFormula --|> AAbstractBlocksManager
     AFormula --> ABlock
