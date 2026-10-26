@@ -14,8 +14,9 @@ class THISISLOGIC_API APropositionBlock : public ABlock
 		
 		APropositionBlock()
 		{
-			FLinearColor BlockColor =
-				FLinearColor(0.9f, 0.3f, 0.1f);
+			FColor FBlockColor = FColor(0xFFFFFF02);
+			
+			FLinearColor BlockColor = FLinearColor(FBlockColor);
 
 			this->SetColor(BlockColor);
 		}
@@ -80,6 +81,15 @@ class THISISLOGIC_API APropositionBlock : public ABlock
 				return this->MaximizedText;
 			}
 		}
+	
+		virtual float GetLabelSize() const override
+		{
+			return
+				this->Height *
+				APropositionBlock::LabelSizeRatio;
+		}
+	
+		static constexpr float LabelSizeRatio = 0.5f;
 
 	private:
 

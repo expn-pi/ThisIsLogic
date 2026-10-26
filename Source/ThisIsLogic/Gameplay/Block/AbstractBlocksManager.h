@@ -32,6 +32,8 @@ class THISISLOGIC_API AAbstractBlocksManager : public AActor
 
 			this->Board =
 				CreateDefaultSubobject<UBlockBoard>(BoardName);
+			
+			Board->SetupAttachment(Root);
 		}
 
 		void SetMaxRowWidth(double MaxRowWidth)

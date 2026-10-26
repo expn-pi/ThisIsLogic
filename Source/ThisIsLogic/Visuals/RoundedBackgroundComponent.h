@@ -12,7 +12,8 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 	public UProceduralMeshComponent
 {
 	GENERATED_BODY()
-
+	
+	#pragma region PublicMethods
 	public:
 
 		URoundedBackgroundComponent(
@@ -20,10 +21,17 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 		)
 			: Super(ObjectInitializer)
 		{
-			FVector BottomLeft = FVector(-1.f, -1.f, 0.f);
-			FVector BottomRight = FVector(-1.f, 1.f, 0.f);
-			FVector TopRight = FVector(1.f, 1.f, 0.f);
-			FVector TopLeft = FVector(1.f, -1.f, 0.f);
+			FVector BottomLeft =
+				FVector(-1.f, -1.f, 0.f);
+			
+			FVector BottomRight =
+				FVector(-1.f, 1.f, 0.f);
+			
+			FVector TopRight =
+				FVector(1.f, 1.f, 0.f);
+			
+			FVector TopLeft =
+				FVector(1.f, -1.f, 0.f);
 
 			this->CornerSigns.Add(BottomLeft);
 			this->CornerSigns.Add(BottomRight);
@@ -31,9 +39,7 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 			this->CornerSigns.Add(TopLeft);
 		}
 
-		void SetColor(
-			const FLinearColor& NewColor
-		)
+		void SetColor(const FLinearColor& NewColor)
 		{
 			this->Color = NewColor;
 		}
@@ -65,11 +71,13 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 			this->BuildMesh();
 		}
 
+	#pragma endregion
+	
+	#pragma region PrivateMethods
 	private:
 
 		void BuildCornerOffsets(
-			float Width, float Height
-		)
+			float Width, float Height)
 		{
 			bool bHasValidSegments =
 				this->CornerSegments >= 0;
@@ -127,7 +135,8 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 			bool bHasValidRoundness =
 				FMath::
 					IsWithinInclusive(
-						this->Roundness, 0.f, 1.f
+						this->Roundness, 0.f,
+						1.f
 					);
 
 			check(bHasValidRoundness);
@@ -142,8 +151,7 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 
 		void CreateCornerOffsets(
 			float AngleStep, float FirstAngle,
-			float VertexDistance,
-			const FVector& ArcCenter
+			float VertexDistance, const FVector& ArcCenter
 		)
 		{
 			for (
@@ -159,7 +167,9 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 				float ScreenRight = FMath::Cos(Angle);
 
 				FVector Direction =
-					FVector(ScreenUp, ScreenRight, 0.f);
+					FVector(
+						ScreenUp, ScreenRight, 0.f
+					);
 
 				FVector Offset =
 					ArcCenter + Direction * VertexDistance;
@@ -168,9 +178,7 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 			}
 		}
 
-		void BuildVertices(
-			float Width, float Height
-		)
+		void BuildVertices(float Width, float Height)
 		{
 			int32 OutlineCount = this->CornerOffsets.Num();
 			int32 VertexCount = OutlineCount + 1;
@@ -182,9 +190,7 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 			this->PlaceOutline(Width, Height);
 		}
 
-		void PlaceOutline(
-			float Width, float Height
-		)
+		void PlaceOutline(float Width, float Height)
 		{
 			float HalfWidth = Width * 0.5f;
 			float HalfHeight = Height * 0.5f;
@@ -215,8 +221,7 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 		}
 
 		void PlaceOutlineVertices(
-			int32 FirstOutlineIndex,
-			const FVector& Corner
+			int32 FirstOutlineIndex, const FVector& Corner
 		)
 		{
 			for (
@@ -233,8 +238,7 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 				const FVector& Offset =
 					this->CornerOffsets[OutlineIndex];
 
-				this->Vertices[VertexIndex] =
-					Corner + Offset;
+				this->Vertices[VertexIndex] = Corner + Offset;
 			}
 		}
 
@@ -254,14 +258,8 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 			TArray<FProcMeshTangent> Tangents;
 
 			this->CreateMeshSection_LinearColor(
-				0,
-				this->Vertices,
-				Triangles,
-				Normals,
-				UVs,
-				VertexColors,
-				Tangents,
-				true
+				0, this->Vertices, Triangles, Normals, UVs,
+				VertexColors, Tangents, true
 			);
 		}
 
@@ -313,7 +311,11 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 
 			this->SetMaterial(0, DynamicMaterial);
 		}
+	
+	#pragma endregion
 
+	#pragma region PrivateAttributes
+	
 		TArray<FVector> CornerSigns;
 
 		int32 CornerVertexCount = 0;
@@ -326,14 +328,16 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 		TObjectPtr<UMaterialInterface> BaseMaterial;
 
 		UPROPERTY(EditAnywhere, Category = "Background")
-		FLinearColor Color = FLinearColor::Blue;
+		FLinearColor Color =
+			FLinearColor::Blue;
 
 		UPROPERTY(
-			EditAnywhere,
-			Category = "Background",
+			EditAnywhere, Category = "Background",
 			meta = (ClampMin = "0")
 		)
 		int32 CornerSegments = 4;
 
 		float Roundness = 1.0f;
+	
+	#pragma endregion
 };

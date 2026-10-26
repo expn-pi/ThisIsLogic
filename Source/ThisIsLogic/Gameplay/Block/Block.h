@@ -73,10 +73,14 @@ class THISISLOGIC_API ABlock :
 
 			this->Label->SetFont(BlockFont);
 			
+			Label->TextRenderColor = FColor::Black;
+			
 			this->ApplyText();
 		}
 
-		void SetData(float NewHeight, const FToken& NewToken)
+		void SetData(
+			float NewHeight, const FToken& NewToken
+		)
 		{
 			this->Height = NewHeight;
 			
@@ -241,18 +245,32 @@ class THISISLOGIC_API ABlock :
 
 			return FString();
 		}
+	
+		virtual float GetLabelSize() const
+		{
+			unimplemented();
+			
+			return 0.f;
+		}
 
 		void FitToText()
 		{
 			this->ApplyText();
 
-			bool bHasWidthListener = this->OnWidthChanged.IsBound();
+			bool bHasWidthListener =
+				this->OnWidthChanged.IsBound();
 
 			check(bHasWidthListener);
 
 			this->OnWidthChanged.Execute(this);
 		}
 
+	#pragma endregion
+	
+	#pragma region ProtectedAttributes
+
+		float Height = 0.f;
+	
 	#pragma endregion
 	
 	#pragma region PrivateMethods
@@ -313,7 +331,7 @@ class THISISLOGIC_API ABlock :
 			this->Outline->SetRoundness(1.f);
 
 			FLinearColor OutlineColor =
-				FLinearColor::Yellow;
+				FLinearColor::White;
 
 			this->Outline->SetColor(OutlineColor);
 
@@ -341,7 +359,7 @@ class THISISLOGIC_API ABlock :
 
 			this->Label->SetRelativeLocation(LabelLocation);
 
-			float LabelSize = this->Height * ABlock::LabelSizeRatio;
+			float LabelSize = this->GetLabelSize();
 
 			this->Label->SetWorldSize(LabelSize);
 
@@ -377,11 +395,11 @@ class THISISLOGIC_API ABlock :
 
 		float GetWidthForText() const
 		{
-			FVector TextSize =
-				this->Label->GetTextLocalSize();
-
-			float TextWidth =
-				static_cast<float>(TextSize.Y);
+			FVector TextSize = this->Label->GetTextLocalSize();
+			
+			double TextSizeY = TextSize.Y;
+			
+			float TextWidth = static_cast<float>(TextSizeY);
 
 			float Margins = this->TextMargin * 2.f;
 
@@ -405,7 +423,7 @@ class THISISLOGIC_API ABlock :
 	
 	#pragma endregion
 
-	#pragma region Attributes
+	#pragma region PrivateAttributes
 	
 		FOnBlockWidthChanged OnWidthChanged;
 
@@ -447,10 +465,6 @@ class THISISLOGIC_API ABlock :
 		// Block
 	
 		float Width = 0.f;
-	
-		float Height = 0.f;
-	
-		static constexpr float LabelSizeRatio = 0.5f;
 
 		static constexpr float TextMarginRatio = 0.2f;
 

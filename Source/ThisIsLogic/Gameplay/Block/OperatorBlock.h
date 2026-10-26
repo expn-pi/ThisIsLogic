@@ -16,8 +16,9 @@ class THISISLOGIC_API AOperatorBlock :
 
 		AOperatorBlock()
 		{
-			FLinearColor BlockColor =
-				FLinearColor(0.1f, 0.3f, 0.8f);
+			FColor FBlockColor = FColor(0xFF5EB8EA);
+			
+			FLinearColor BlockColor = FLinearColor(FBlockColor);
 
 			this->SetColor(BlockColor);
 		}
@@ -33,7 +34,16 @@ class THISISLOGIC_API AOperatorBlock :
 		{
 			return this->Symbol;
 		}
-
+	
+	virtual float GetLabelSize() const override
+		{
+			return
+				this->Height *
+				AOperatorBlock::LabelSizeRatio;
+		}
+	
+		static constexpr float LabelSizeRatio = 0.7f;
+	
 	private:
 
 		FString Symbol;

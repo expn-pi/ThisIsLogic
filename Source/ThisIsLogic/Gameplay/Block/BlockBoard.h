@@ -9,17 +9,31 @@
 #include "BlockBoardRows.h"
 #include "PropositionBlock.h"
 #include "../../Logic/LogicTypes.h"
+#include "../../Visuals/RoundedBackgroundComponent.h"
+#include "../../BasicComponents/ThisIsLogicSettings.h"
 
 #include "BlockBoard.generated.h"
 
 UCLASS()
-class THISISLOGIC_API UBlockBoard : public UObject
+class THISISLOGIC_API UBlockBoard : public USceneComponent
 {
 	GENERATED_BODY()
 
 	#pragma region PublicMethods
 	public:
-
+	
+		UBlockBoard()
+		{
+			FName UBackGroundName = TEXT("Background");
+			
+			Background =
+				CreateDefaultSubobject<
+					URoundedBackgroundComponent
+				>(UBackGroundName);
+			
+			Background->SetupAttachment(this);
+		}
+	
 		void SetOrigin(const FVector& Origin)
 		{
 			this->Rows.SetOrigin(Origin);
@@ -34,6 +48,8 @@ class THISISLOGIC_API UBlockBoard : public UObject
 				SetData(RowHeightRatio, BlockHeight, MaxRowWidth);
 
 			this->BlockFactory.Emplace(BlockHeight);
+			
+			this->BuildBackground(10.f, 10.f);
 		}
 	
 		void SetSentences(
@@ -242,7 +258,27 @@ class THISISLOGIC_API UBlockBoard : public UObject
 	
 	#pragma region PrivateMethods
 	private:
+		
+		void BuildBackground(float Width, float Height)
+		{
+			this->Background->Build(Width, Height);
+			
+			const UThisIsLogicSettings* Settings =
+				GetDefault<UThisIsLogicSettings>();
 
+			UMaterialInterface* BlockMaterial =
+				Settings->GetBlockMaterial();
+
+			this->Background->SetBaseMaterial(BlockMaterial);
+
+			FColor FBackgroundColor = FColor(0xFFFFFFFF);
+				
+			FLinearColor BackgroundColor =
+				FLinearColor(FBackgroundColor);
+				
+			this->Background->SetColor(BackgroundColor);
+		}
+	
 		void AddBlocks(const TArray<ABlock*>& NewBlocks)
 		{
 			for (ABlock* Block : NewBlocks)
@@ -255,7 +291,9 @@ class THISISLOGIC_API UBlockBoard : public UObject
 			this->UpdateLayout();
 		}
 
-		void CreateBlockAt(const FToken& Token, int32 Index)
+		void CreateBlockAt(
+			const FToken& Token, int32 Index
+		)
 		{
 			ABlock* Block = this->SpawnBlock(Token);
 
@@ -377,6 +415,9 @@ class THISISLOGIC_API UBlockBoard : public UObject
 	#pragma endregion
 
 	#pragma region Attributes
+	
+		UPROPERTY(VisibleAnywhere)
+		TObjectPtr<URoundedBackgroundComponent> Background;
 
 		FOnBlockTapped OnTapped;
 
