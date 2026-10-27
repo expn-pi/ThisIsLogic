@@ -55,6 +55,18 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 		{
 			this->Roundness = NewRoundness;
 		}
+	
+		void SetCornerRadius(float NewCornerRadius)
+		{
+			this->FixedCornerRadius = NewCornerRadius;
+
+			this->bHasFixedRadius = true;
+		}
+	
+		void SetCornerSegments(int32 NewCornerSegments)
+		{
+			this->CornerSegments = NewCornerSegments;
+		}
 
 		void Build(float Width, float Height)
 		{
@@ -79,25 +91,21 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 		void BuildCornerOffsets(
 			float Width, float Height)
 		{
-			bool bHasValidSegments =
-				this->CornerSegments >= 0;
+			bool bHasValidSegments = this->CornerSegments >= 0;
 
 			check(bHasValidSegments);
 
 			float CornerRadius =
 				this->GetCornerRadius(Width, Height);
 
-			this->CornerVertexCount =
-				this->CornerSegments + 1;
+			this->CornerVertexCount = this->CornerSegments + 1;
 
-			float AngleStep =
-				UE_HALF_PI / this->CornerVertexCount;
+			float AngleStep = UE_HALF_PI / this->CornerVertexCount;
 
 			float HalfStep = AngleStep * 0.5f;
 			float HalfStepCosine = FMath::Cos(HalfStep);
 
-			float VertexDistance =
-				CornerRadius / HalfStepCosine;
+			float VertexDistance = CornerRadius / HalfStepCosine;
 
 			this->CornerOffsets.Reset();
 
@@ -112,14 +120,11 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 				const FVector& CornerSign =
 					this->CornerSigns[CornerIndex];
 
-				FVector ArcCenter =
-					-CornerSign * CornerRadius;
+				FVector ArcCenter = -CornerSign * CornerRadius;
 
-				float CornerAngle =
-					UE_HALF_PI * CornerIndex;
+				float CornerAngle = UE_HALF_PI * CornerIndex;
 
-				float FirstAngle =
-					UE_PI + CornerAngle + HalfStep;
+				float FirstAngle = UE_PI + CornerAngle + HalfStep;
 
 				this->CreateCornerOffsets(
 					AngleStep, FirstAngle,
@@ -128,25 +133,38 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 			}
 		}
 
-		float GetCornerRadius(
-			float Width, float Height
-		) const
+		float GetCornerRadius(float Width, float Height)
+			const
 		{
-			bool bHasValidRoundness =
-				FMath::
-					IsWithinInclusive(
-						this->Roundness, 0.f,
-						1.f
-					);
-
-			check(bHasValidRoundness);
-
 			float SmallestSide =
 				FMath::Min(Width, Height);
 
 			float SmallestHalfSide = SmallestSide * 0.5f;
 
-			return this->Roundness * SmallestHalfSide;
+			float CornerRadius;
+
+			if (this->bHasFixedRadius)
+			{
+				CornerRadius = this->FixedCornerRadius;
+			}
+			else
+			{
+				bool bHasValidRoundness =
+					FMath::IsWithinInclusive(
+						this->Roundness, 0.f,
+						1.f
+					);
+
+				check(bHasValidRoundness);
+
+				CornerRadius = this->Roundness * SmallestHalfSide;
+			}
+
+			bool bFitsInSides = CornerRadius <= SmallestHalfSide;
+
+			check(bFitsInSides);
+
+			return CornerRadius;
 		}
 
 		void CreateCornerOffsets(
@@ -338,6 +356,10 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 		int32 CornerSegments = 4;
 
 		float Roundness = 1.0f;
+	
+		float FixedCornerRadius = 0.f;
+
+		bool bHasFixedRadius = false;
 	
 	#pragma endregion
 };

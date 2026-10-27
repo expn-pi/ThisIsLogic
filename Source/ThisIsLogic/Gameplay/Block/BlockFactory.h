@@ -13,8 +13,13 @@ class FBlockFactory
 {
 	public:
 
-		explicit FBlockFactory(float InBlockHeight) :
-			BlockHeight(InBlockHeight)
+		explicit FBlockFactory(
+			float InBlockHeight, UFont* InBlockFont,
+			UMaterialInterface* InBlockMaterial
+		):
+			BlockHeight(InBlockHeight),
+			BlockFont(InBlockFont),
+			BlockMaterial(InBlockMaterial)
 		{
 		}
 
@@ -74,7 +79,11 @@ class FBlockFactory
 						APropositionBlock
 					>(BlockClass, Transform);
 
-			Block->SetData(this->BlockHeight, Token);
+			Block->
+				SetData(
+					this->BlockHeight, Token,
+					this->BlockFont, this->BlockMaterial
+				);
 			
 			int32 PropositionIndex = Token.Index;
 
@@ -104,7 +113,11 @@ class FBlockFactory
 						AOperatorBlock
 					>(BlockClass, Transform);
 			
-			Block->SetData(this->BlockHeight, Token);
+			Block->
+				SetData(
+					this->BlockHeight, Token,
+					this->BlockFont, this->BlockMaterial
+				);
 
 			ETokenKind Kind = Token.Kind;
 
@@ -116,8 +129,11 @@ class FBlockFactory
 
 			return Block;
 		}
-
-		FNotation Notation;
-	
 		float BlockHeight = 0.f;
+		
+		UFont* BlockFont;
+	
+		UMaterialInterface* BlockMaterial;
+	
+		FNotation Notation;
 };

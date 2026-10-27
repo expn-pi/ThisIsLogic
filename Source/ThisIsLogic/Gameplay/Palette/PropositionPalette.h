@@ -48,10 +48,17 @@ class THISISLOGIC_API APropositionPalette : public APalette
 
 			return AAbstractBlocksManager::BlockHeight * Ratio;
 		}
+	
+		virtual int32 GetBackgroundRowCount() const override
+		{
+			return APropositionPalette::BackgroundRowCount;
+		}
 
 	private:
 
 		int32 PropositionCount = 0;
 
 		static constexpr double MaxRowWidthRatio = 20.0;
+	
+		static constexpr int32 BackgroundRowCount = 2;
 };

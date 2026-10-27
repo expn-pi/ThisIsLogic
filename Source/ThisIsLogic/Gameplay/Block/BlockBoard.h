@@ -24,14 +24,19 @@ class THISISLOGIC_API UBlockBoard : public USceneComponent
 	
 		UBlockBoard()
 		{
-			FName UBackGroundName = TEXT("Background");
+			FName BackgroundName = TEXT("Background");
 			
-			Background =
+			this->Background =
 				CreateDefaultSubobject<
 					URoundedBackgroundComponent
-				>(UBackGroundName);
+				>(BackgroundName);
 			
-			Background->SetupAttachment(this);
+			this->Background->SetupAttachment(this);
+			
+			this->Background->
+				SetCollisionEnabled(
+					ECollisionEnabled::NoCollision
+				);
 		}
 	
 		void SetOrigin(const FVector& Origin)
@@ -41,15 +46,39 @@ class THISISLOGIC_API UBlockBoard : public USceneComponent
 
 		void SetData(
 			double RowHeightRatio, float BlockHeight,
-			double MaxRowWidth
+			double MaxRowWidth, int32 BackgroundRowCount
 		)
 		{
 			this->Rows.
 				SetData(RowHeightRatio, BlockHeight, MaxRowWidth);
 
-			this->BlockFactory.Emplace(BlockHeight);
-			
-			this->BuildBackground(10.f, 10.f);
+			const UThisIsLogicSettings* Settings =
+				GetDefault<UThisIsLogicSettings>();
+
+			this->BlockFont = Settings->GetBlockFont();
+
+			this->BlockMaterial = Settings->GetBlockMaterial();
+
+			this->BlockFactory.
+				Emplace(
+					BlockHeight, this->BlockFont,
+					this->BlockMaterial
+				);
+
+			float BackgroundWidth =
+				this->GetBackgroundWidth(
+					BlockHeight, MaxRowWidth
+				);
+
+			float BackgroundHeight =
+				this->GetBackgroundHeight(
+					RowHeightRatio, BlockHeight,
+					BackgroundRowCount
+				);
+
+			this->BuildBackground(
+				BackgroundWidth, BackgroundHeight, BlockHeight
+			);
 		}
 	
 		void SetSentences(
@@ -259,24 +288,86 @@ class THISISLOGIC_API UBlockBoard : public USceneComponent
 	#pragma region PrivateMethods
 	private:
 		
-		void BuildBackground(float Width, float Height)
+		void BuildBackground(
+			float Width, float Height, float BlockHeight
+		)
 		{
-			this->Background->Build(Width, Height);
-			
-			const UThisIsLogicSettings* Settings =
-				GetDefault<UThisIsLogicSettings>();
+			this->Background->
+				SetBaseMaterial(this->BlockMaterial);
 
-			UMaterialInterface* BlockMaterial =
-				Settings->GetBlockMaterial();
+			FColor BackgroundColorSRGB = FColor(0xFF2A3039);
 
-			this->Background->SetBaseMaterial(BlockMaterial);
-
-			FColor FBackgroundColor = FColor(0xFFFFFFFF);
-				
 			FLinearColor BackgroundColor =
-				FLinearColor(FBackgroundColor);
-				
+				FLinearColor(BackgroundColorSRGB);
+
 			this->Background->SetColor(BackgroundColor);
+
+			float CornerRadius =
+				BlockHeight * UBlockBoard::BackgroundRadiusRatio;
+
+			this->Background->SetCornerRadius(CornerRadius);
+
+			this->Background->Build(Width, Height);
+
+			FVector Location =
+				this->GetBackgroundLocation(Height, BlockHeight);
+
+			this->Background->SetRelativeLocation(Location);
+		}
+
+		float GetBackgroundMargin(float BlockHeight) const
+		{
+			return
+				BlockHeight * UBlockBoard::BackgroundMarginRatio;
+		}
+
+		float GetBackgroundWidth(
+			float BlockHeight, double MaxRowWidth
+		) const
+		{
+			float Margin = this->GetBackgroundMargin(BlockHeight);
+
+			float RowWidth = static_cast<float>(MaxRowWidth);
+
+			return RowWidth + Margin * 2.f;
+		}
+
+		float GetBackgroundHeight(
+			double RowHeightRatio, float BlockHeight,
+			int32 RowCount
+		) const
+		{
+			float Ratio = static_cast<float>(RowHeightRatio);
+
+			float RowHeight = BlockHeight * Ratio;
+
+			int32 GapCount = RowCount - 1;
+
+			float RowsSpan = RowHeight * GapCount;
+
+			float Margin = this->GetBackgroundMargin(BlockHeight);
+
+			return RowsSpan + BlockHeight + Margin * 2.f;
+		}
+
+		FVector GetBackgroundLocation(
+			float Height, float BlockHeight
+		) const
+		{
+			float Margin = this->GetBackgroundMargin(BlockHeight);
+
+			float HalfBlockHeight = BlockHeight * 0.5f;
+
+			float TopX = HalfBlockHeight + Margin;
+
+			float HalfHeight = Height * 0.5f;
+
+			float CenterX = TopX - HalfHeight;
+
+			float Depth =
+				BlockHeight * UBlockBoard::BackgroundDepthRatio;
+
+			return FVector(CenterX, 0.f, -Depth);
 		}
 	
 		void AddBlocks(const TArray<ABlock*>& NewBlocks)
@@ -419,6 +510,12 @@ class THISISLOGIC_API UBlockBoard : public USceneComponent
 		UPROPERTY(VisibleAnywhere)
 		TObjectPtr<URoundedBackgroundComponent> Background;
 
+		UPROPERTY()
+		TObjectPtr<UFont> BlockFont;
+
+		UPROPERTY()
+		TObjectPtr<UMaterialInterface> BlockMaterial;
+	
 		FOnBlockTapped OnTapped;
 
 		FOnBlockLongPressed OnLongPressed;
@@ -437,6 +534,12 @@ class THISISLOGIC_API UBlockBoard : public USceneComponent
 		TOptional<FBlockFactory> BlockFactory;
 
 		FBlockBoardRows Rows;
+	
+		static constexpr float BackgroundMarginRatio = 0.3f;
+
+		static constexpr float BackgroundRadiusRatio = 0.4f;
+
+		static constexpr float BackgroundDepthRatio = 0.1f;
 
 	#pragma endregion
 };

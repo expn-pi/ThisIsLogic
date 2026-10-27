@@ -197,6 +197,11 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 
 			this->NotifyChanged();
 		}
+	
+		virtual int32 GetBackgroundRowCount() const override
+		{
+			return AFormula::BackgroundRowCount;
+		}
 
 	#pragma endregion
 	
@@ -294,6 +299,8 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 		bool bIsPropositionSelected = false;
 	
 		static constexpr double RowHeightRatio = 1.5;
+	
+		static constexpr int32 BackgroundRowCount = 5;
 	
 	#pragma endregion
 };

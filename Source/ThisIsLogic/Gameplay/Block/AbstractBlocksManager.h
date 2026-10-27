@@ -40,11 +40,15 @@ class THISISLOGIC_API AAbstractBlocksManager : public AActor
 		{
 			double RowHeightRatio = this->GetRowHeightRatio();
 
+			int32 BackgroundRowCount =
+				this->GetBackgroundRowCount();
+
 			this->Board->
 				SetData(
 					RowHeightRatio,
 					AAbstractBlocksManager::BlockHeight,
-					MaxRowWidth
+					MaxRowWidth,
+					BackgroundRowCount
 				);
 		}
 
@@ -69,6 +73,13 @@ class THISISLOGIC_API AAbstractBlocksManager : public AActor
 			unimplemented();
 
 			return 0.0;
+		}
+	
+		virtual int32 GetBackgroundRowCount() const
+		{
+			unimplemented();
+
+			return 0;
 		}
 	
 		virtual void OnBlockTapped(ABlock* Block)

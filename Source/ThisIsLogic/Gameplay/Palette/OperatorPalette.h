@@ -50,8 +50,15 @@ class THISISLOGIC_API AOperatorPalette : public APalette
 
 			return AAbstractBlocksManager::BlockHeight * Columns;
 		}
-
+		
+		virtual int32 GetBackgroundRowCount() const override
+		{
+			return AOperatorPalette::BackgroundRowCount;
+		}
+	
 	private:
 
 		static constexpr int32 ColumnCount = 1;
+	
+		static constexpr int32 BackgroundRowCount = 13;
 };

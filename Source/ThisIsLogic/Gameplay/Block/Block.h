@@ -8,7 +8,6 @@
 #include "../../Logic/LogicTypes.h"
 #include "../../Input/PointerTarget.h"
 #include "../../Visuals/RoundedBackgroundComponent.h"
-#include "../../BasicComponents/ThisIsLogicSettings.h"
 
 #include "Block.generated.h"
 
@@ -55,36 +54,29 @@ class THISISLOGIC_API ABlock :
 			
 			this->ApplyHeight();
 
-			const UThisIsLogicSettings* Settings =
-				GetDefault<UThisIsLogicSettings>();
-
-			UMaterialInterface* BlockMaterial =
-				Settings->GetBlockMaterial();
-
-			this->Background->SetBaseMaterial(BlockMaterial);
-
 			this->Background->Build(this->Width, this->Height);
-
-			this->Outline->SetBaseMaterial(BlockMaterial);
 
 			this->Outline->Build(this->Width, this->Height);
 
-			UFont* BlockFont = Settings->GetBlockFont();
-
-			this->Label->SetFont(BlockFont);
-			
 			Label->TextRenderColor = FColor::Black;
 			
 			this->ApplyText();
 		}
 
 		void SetData(
-			float NewHeight, const FToken& NewToken
+			float NewHeight, const FToken& NewToken,
+			UFont* BlockFont, UMaterialInterface* BlockMaterial
 		)
 		{
 			this->Height = NewHeight;
 			
 			this->Token = NewToken;
+			
+			this->Label->SetFont(BlockFont);
+			
+			this->Background->SetBaseMaterial(BlockMaterial);
+			
+			this->Outline->SetBaseMaterial(BlockMaterial);
 		}
 	
 		FToken GetToken() const
