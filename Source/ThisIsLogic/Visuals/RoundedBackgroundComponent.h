@@ -83,6 +83,13 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 			this->BuildMesh();
 		}
 
+		void ChangeColor(const FLinearColor& NewColor)
+		{
+			this->Color = NewColor;
+
+			this->ApplyColor();
+		}
+	
 	#pragma endregion
 	
 	#pragma region PrivateMethods
@@ -314,20 +321,25 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 
 		void ApplyMaterial()
 		{
-			UMaterialInstanceDynamic* DynamicMaterial =
+			this->DynamicMaterial =
 				UMaterialInstanceDynamic::
 				Create(this->BaseMaterial, this);
 
+			this->ApplyColor();
+
+			this->SetMaterial(0, this->DynamicMaterial);
+		}
+
+		void ApplyColor()
+		{
 			FName ColorParameterName =
 				TEXT("Color");
 
-			DynamicMaterial->
+			this->DynamicMaterial->
 				SetVectorParameterValue(
 					ColorParameterName,
 					this->Color
 				);
-
-			this->SetMaterial(0, DynamicMaterial);
 		}
 	
 	#pragma endregion
@@ -344,6 +356,9 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 
 		UPROPERTY()
 		TObjectPtr<UMaterialInterface> BaseMaterial;
+	
+		UPROPERTY()
+		TObjectPtr<UMaterialInstanceDynamic> DynamicMaterial;
 
 		UPROPERTY(EditAnywhere, Category = "Background")
 		FLinearColor Color =

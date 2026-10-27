@@ -54,7 +54,12 @@ class THISISLOGIC_API ABlock :
 			
 			this->ApplyHeight();
 
-			this->Background->Build(this->Width, this->Height);
+			float BackgroundWidth = this->GetBackgroundWidth();
+
+			float BackgroundHeight = this->GetBackgroundHeight();
+
+			this->Background->
+				Build(BackgroundWidth, BackgroundHeight);
 
 			this->Outline->Build(this->Width, this->Height);
 
@@ -161,7 +166,10 @@ class THISISLOGIC_API ABlock :
 
 		void SetSelected(bool bNewSelected)
 		{
-			this->Outline->SetVisibility(bNewSelected);
+			FLinearColor OutlineColor =
+				this->GetOutlineColor(bNewSelected);
+
+			this->Outline->ChangeColor(OutlineColor);
 		}
 
 		virtual void Tapped() override
@@ -323,7 +331,7 @@ class THISISLOGIC_API ABlock :
 			this->Outline->SetRoundness(1.f);
 
 			FLinearColor OutlineColor =
-				FLinearColor::White;
+				this->GetOutlineColor(false);
 
 			this->Outline->SetColor(OutlineColor);
 
@@ -331,8 +339,25 @@ class THISISLOGIC_API ABlock :
 				SetCollisionEnabled(
 					ECollisionEnabled::NoCollision
 				);
+		}
 
-			this->Outline->SetVisibility(false);
+		FLinearColor GetOutlineColor(bool bIsSelected) const
+		{
+			FColor OutlineColorSRGB;
+
+			if (bIsSelected)
+			{
+				OutlineColorSRGB = FColor::White;
+			}
+			else
+			{
+				OutlineColorSRGB = FColor(0xFF0D0F12);
+			}
+
+			FLinearColor OutlineColor =
+				FLinearColor(OutlineColorSRGB);
+
+			return OutlineColor;
 		}
 
 		// To use any time
@@ -380,9 +405,7 @@ class THISISLOGIC_API ABlock :
 
 			this->Width = this->GetWidthForText();
 
-			this->Background->Resize(this->Width, this->Height);
-
-			this->ResizeOutline();
+			this->ResizeBackgrounds();
 		}
 
 		float GetWidthForText() const
@@ -400,17 +423,31 @@ class THISISLOGIC_API ABlock :
 			return
 				FMath::Max(WidthWithMargins, this->Height);
 		}
-
-		void ResizeOutline()
+	
+		float GetBackgroundWidth() const
 		{
 			float Border = this->OutlineThickness * 2.f;
 
-			float OutlineWidth = this->Width + Border;
+			return this->Width - Border;
+		}
 
-			float OutlineHeight = this->Height + Border;
+		float GetBackgroundHeight() const
+		{
+			float Border = this->OutlineThickness * 2.f;
 
-			this->Outline->
-				Resize(OutlineWidth, OutlineHeight);
+			return this->Height - Border;
+		}
+
+		void ResizeBackgrounds()
+		{
+			float BackgroundWidth = this->GetBackgroundWidth();
+
+			float BackgroundHeight = this->GetBackgroundHeight();
+
+			this->Background->
+				Resize(BackgroundWidth, BackgroundHeight);
+
+			this->Outline->Resize(this->Width, this->Height);
 		}
 	
 	#pragma endregion
@@ -460,7 +497,7 @@ class THISISLOGIC_API ABlock :
 
 		static constexpr float TextMarginRatio = 0.2f;
 
-		static constexpr float OutlineThicknessRatio = 0.08f;
+		static constexpr float OutlineThicknessRatio = 0.06f;
 
 		static constexpr float LayerOffsetRatio = 0.05f;
 	
