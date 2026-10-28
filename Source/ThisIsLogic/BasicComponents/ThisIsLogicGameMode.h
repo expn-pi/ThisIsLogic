@@ -63,7 +63,7 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 
 			AFormula* Formula = this->CreateFormula(Sentences);
 
-			this->CreateBackground(Formula);
+			this->CreateBackgroundTarget(Formula);
 
 			AExercise* Exercise =
 				this->SpawnExercise(
@@ -131,27 +131,28 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 			return Formula;
 		}
 
-		void CreateBackground(AFormula* Formula)
+		void CreateBackgroundTarget(AFormula* Formula)
 		{
 			UWorld* World = this->GetWorld();
 
 			double LocationZ =
-				-AThisIsLogicGameMode::BackgroundDepth;
+				-AThisIsLogicGameMode::BackgroundTargetDepth;
 
-			FVector Location = FVector(0.0, 0.0, LocationZ);
+			FVector Location =
+				FVector(0.0, 0.0, LocationZ);
 
 			FTransform Transform = FTransform(Location);
 
-			UClass* BackgroundClass =
+			UClass* TargetClass =
 				ABackgroundTarget::StaticClass();
 
-			ABackgroundTarget* Background =
+			ABackgroundTarget* Target =
 				World->
 					SpawnActor<
 						ABackgroundTarget
-					>(BackgroundClass, Transform);
+					>(TargetClass, Transform);
 
-			Background->
+			Target->
 				SetTappedListener(
 					Formula, &AFormula::ClearSelection
 				);
@@ -311,5 +312,5 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 
 		static constexpr double MaxRowWidth = 40.0;
 
-		static constexpr double BackgroundDepth = 5.0;
+		static constexpr double BackgroundTargetDepth = 5.0;
 };

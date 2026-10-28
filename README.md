@@ -36,6 +36,7 @@ New blocks come from two palettes: the operators, in a column on the left, and t
 - [x] Levels loaded from a data table
 - [x] Command panel to minimize or maximize propositions, remove the selected block, undo any command and restart the level
 - [x] Camera that frames the table on windows of any shape
+- [x] A readable table: high-contrast colors, a bold font, the parentheses in gray, a background behind each group of blocks and an outline that marks the selected block
 - [x] Operator palette: a tap inserts an operator before the selected block, or at the end of the formula; a long press inserts it after the selected block, or at the start
 - [x] Proposition palette, which doubles as a legend of the sentences and inserts propositions as the operator palette inserts operators
 - [x] Logic core: parser with the usual precedence of logic courses, evaluation and equivalence by truth table
@@ -77,7 +78,7 @@ Images/              pictures shown in this README
 
 ## Class diagram
 
-How the classes connect, drawn in Visual Paradigm. Colors mark the kind of each class: actor, other engine object, plain C++ class or interface. Solid arrows are associations (the class keeps a reference to the other), dashed arrows are dependencies (it only uses the other), an X marks the end of a class that does not know the other, and hollow triangles mark inheritance and interface implementation. The drawing shows the code of the latest commit in [the image's history](https://github.com/expn-pi/ThisIsLogic/commits/main/Images/ProjectClassDiagram.png), and it may lag behind the text version below.
+How the classes connect, drawn in Visual Paradigm. Colors mark the kind of each class: actor, other engine object, plain C++ class, interface or Blueprint, and abstract classes are in italics. Solid arrows are associations (the class keeps a reference to the other), dashed arrows are dependencies (it only uses the other), an X marks the end of a class that does not know the other, and hollow triangles mark inheritance and interface implementation. The drawing shows the code of the latest commit in [the image's history](https://github.com/expn-pi/ThisIsLogic/commits/main/Images/ProjectClassDiagram.png), and it may lag behind the text version below.
 
 ![Class diagram drawn in Visual Paradigm](Images/ProjectClassDiagram.png)
 
@@ -96,6 +97,12 @@ classDiagram
     }
     class APalette {
         <<abstract>>
+    }
+    class UCommandPanel {
+        <<abstract>>
+    }
+    class WBP_CommandPanel {
+        <<Blueprint>>
     }
 
     AThisIsLogicGameMode ..> ACameraPawn
@@ -133,6 +140,8 @@ classDiagram
     UBlockBoard --> FBlockFactory
     UBlockBoard --> ABlock
     UBlockBoard ..> APropositionBlock
+    UBlockBoard --> URoundedBackgroundComponent
+    UBlockBoard ..> UThisIsLogicSettings
     FBlockBoardRows --> FBlockRow
     FBlockBoardRows ..> ABlock
     FBlockRow ..> ABlock
@@ -146,20 +155,20 @@ classDiagram
     APropositionBlock --|> ABlock
     ABlock ..|> IPointerTarget
     ABlock --> URoundedBackgroundComponent
-    ABlock ..> UThisIsLogicSettings
 
     ABackgroundTarget ..|> IPointerTarget
     AThisIsLogicPlayerController --> IPointerTarget
 
     UThisIsLogicSettings ..> UCommandPanel
     UCommandPanel ..> FAuxUI
+    WBP_CommandPanel --|> UCommandPanel
 ```
 
 ## License
 
 This project is licensed under the MIT License; see [LICENSE](LICENSE) for details.
 
-The blocks' font is DejaVu Sans, distributed under its own free license; see [Data/Fonts/DejaVuSans/LICENSE](Data/Fonts/DejaVuSans/LICENSE).
+The blocks' font is DejaVu Sans Bold, distributed under its own free license; see [Data/Fonts/DejaVuSans/LICENSE](Data/Fonts/DejaVuSans/LICENSE).
 
 Unreal Engine is a trademark of Epic Games, Inc., and its use is governed by the [Unreal Engine EULA](https://www.unrealengine.com/eula). This repository contains no engine code.
 

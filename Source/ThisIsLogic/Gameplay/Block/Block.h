@@ -63,8 +63,6 @@ class THISISLOGIC_API ABlock :
 
 			this->Outline->Build(this->Width, this->Height);
 
-			this->Label->TextRenderColor = FColor::Black;
-			
 			this->ApplyText();
 		}
 
@@ -314,6 +312,8 @@ class THISISLOGIC_API ABlock :
 
 			this->Label->
 				SetVerticalAlignment(EVRTA_TextCenter);
+
+			this->Label->TextRenderColor = FColor::Black;
 		}
 
 		void CreateOutline()

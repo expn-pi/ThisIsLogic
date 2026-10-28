@@ -1,7 +1,9 @@
 #pragma once
 
-#include "Block.h"
 #include "CoreMinimal.h"
+
+#include "Block.h"
+
 #include "PropositionBlock.generated.h"
 
 UCLASS()

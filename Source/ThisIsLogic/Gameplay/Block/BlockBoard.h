@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/Object.h"
+#include "Components/SceneComponent.h"
 
 #include "Block.h"
 #include "BlockData.h"
@@ -408,7 +408,7 @@ class THISISLOGIC_API UBlockBoard : public USceneComponent
 	
 		void RegisterBlock(ABlock* Block)
 		{
-			AActor* Manager = this->GetTypedOuter<AActor>();
+			AActor* Manager = this->GetOwner();
 
 			Block->SetOwner(Manager);
 			
