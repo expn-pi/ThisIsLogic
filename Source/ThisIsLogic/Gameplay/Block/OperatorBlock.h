@@ -14,13 +14,14 @@ class THISISLOGIC_API AOperatorBlock :
 
 	public:
 
-		AOperatorBlock()
+		virtual void OnConstruction(const FTransform& Transform)
+			override
 		{
-			FColor FBlockColor = FColor(0xFF5EB8EA);
-			
-			FLinearColor BlockColor = FLinearColor(FBlockColor);
+			FLinearColor BlockColor = this->GetBlockColor();
 
 			this->SetColor(BlockColor);
+
+			Super::OnConstruction(Transform);
 		}
 
 		void SetSymbol(const FString& NewSymbol)
@@ -34,17 +35,43 @@ class THISISLOGIC_API AOperatorBlock :
 		{
 			return this->Symbol;
 		}
-	
-	virtual float GetLabelSize() const override
+		
+		virtual float GetLabelSize() const override
 		{
 			return
 				this->Height *
 				AOperatorBlock::LabelSizeRatio;
 		}
-	
+		
 		static constexpr float LabelSizeRatio = 0.7f;
-	
+		
 	private:
+
+		FLinearColor GetBlockColor() const
+		{
+			FToken BlockToken = this->GetToken();
+
+			ETokenKind Kind = BlockToken.Kind;
+
+			bool bIsParenthesis =
+				Kind == ETokenKind::OpenParenthesis ||
+				Kind == ETokenKind::CloseParenthesis;
+
+			FColor SRGBColor;
+
+			if (bIsParenthesis)
+			{
+				SRGBColor = FColor(0xFFB4BBC4);
+			}
+			else
+			{
+				SRGBColor = FColor(0xFF5EB8EA);
+			}
+
+			FLinearColor BlockColor = FLinearColor(SRGBColor);
+
+			return BlockColor;
+		}
 
 		FString Symbol;
 };

@@ -14,9 +14,9 @@ class THISISLOGIC_API APropositionBlock : public ABlock
 		
 		APropositionBlock()
 		{
-			FColor FBlockColor = FColor(0xFFFFFF02);
+			FColor SRGBColor = FColor(0xFFF2CC4D);
 			
-			FLinearColor BlockColor = FLinearColor(FBlockColor);
+			FLinearColor BlockColor = FLinearColor(SRGBColor);
 
 			this->SetColor(BlockColor);
 		}

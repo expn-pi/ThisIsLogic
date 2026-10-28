@@ -113,7 +113,7 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 		{
 			UWorld* World = this->GetWorld();
 
-			FVector Location = FVector::ZeroVector;
+			FVector Location = FVector(1.6, 0.0, 0.0);
 
 			FTransform Transform = FTransform(Location);
 

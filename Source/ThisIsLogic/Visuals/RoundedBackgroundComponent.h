@@ -95,8 +95,7 @@ class THISISLOGIC_API URoundedBackgroundComponent :
 	#pragma region PrivateMethods
 	private:
 
-		void BuildCornerOffsets(
-			float Width, float Height)
+		void BuildCornerOffsets(float Width, float Height)
 		{
 			bool bHasValidSegments = this->CornerSegments >= 0;
 

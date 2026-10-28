@@ -44,6 +44,8 @@ class THISISLOGIC_API ACameraPawn : public APawn
 
 			this->Camera->
 				SetAspectRatioAxisConstraint(AxisConstraint);
+			
+			this->SetPostProcess();
 		}
 
 	protected:
@@ -135,6 +137,24 @@ class THISISLOGIC_API ACameraPawn : public APawn
 			);
 		}
 
+		void SetPostProcess()
+		{
+			FPostProcessSettings& Settings =
+				this->Camera->PostProcessSettings;
+
+			Settings.bOverride_ToneCurveAmount = true;
+
+			Settings.ToneCurveAmount = 0.f;
+
+			Settings.bOverride_ExpandGamut = true;
+
+			Settings.ExpandGamut = 0.f;
+
+			Settings.bOverride_VignetteIntensity = true;
+
+			Settings.VignetteIntensity = 0.f;
+		}
+	
 		UPROPERTY(VisibleAnywhere)
 		TObjectPtr<UCameraComponent> Camera;
 

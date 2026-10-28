@@ -76,9 +76,11 @@ class THISISLOGIC_API UCommandPanel :
 			bool bHasSelection, bool bIsPropositionSelected
 		)
 		{
-			this->SetSelectionButtonsVisible(bHasSelection);
+			this->SelectionButtonsBox->
+				SetIsEnabled(bHasSelection);
 
-			this->SetToggleMinimizedVisible(bIsPropositionSelected);
+			this->ToggleMinimizedButton->
+				SetIsEnabled(bIsPropositionSelected);
 		}
 
 	#pragma endregion
@@ -130,40 +132,13 @@ class THISISLOGIC_API UCommandPanel :
 					this->UndoButton,
 					"OnUndoClicked"
 				);
+			
+			this->UpdateSelection(false, false);
 		}
 
 	#pragma region PrivateMethods
 	private:
-
-		void SetSelectionButtonsVisible(bool bVisible)
-		{
-			ESlateVisibility NewVisibility =
-				ESlateVisibility::Collapsed;
-
-			if (bVisible)
-			{
-				NewVisibility =
-					ESlateVisibility::SelfHitTestInvisible;
-			}
-
-			this->SelectionButtonsBox->
-				SetVisibility(NewVisibility);
-		}
 	
-		void SetToggleMinimizedVisible(bool bVisible)
-		{
-			ESlateVisibility NewVisibility =
-				ESlateVisibility::Collapsed;
-
-			if (bVisible)
-			{
-				NewVisibility = ESlateVisibility::Visible;
-			}
-
-			this->ToggleMinimizedButton->
-				SetVisibility(NewVisibility);
-		}
-
 		UFUNCTION()
 		void OnMinimizeAllClicked()
 		{

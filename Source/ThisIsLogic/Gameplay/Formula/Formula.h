@@ -300,7 +300,7 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 	
 		static constexpr double RowHeightRatio = 1.5;
 	
-		static constexpr int32 BackgroundRowCount = 5;
+		static constexpr int32 BackgroundRowCount = 6;
 	
 	#pragma endregion
 };
