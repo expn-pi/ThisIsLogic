@@ -84,7 +84,8 @@ Boolean logic puzzle game in Unreal Engine 5.8.3, built as a public portfolio pr
 
 - Windows 10, JetBrains Rider opening `ThisIsLogic.uproject` directly, Development Editor configuration. Rider replaced Visual Studio, whose IntelliSense showed false errors in headers with UE 5.8; Visual Studio 2022 17.14 stays installed only for the MSVC toolchain and the Windows SDK.
 - The .NET 10 SDK is installed, since UE 5.8's tools need it. RiderLink is installed in the engine, not in the project, so it stays out of the repository.
-- DejaVu Sans Bold 2.37 is installed in Windows, since the editor generates the blocks' offline font from an installed font (see `Docs/Font.md`).
+- DejaVu Sans Condensed Bold 2.37 is installed in Windows, since the editor generates the offline font of the blocks and the indicators from an installed font (see `Docs/Font.md`).
+- The Fab plugin, Epic's store inside the editor, is disabled in `ThisIsLogic.uproject`: the project uses no Fab content, and an update of the plugin by the Epic Games Launcher once stopped the build before any code was compiled (a module rules error about `FabToolset`).
 - The editor is launched from Rider with Run, without the debugger. Debug with logs (`UE_LOGFMT`); do not suggest the debugger.
 - The author keeps the editor closed while writing code and opens it only to test, after a build from Rider, so structural changes (reflection, new classes, changed defaults) need no warning.
 - The author creates new source files in Rider, in the right folder: always state the exact folder.
@@ -99,9 +100,9 @@ Boolean logic puzzle game in Unreal Engine 5.8.3, built as a public portfolio pr
 - The notation changes only what the screen shows, never the levels: the letters, a run of consecutive letters from a first letter (P, Q, R...), and the text of each operator, in a symbol style: the textbook symbols (∧, ∨, ↔...) or ASCII texts. The player will choose it, to match the course they follow. For now there is one, from P, with the textbook symbols.
 - Formulas are read with a single convention of precedence and grouping, the most common one in logic courses, with the gaps filled from the Wolfram Language (see `Docs/Logic.md`): from tightest to loosest, ¬, ∧, ↑, ⊕, ∨, ↓, → and ← together, and ↔; a chain of ∧, ↑, ⊕, ∨ or ↓ is one operation, and a chain of →, ← or ↔ groups from the right. Unlike the notation, a convention changes what a formula without parentheses means, so the levels are written for this one.
 - The player moves, adds and removes blocks freely. New blocks come from two palettes: the operators, in a column on the left of the table, and the level's propositions, at the top, laid out in rows like the formula and doubling as the legend of their sentences (see `Docs/Palette.md`). The game does almost nothing for the player (a choice for simplicity, open to revision).
-- Two indicators:
-  - Validity: is the sequence a well-formed formula?
-  - Equivalence with the level's starting expression: cyan if equivalent, red if not, gray when the expression is invalid.
+- Two indicators, each a label followed by a colored circle with a symbol, so they do not rely on color alone (see `Docs/Indicators.md`):
+  - Validity: is the sequence a well-formed formula? ✔ on cyan if it is, ✗ on red if not.
+  - Equivalence with the level's starting expression: ≡ on cyan if equivalent, ≢ on red if not, ∅ on gray when the expression is not well formed, since the question does not apply.
 - Visuals: simple 2D made with basic 3D, at the real size of a board game (see `Docs/Scale.md`). Top-down orthographic camera, which keeps a minimum area of the table in view on windows of any shape; blocks are meshes, not textures: capsules, or circles when the text is short.
 
 ## Data rules
@@ -123,17 +124,18 @@ Each area's decisions, with their reasons and the alternatives already rejected,
 - `Docs/Input.md`: how presses reach the elements (the controller as a router, tap, drag or long press, the background target, UMG and the world).
 - `Docs/Commands.md`: what the player can do and how (single pointer, selection, panel, palette, inserting, removing, undo, laws).
 - `Docs/Assembly.md`: the GameMode as the Composition Root (the level it reads and hands out, what it creates, in which order, how it connects the pieces, and the selection event that reaches the panel).
-- `Docs/Exercise.md`: `AExercise`, the problem level: the level's starting formula and solution, analyzed and checked, the solution's tree, against which each change is compared, its undo history, Restart and Undo.
+- `Docs/Exercise.md`: `AExercise`, the problem level: the level's starting formula and solution, analyzed and checked, the solution's tree, against which each change is compared, its undo history, Restart and Undo, and the indicators it updates.
+- `Docs/Indicators.md`: the validity and equivalence indicators (`UIndicators`, a scene component of the exercise): who computes and who shows, their colors and symbols, where the symbols and the assets come from, and their layout.
 - `Docs/BlocksManager.md`: the abstract base of the formula and the palettes (`AAbstractBlocksManager`): the board it keeps as a protected attribute, the events it binds, what it asks of its subclasses (Template Method and hooks), the single block height, and the requests that live in the subclasses.
 - `Docs/Layout.md`: the board, the blocks' facade (`UBlockBoard`), and its rows (`FBlockBoardRows` and `FBlockRow`), shared by the formula and the palettes: creating, registering and removing the blocks, their order, spacing and line breaks, and dragging within and between rows.
 - `Docs/Palette.md`: the palettes (`APalette` and its subclasses, the operator column, the proposition rows, and why they are actors in the world).
 - `Docs/Levels.md`: the level format (statement, formula with numbered propositions and operator words, sentences, solution), the errors that stop the game, the result variable, the levels' file and DataTable, and the quick test level.
 - `Docs/BlockCreation.md`: from tokens to blocks (the flow, the factory in the board, deferred spawn, the notation and the text of each block).
-- `Docs/Font.md`: the blocks' font (why an offline distance field font, DejaVu Sans Bold, its import options and how to regenerate it).
+- `Docs/Font.md`: the font of the blocks and the indicators (why an offline distance field font, DejaVu Sans Condensed Bold, its import options and how to regenerate it) and the unlit text material, `M_Text`.
 - `Docs/Logic.md`: the logic core (standard C++ only, apart from development logs, how it reports errors, the token, the analyzer, the expression tree, the parser and its convention of precedence and grouping, evaluation and equivalence by truth table).
 - `Docs/Background.md`: the rounded background mesh (triangle fan, corners, radius, color, collision).
 - `Docs/Scale.md`: the real-world scale (the unit, the blocks' single height and the sizes derived from it, the table's arrangement in the GameMode, the heights along Z, the background target's depth, and the camera's framing, which the panel's scaling does not always follow).
-- `Docs/Visuals.md`: the table's look (colors written in sRGB and their contrast, post-processing in Project Settings and in the camera, the table, the boards' backgrounds, the blocks' outline and label sizes, and the panel's style).
+- `Docs/Visuals.md`: the table's look (colors written in sRGB and their contrast, post-processing in Project Settings and in the camera, Lumen turned off, the table, the boards' backgrounds, the blocks' outline and label sizes, and the panel's style).
 - `Docs/Data.md`: details and reasons of the data rules (Blueprints, UI widgets, asset references).
 - `Docs/ClassDiagram.md`: the class diagram in its two forms (the Visual Paradigm drawing, shown first in the README, and the Mermaid text, kept up to date with the code), why the drawing matters, the `Images/` folder and the notation.
 
@@ -146,16 +148,16 @@ Docs/                design decisions by area (see Design docs)
 Images/              pictures shown in the README (the class diagram drawn in Visual Paradigm)
 Data/
   Levels.csv         the levels, source of DT_Levels
-  Fonts/DejaVuSans/  DejaVuSans-Bold.ttf and its LICENSE, source of Font_DejaVuSans
+  Fonts/DejaVuSans/  DejaVuSansCondensed-Bold.ttf and its LICENSE, source of Font_DejaVuSans
 Config/
   DefaultGame.ini    values of UThisIsLogicSettings (asset paths)
 Source/ThisIsLogic/
   BasicComponents/   camera pawn, game mode (which assembles the table), player controller, settings
   Gameplay/Block/    blocks, their data, their factory, the board that creates and keeps them, its rows, and the abstract base of the formula and the palettes
-  Gameplay/Exercise/ the exercise being played, and its undo history
+  Gameplay/Exercise/ the exercise being played, its undo history and its indicators
   Gameplay/Formula/  the formula, its blocks laid out in rows
   Gameplay/Level/    the row of the levels' DataTable, and the quick test level
-  Gameplay/Notation/ the notation: letters and operator texts shown to the player
+  Gameplay/Notation/ the notation: letters, operator texts and equivalence symbols shown to the player
   Gameplay/Palette/  the palettes: a base that shows blocks from tokens, the operator palette and the proposition palette
   Input/             pointer interface and background target
   Logic/             logic core (standard C++; the engine only for development logs)
@@ -163,7 +165,7 @@ Source/ThisIsLogic/
   Visuals/           reusable visual components
 Content/             folders by feature
   Levels/            Main (startup map; the GameMode creates every piece, so it holds only the table)
-  Gameplay/Block/    M_Block (Unlit, Color parameter), Font_DejaVuSans (offline font, bold)
+  Gameplay/Block/    M_Block (Unlit, Color parameter), M_Text (unlit text), Font_DejaVuSans (offline font, condensed bold)
   Gameplay/Level/    DT_Levels (imported from Data/Levels.csv)
   Input/             IA_Click, IMC_Gameplay
   Core/              BP_ThisIsLogicGameMode (default GameMode), BP_ThisIsLogicPlayerController
@@ -184,7 +186,7 @@ Items are numbered in order. A new item takes its place in the sequence, and the
 - [x] 2.1 Represent boolean expressions as a tree: propositions, constants and the operators of `ETokenKind`.
 - [x] 2.2 Parse the tokens into a tree, with precedence and parentheses; this also decides validity.
 - [x] 2.3 Evaluate expressions and check equivalence with a truth table.
-- [ ] 2.4 Validity and equivalence indicators (cyan / red / gray), built on the core, with no stubs; the equivalence indicator should not rely on color alone (see `Docs/Visuals.md`).
+- [x] 2.4 Validity and equivalence indicators (cyan / red / gray, with a symbol in each, so they do not rely on color alone), built on the core, with no stubs (see `Docs/Indicators.md`).
 - [ ] 2.5 Measure the size of an expression (basis for goals and scoring).
 - [ ] 2.6 Automated tests for the core.
 
@@ -209,7 +211,7 @@ Items are numbered in order. A new item takes its place in the sequence, and the
 - Laws as molds to fit blocks into. High cost: blocks inside blocks, against `Blocks` as the only source of the order.
 - Drag from a palette to insert, and drop a block on a palette to remove it (see `Docs/Commands.md`).
 - The player chooses the convention of precedence and grouping of their course, as with the notation; the formula is then rewritten from its tree, with the parentheses the new convention needs (see `Docs/Logic.md`).
-- A taller, condensed font for the propositions, such as Anton (SIL OFL), so a maximized formula takes less room. Anton lacks the logic symbols, so the operators would keep DejaVu Sans Bold and each block class would choose its font, against the single font of `Docs/Font.md`.
+- A taller, condensed font for the propositions, such as Anton (SIL OFL), so a maximized formula takes less room. Anton lacks the logic symbols, so the operators would keep DejaVu Sans Condensed Bold and each block class would choose its font, against the single font of `Docs/Font.md`.
 
 ## Pending
 
@@ -217,11 +219,12 @@ Items are numbered in order. A new item takes its place in the sequence, and the
 - A block wider than the formula's area (only a very long sentence, maximized) jumps between two positions when dragged across, since its horizontal limits cross. No level has such a sentence yet.
 - The proposition palette grows downward from a fixed place at the top of the table, so a level with many or long sentences would reach the formula's first row. No level has that yet.
 - Code against the inheritance rule (see Engineering principles): `ABlock::FitToText` is used only by `APropositionBlock`.
-- Logs that do not follow the `bIsDebug` pattern yet (see Code style): `AExercise::LogIndicators`, the gesture logs of `AThisIsLogicPlayerController` and the ortho width log of `ACameraPawn`.
+- Logs that do not follow the `bIsDebug` pattern yet (see Code style): the gesture logs of `AThisIsLogicPlayerController` and the ortho width log of `ACameraPawn`.
 - `URoundedBackgroundComponent` has two ways to set its color: `SetColor`, before `Build`, and `ChangeColor`, after it, which changes the dynamic material's color at runtime, as the blocks' outline needs for the selection. Keeping only `ChangeColor` asks for two changes: the dynamic material created in `SetBaseMaterial` rather than in `Build`, which also stops each `Build` from creating a new one; and the colors out of the constructors, which run before `SetData` hands the material over. `AOperatorBlock` already sets its color in `OnConstruction`, chosen from its token, while `APropositionBlock` still sets its color in its constructor, and `ABlock::CreateOutline` sets the outline's there too; each subclass could give its color through a virtual method, as with `GetLabelSize`, and `ABlock::OnConstruction` would apply it. `UBlockBoard` already sets its color after `SetBaseMaterial`.
 - The panel does not keep its size relative to the blocks on every window: UMG scales it by the window's shortest side, while the camera follows the window's height on windows wider than 50:28 and its width on narrower ones, so on narrower windows and on every portrait window the panel grows relative to the blocks, up to about 1.8 times; below 480 pixels on the shortest side, as in a small editor viewport, the engine's default curve stops shrinking it, so it grows further (see `Docs/Scale.md`). Even at the right scale, by an estimate with UMG's default font on a 16:9 window, the panel covers the formula's sixth row, which the formula's background has room for, so those blocks hide under the buttons, and a press on a disabled button reaches them (see `Docs/Input.md`). A possible solution: the Scale To Fit rule (Project Settings, Engine > User Interface, DPI Scale Rule), which skips the curve and scales UMG relative to a Design Screen Size, set in the proportions of the camera's minimum area (50:28), plus room for the panel in the table's arrangement. Low priority, by the author's decision.
 - `URoundedBackgroundComponent` exposes `Color` and `CornerSegments` to the editor (`EditAnywhere`) since its first commit, against the data rules, although only code sets them: as plain fields, they need no `UPROPERTY` at all.
-- Switch the blocks' font to DejaVu Sans Condensed Bold 2.37, so that maximized propositions take less room: its characters are 10% narrower than DejaVu Sans Bold's, and it has every symbol of the operators and the printable ASCII characters (checked in its character map). Regenerating `Font_DejaVuSans` needs DejaVu Sans Condensed Bold installed in Windows, with Font Name DejaVu Sans Condensed and Enable Bold; `Data/Fonts/DejaVuSans/` would then hold `DejaVuSansCondensed-Bold.ttf`, under the same LICENSE, and `Docs/Font.md` would follow. Unlike the Anton idea, it keeps a single font for every block.
+- The blocks' labels still use the engine's default text material, `DefaultTextMaterialOpaque`, which reacts to light; with no light on the table they come out black, which is their color anyway. `M_Text`, the indicators' unlit text material, could serve them too: the board would read it from the settings with the font and pass it through the factory to each block, with `SetData` (see `Docs/Font.md`).
+- Hardware ray tracing (`r.RayTracing`, `r.PathTracing`, `r.Lumen.HardwareRayTracing`) and mesh distance fields (`r.GenerateMeshDistanceFields`) are still on in `DefaultEngine.ini`, as the project template set them, although they served only Lumen, now off, and the path tracer. Turning them off would shorten shader compilation, at the cost of an editor restart and a shader recompilation (see `Docs/Visuals.md`).
 
 ## Maintaining this file
 

@@ -50,7 +50,24 @@ class FNotation
 		{
 			return this->Symbols[Kind];
 		}
-
+		
+		FString GetEquivalentSymbol(
+			bool bIsEquivalent
+		) const
+		{
+			if (bIsEquivalent)
+			{
+				return
+					FString::Chr(FNotation::EquivalentCode);
+			}
+			else
+			{
+				return
+					FString::
+						Chr(FNotation::NotEquivalentCode);
+			}
+		}
+	
 	private:
 
 		void FillSymbols(ESymbolStyle SymbolStyle)
@@ -167,4 +184,8 @@ class FNotation
 
 		static constexpr ESymbolStyle DefaultSymbolStyle =
 			ESymbolStyle::Textbook;
+	
+		static constexpr TCHAR EquivalentCode = 0x2261;
+
+		static constexpr TCHAR NotEquivalentCode = 0x2262;
 };

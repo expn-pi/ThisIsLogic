@@ -2,9 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Logging/StructuredLog.h"
 #include "Components/SceneComponent.h"
 
+#include "Indicators.h"
 #include "UndoHistory.h"
 #include "../Formula/Formula.h"
 #include "../Block/BlockData.h"
@@ -31,11 +31,29 @@ class THISISLOGIC_API AExercise : public AActor
 				CreateDefaultSubobject<USceneComponent>(RootName);
 
 			this->RootComponent = Root;
+
+			FName IndicatorsName = TEXT("Indicators");
+
+			this->Indicators =
+				CreateDefaultSubobject<
+					UIndicators
+				>(IndicatorsName);
+
+			this->Indicators->SetupAttachment(Root);
 		}
 
 		void SetFormula(AFormula* NewFormula)
 		{
 			this->Formula = NewFormula;
+		}
+
+		void SetIndicatorsAssets(
+			UMaterialInterface* Material, UFont* Font,
+			UMaterialInterface* TextMaterial
+		)
+		{
+			this->Indicators->
+				SetAssets(Material, Font, TextMaterial);
 		}
 
 		void SetFormulasTexts(
@@ -67,6 +85,8 @@ class THISISLOGIC_API AExercise : public AActor
 			this->Formula->SetTokens(this->StartingTokens);
 
 			this->SaveState();
+
+			this->UpdateIndicators();
 		}
 
 		void Undo()
@@ -79,6 +99,8 @@ class THISISLOGIC_API AExercise : public AActor
 					this->UndoHistory.Undo();
 
 				this->Formula->SetStates(Snapshot);
+
+				this->UpdateIndicators();
 			}
 		}
 	
@@ -95,6 +117,8 @@ class THISISLOGIC_API AExercise : public AActor
 			this->Formula->SetTokens(this->StartingTokens);
 
 			this->SaveState();
+
+			this->UpdateIndicators();
 		}
 
 	#pragma region PrivateMethods
@@ -194,10 +218,10 @@ class THISISLOGIC_API AExercise : public AActor
 		{
 			this->SaveState();
 
-			this->LogIndicators();
+			this->UpdateIndicators();
 		}
 
-		void LogIndicators() const
+		void UpdateIndicators()
 		{
 			TArray<FToken> Tokens = this->Formula->GetTokens();
 
@@ -206,10 +230,7 @@ class THISISLOGIC_API AExercise : public AActor
 
 			bool bIsWellFormed = Expression.has_value();
 
-			UE_LOGFMT(
-				LogTemp, Warning,
-				"Well-formed: {0}", bIsWellFormed
-			);
+			bool bIsEquivalent = false;
 
 			if (bIsWellFormed)
 			{
@@ -219,14 +240,11 @@ class THISISLOGIC_API AExercise : public AActor
 				const FExpression& Solution =
 					this->SolutionExpression.value();
 
-				bool bIsEquivalent =
+				bIsEquivalent =
 					ValidExpression.IsEquivalentTo(Solution);
-
-				UE_LOGFMT(
-					LogTemp, Warning,
-					"Equivalent: {0}", bIsEquivalent
-				);
 			}
+
+			this->Indicators->Show(bIsWellFormed, bIsEquivalent);
 		}
 
 	#pragma endregion
@@ -235,6 +253,9 @@ class THISISLOGIC_API AExercise : public AActor
 
 		UPROPERTY()
 		TObjectPtr<AFormula> Formula;
+
+		UPROPERTY(VisibleAnywhere)
+		TObjectPtr<UIndicators> Indicators;
 
 		TArray<FToken> StartingTokens;
 

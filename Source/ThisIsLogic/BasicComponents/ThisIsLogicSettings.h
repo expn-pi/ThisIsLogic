@@ -21,8 +21,7 @@ class THISISLOGIC_API UThisIsLogicSettings :
 
 		UFont* GetBlockFont() const
 		{
-			UFont* Font =
-				this->BlockFont.LoadSynchronous();
+			UFont* Font = this->BlockFont.LoadSynchronous();
 
 			bool bHasFont = Font != nullptr;
 
@@ -31,12 +30,22 @@ class THISISLOGIC_API UThisIsLogicSettings :
 			return Font;
 		}
 	
-		UMaterialInterface*
-			GetBlockMaterial() const
+		UMaterialInterface* GetBlockMaterial() const
 		{
 			UMaterialInterface* Material =
-				this->BlockMaterial.
-					LoadSynchronous();
+				this->BlockMaterial.LoadSynchronous();
+
+			bool bHasMaterial = Material != nullptr;
+
+			check(bHasMaterial);
+
+			return Material;
+		}
+	
+		UMaterialInterface* GetTextMaterial() const
+		{
+			UMaterialInterface* Material =
+				this->TextMaterial.LoadSynchronous();
 
 			bool bHasMaterial = Material != nullptr;
 
@@ -45,12 +54,11 @@ class THISISLOGIC_API UThisIsLogicSettings :
 			return Material;
 		}
 
-		TSubclassOf<UCommandPanel>
-			GetCommandPanelClass() const
+		TSubclassOf<UCommandPanel> GetCommandPanelClass()
+			const
 		{
 			TSubclassOf<UCommandPanel> PanelClass =
-				this->CommandPanelClass.
-					LoadSynchronous();
+				this->CommandPanelClass.LoadSynchronous();
 
 			bool bHasPanelClass = PanelClass != nullptr;
 
@@ -59,8 +67,7 @@ class THISISLOGIC_API UThisIsLogicSettings :
 			return PanelClass;
 		}
 
-		UDataTable*
-			GetLevelTable() const
+		UDataTable* GetLevelTable() const
 		{
 			UDataTable* Table =
 				this->LevelTable.LoadSynchronous();
@@ -77,20 +84,30 @@ class THISISLOGIC_API UThisIsLogicSettings :
 		UPROPERTY(
 			Config, EditAnywhere, Category = "Block"
 		)
-		TSoftObjectPtr<UFont> BlockFont;
+		TSoftObjectPtr<UFont>
+			BlockFont;
 	
 		UPROPERTY(
 			Config, EditAnywhere, Category = "Block"
 		)
-		TSoftObjectPtr<UMaterialInterface> BlockMaterial;
+		TSoftObjectPtr<UMaterialInterface>
+			BlockMaterial;
+	
+		UPROPERTY(
+			Config, EditAnywhere, Category = "Block"
+		)
+		TSoftObjectPtr<UMaterialInterface>
+			TextMaterial;
 
 		UPROPERTY(
 			Config, EditAnywhere, Category = "UI"
 		)
-		TSoftClassPtr<UCommandPanel> CommandPanelClass;
+		TSoftClassPtr<UCommandPanel>
+			CommandPanelClass;
 
 		UPROPERTY(
 			Config, EditAnywhere, Category = "Level"
 		)
-		TSoftObjectPtr<UDataTable> LevelTable;
+		TSoftObjectPtr<UDataTable>
+			LevelTable;
 };

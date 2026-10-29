@@ -158,6 +158,15 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 				);
 		}
 
+		FTransform GetExerciseTransform() const
+		{
+			FVector Location = FVector(5.1, 20.6, 0.0);
+
+			FTransform Transform = FTransform(Location);
+
+			return Transform;
+		}
+
 		AExercise* SpawnExercise(
 			AFormula* Formula, const FString& StartingText,
 			const FString& SolutionText
@@ -165,7 +174,7 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 		{
 			UWorld* World = this->GetWorld();
 
-			FTransform Transform = FTransform::Identity;
+			FTransform Transform = this->GetExerciseTransform();
 
 			UClass* ExerciseClass = AExercise::StaticClass();
 
@@ -179,8 +188,23 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 
 			Exercise->
 				SetFormulasTexts(
-					StartingText,
-					SolutionText
+					StartingText, SolutionText
+				);
+
+			const UThisIsLogicSettings* Settings =
+				GetDefault<UThisIsLogicSettings>();
+
+			UMaterialInterface* Material =
+				Settings->GetBlockMaterial();
+
+			UFont* Font = Settings->GetBlockFont();
+
+			UMaterialInterface* TextMaterial =
+				Settings->GetTextMaterial();
+
+			Exercise->
+				SetIndicatorsAssets(
+					Material, Font, TextMaterial
 				);
 
 			return Exercise;
@@ -241,7 +265,7 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 
 		void StartExercise(AExercise* Exercise)
 		{
-			FTransform Transform = FTransform::Identity;
+			FTransform Transform = this->GetExerciseTransform();
 
 			Exercise->FinishSpawning(Transform);
 		}
@@ -255,7 +279,8 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 
 			FTransform Transform = FTransform(Location);
 
-			UClass* PaletteClass = AOperatorPalette::StaticClass();
+			UClass* PaletteClass =
+				AOperatorPalette::StaticClass();
 
 			AOperatorPalette* Palette =
 				World->
