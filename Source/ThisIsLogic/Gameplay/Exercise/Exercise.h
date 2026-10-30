@@ -13,6 +13,10 @@
 
 #include "Exercise.generated.h"
 
+DECLARE_DELEGATE_OneParam(FOnExerciseEquivalenceChanged, bool);
+
+DECLARE_DELEGATE_OneParam(FOnExerciseSubmitted, bool);
+
 UCLASS()
 class THISISLOGIC_API AExercise : public AActor
 {
@@ -80,13 +84,32 @@ class THISISLOGIC_API AExercise : public AActor
 			this->SolutionExpression = Solution;
 		}
 
+		template<typename UserClass>
+		void SetEquivalenceChangedListener(
+			UserClass* Listener, void (UserClass::* Callback)(bool)
+		)
+		{
+			this->OnEquivalenceChanged.
+				BindUObject(Listener, Callback);
+		}
+
+		template<typename UserClass>
+		void SetSubmittedListener(
+			UserClass* Listener, void (UserClass::* Callback)(bool)
+		)
+		{
+			this->OnSubmitted.BindUObject(Listener, Callback);
+		}
+	
 		void Restart()
 		{
+			this->UndoHistory.Clear();
+			
 			this->Formula->SetTokens(this->StartingTokens);
 
 			this->SaveState();
 
-			this->UpdateIndicators();
+			this->CheckFormula();
 		}
 
 		void Undo()
@@ -100,8 +123,18 @@ class THISISLOGIC_API AExercise : public AActor
 
 				this->Formula->SetStates(Snapshot);
 
-				this->UpdateIndicators();
+				this->CheckFormula();
 			}
+		}
+
+		void Submit()
+		{
+			bool bHasSubmittedListener =
+				this->OnSubmitted.IsBound();
+
+			check(bHasSubmittedListener);
+
+			this->OnSubmitted.Execute(this->bIsSolved);
 		}
 	
 	#pragma endregion
@@ -118,7 +151,7 @@ class THISISLOGIC_API AExercise : public AActor
 
 			this->SaveState();
 
-			this->UpdateIndicators();
+			this->CheckFormula();
 		}
 
 	#pragma region PrivateMethods
@@ -218,10 +251,10 @@ class THISISLOGIC_API AExercise : public AActor
 		{
 			this->SaveState();
 
-			this->UpdateIndicators();
+			this->CheckFormula();
 		}
 
-		void UpdateIndicators()
+		void CheckFormula()
 		{
 			TArray<FToken> Tokens = this->Formula->GetTokens();
 
@@ -231,6 +264,8 @@ class THISISLOGIC_API AExercise : public AActor
 			bool bIsWellFormed = Expression.has_value();
 
 			bool bIsEquivalent = false;
+
+			bool bHasSolutionSize = false;
 
 			if (bIsWellFormed)
 			{
@@ -242,9 +277,27 @@ class THISISLOGIC_API AExercise : public AActor
 
 				bIsEquivalent =
 					ValidExpression.IsEquivalentTo(Solution);
+
+				bHasSolutionSize =
+					ValidExpression.HasSameSizeAs(Solution);
 			}
 
+			this->bIsSolved = bIsEquivalent && bHasSolutionSize;
+
 			this->Indicators->Show(bIsWellFormed, bIsEquivalent);
+
+			this->NotifyEquivalenceChanged(bIsEquivalent);
+		}
+
+		void NotifyEquivalenceChanged(bool bIsEquivalent)
+		{
+			bool bHasEquivalenceListener =
+				this->OnEquivalenceChanged.IsBound();
+
+			check(bHasEquivalenceListener);
+
+			this->OnEquivalenceChanged.
+				Execute(bIsEquivalent);
 		}
 
 	#pragma endregion
@@ -262,6 +315,12 @@ class THISISLOGIC_API AExercise : public AActor
 		std::optional<FExpression> SolutionExpression;
 
 		FUndoHistory UndoHistory;
+
+		FOnExerciseEquivalenceChanged OnEquivalenceChanged;
+	
+		FOnExerciseSubmitted OnSubmitted;
+
+		bool bIsSolved = false;
 
 	#pragma endregion
 };

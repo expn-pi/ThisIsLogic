@@ -8,6 +8,7 @@
 #include "Materials/MaterialInterface.h"
 
 #include "../UI/CommandPanel.h"
+#include "../UI/ResultScreen.h"
 
 #include "ThisIsLogicSettings.generated.h"
 
@@ -66,6 +67,19 @@ class THISISLOGIC_API UThisIsLogicSettings :
 
 			return PanelClass;
 		}
+	
+		TSubclassOf<UResultScreen> GetResultScreenClass()
+			const
+		{
+			TSubclassOf<UResultScreen> ScreenClass =
+				this->ResultScreenClass.LoadSynchronous();
+
+			bool bHasScreenClass = ScreenClass != nullptr;
+
+			check(bHasScreenClass);
+
+			return ScreenClass;
+		}
 
 		UDataTable* GetLevelTable() const
 		{
@@ -105,6 +119,12 @@ class THISISLOGIC_API UThisIsLogicSettings :
 		TSoftClassPtr<UCommandPanel>
 			CommandPanelClass;
 
+		UPROPERTY(
+			Config, EditAnywhere, Category = "UI"
+		)
+		TSoftClassPtr<UResultScreen>
+			ResultScreenClass;
+	
 		UPROPERTY(
 			Config, EditAnywhere, Category = "Level"
 		)

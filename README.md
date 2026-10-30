@@ -4,7 +4,7 @@ A puzzle game about boolean logic, made with Unreal Engine 5 and C++.
 
 The player gets a statement in natural language, written as a "complex" boolean formula, and must rewrite it into a simpler equivalent one, in the style of the exercises of an introductory logic course.
 
-> **Status:** early development. The game is not playable yet.
+> **Status:** early development. One level can be played, won or lost, but there is no progression between levels yet.
 
 ## How it works
 
@@ -16,6 +16,8 @@ Each symbol of the formula is a block, and the blocks are laid out in rows, like
 Proposition blocks hold a sentence and a letter, and can be minimized (letter) or maximized (letter and sentence, as in "P: Alarm on"). Operator blocks cover the constants ⊤ and ⊥, ¬, ∧, ∨, ⊕, NAND (↑), NOR (↓), →, ←, ↔ and the parentheses.
 
 New blocks come from two palettes: the operators, in a column on the left, and the level's propositions, at the top, which double as a legend of their sentences.
+
+When the formula seems as simple as it gets, the player submits it with the Submit button, which works only while the formula is equivalent. It wins if it has as few propositions and constants as the level's solution; otherwise the player loses, and the level starts over.
 
 ### Example
 
@@ -41,7 +43,8 @@ New blocks come from two palettes: the operators, in a column on the left, and t
 - [x] Proposition palette, which doubles as a legend of the sentences and inserts propositions as the operator palette inserts operators
 - [x] Logic core: parser with the usual precedence of logic courses, evaluation and equivalence by truth table
 - [x] Validity and equivalence indicators, each a colored circle with a symbol, updated after every change
-- [ ] Win condition and progression between levels
+- [x] Win condition: a Submit button, enabled while the formula is equivalent, and a result screen; the formula wins with as few propositions and constants as the level's solution
+- [ ] Progression between levels
 - [ ] Menu, level select and saved progress
 
 ## Built with
@@ -104,12 +107,19 @@ classDiagram
     class WBP_CommandPanel {
         <<Blueprint>>
     }
+    class UResultScreen {
+        <<abstract>>
+    }
+    class WBP_ResultScreen {
+        <<Blueprint>>
+    }
 
     AThisIsLogicGameMode ..> ACameraPawn
     AThisIsLogicGameMode ..> AFormula
     AThisIsLogicGameMode ..> ABackgroundTarget
     AThisIsLogicGameMode ..> AExercise
     AThisIsLogicGameMode ..> UCommandPanel
+    AThisIsLogicGameMode ..> UResultScreen
     AThisIsLogicGameMode ..> AOperatorPalette
     AThisIsLogicGameMode ..> APropositionPalette
     AThisIsLogicGameMode ..> UThisIsLogicSettings
@@ -164,8 +174,11 @@ classDiagram
     AThisIsLogicPlayerController --> IPointerTarget
 
     UThisIsLogicSettings ..> UCommandPanel
+    UThisIsLogicSettings ..> UResultScreen
     UCommandPanel ..> FAuxUI
+    UResultScreen ..> FAuxUI
     WBP_CommandPanel --|> UCommandPanel
+    WBP_ResultScreen --|> UResultScreen
 ```
 
 ## License

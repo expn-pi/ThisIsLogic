@@ -103,6 +103,7 @@ Boolean logic puzzle game in Unreal Engine 5.8.3, built as a public portfolio pr
 - Two indicators, each a label followed by a colored circle with a symbol, so they do not rely on color alone (see `Docs/Indicators.md`):
   - Validity: is the sequence a well-formed formula? ✔ on cyan if it is, ✗ on red if not.
   - Equivalence with the level's starting expression: ≡ on cyan if equivalent, ≢ on red if not, ∅ on gray when the expression is not well formed, since the question does not apply.
+- The player ends a level by submitting the formula, with a Submit button enabled only while the formula is equivalent to the starting expression. It wins if it has the size of the level's solution, its number of leaves: the propositions and constants, the usual size of a formula, with the ¬ and the parentheses free. Otherwise the player loses, and the level restarts with no undo, so the player decides when the formula is the simplest, as in an exam (see `Docs/LevelResult.md`).
 - Visuals: simple 2D made with basic 3D, at the real size of a board game (see `Docs/Scale.md`). Top-down orthographic camera, which keeps a minimum area of the table in view on windows of any shape; blocks are meshes, not textures: capsules, or circles when the text is short.
 
 ## Data rules
@@ -122,20 +123,21 @@ Boolean logic puzzle game in Unreal Engine 5.8.3, built as a public portfolio pr
 Each area's decisions, with their reasons and the alternatives already rejected, live in `Docs/`. Before proposing a change in an area, read its file, and do not propose a rejected alternative again without a new reason.
 
 - `Docs/Input.md`: how presses reach the elements (the controller as a router, tap, drag or long press, the background target, UMG and the world).
-- `Docs/Commands.md`: what the player can do and how (single pointer, selection, panel, palette, inserting, removing, undo, laws).
-- `Docs/Assembly.md`: the GameMode as the Composition Root (the level it reads and hands out, what it creates, in which order, how it connects the pieces, and the selection event that reaches the panel).
-- `Docs/Exercise.md`: `AExercise`, the problem level: the level's starting formula and solution, analyzed and checked, the solution's tree, against which each change is compared, its undo history, Restart and Undo, and the indicators it updates.
+- `Docs/Commands.md`: what the player can do and how (single pointer, selection, panel, palette, inserting, removing, undo and the commands that cannot be undone, laws).
+- `Docs/Assembly.md`: the GameMode as the Composition Root (the level it reads and hands out, what it creates, in which order, how it connects the pieces, and the selection and equivalence events that reach the panel).
+- `Docs/Exercise.md`: `AExercise`, the problem level: the level's starting formula and solution, analyzed and checked, the solution's tree, against which each change is compared, its undo history, Restart, Undo and Submit, the indicators it updates and the result it decides.
 - `Docs/Indicators.md`: the validity and equivalence indicators (`UIndicators`, a scene component of the exercise): who computes and who shows, their colors and symbols, where the symbols and the assets come from, and their layout.
+- `Docs/LevelResult.md`: the level's result: submitting the formula, the win condition, the result screen (`UResultScreen`, a UMG widget that takes every press while shown), its messages and colors, and the Restart that follows its OK.
 - `Docs/BlocksManager.md`: the abstract base of the formula and the palettes (`AAbstractBlocksManager`): the board it keeps as a protected attribute, the events it binds, what it asks of its subclasses (Template Method and hooks), the single block height, and the requests that live in the subclasses.
 - `Docs/Layout.md`: the board, the blocks' facade (`UBlockBoard`), and its rows (`FBlockBoardRows` and `FBlockRow`), shared by the formula and the palettes: creating, registering and removing the blocks, their order, spacing and line breaks, and dragging within and between rows.
 - `Docs/Palette.md`: the palettes (`APalette` and its subclasses, the operator column, the proposition rows, and why they are actors in the world).
-- `Docs/Levels.md`: the level format (statement, formula with numbered propositions and operator words, sentences, solution), the errors that stop the game, the result variable, the levels' file and DataTable, and the quick test level.
+- `Docs/Levels.md`: the level format (statement, formula with numbered propositions and operator words, sentences, solution), the errors that stop the game, the solution's size, which the game takes on trust, the result variable, the levels' file and DataTable, and the quick test level.
 - `Docs/BlockCreation.md`: from tokens to blocks (the flow, the factory in the board, deferred spawn, the notation and the text of each block).
 - `Docs/Font.md`: the font of the blocks and the indicators (why an offline distance field font, DejaVu Sans Condensed Bold, its import options and how to regenerate it) and the unlit text material, `M_Text`.
-- `Docs/Logic.md`: the logic core (standard C++ only, apart from development logs, how it reports errors, the token, the analyzer, the expression tree, the parser and its convention of precedence and grouping, evaluation and equivalence by truth table).
+- `Docs/Logic.md`: the logic core (standard C++ only, apart from development logs, how it reports errors, the token, the analyzer, the expression tree, the parser and its convention of precedence and grouping, evaluation and equivalence by truth table, and the size of an expression, its number of leaves).
 - `Docs/Background.md`: the rounded background mesh (triangle fan, corners, radius, color, collision).
 - `Docs/Scale.md`: the real-world scale (the unit, the blocks' single height and the sizes derived from it, the table's arrangement in the GameMode, the heights along Z, the background target's depth, and the camera's framing, which the panel's scaling does not always follow).
-- `Docs/Visuals.md`: the table's look (colors written in sRGB and their contrast, post-processing in Project Settings and in the camera, Lumen turned off, the table, the boards' backgrounds, the blocks' outline and label sizes, and the panel's style).
+- `Docs/Visuals.md`: the table's look (colors written in sRGB and their contrast, post-processing in Project Settings and in the camera, Lumen turned off, the table, the boards' backgrounds, the blocks' outline and label sizes, the panel's style and the result screen's look).
 - `Docs/Data.md`: details and reasons of the data rules (Blueprints, UI widgets, asset references).
 - `Docs/ClassDiagram.md`: the class diagram in its two forms (the Visual Paradigm drawing, shown first in the README, and the Mermaid text, kept up to date with the code), why the drawing matters, the `Images/` folder and the notation.
 
@@ -170,7 +172,7 @@ Content/             folders by feature
   Input/             IA_Click, IMC_Gameplay
   Core/              BP_ThisIsLogicGameMode (default GameMode), BP_ThisIsLogicPlayerController
   Table/             MI_Table (the table's color, an instance of M_Block)
-  UI/                WBP_CommandPanel (layout of UCommandPanel)
+  UI/                WBP_CommandPanel and WBP_ResultScreen (layouts of UCommandPanel and UResultScreen)
 ```
 
 Read the code for the classes in each folder.
@@ -187,15 +189,15 @@ Items are numbered in order. A new item takes its place in the sequence, and the
 - [x] 2.2 Parse the tokens into a tree, with precedence and parentheses; this also decides validity.
 - [x] 2.3 Evaluate expressions and check equivalence with a truth table.
 - [x] 2.4 Validity and equivalence indicators (cyan / red / gray, with a symbol in each, so they do not rely on color alone), built on the core, with no stubs (see `Docs/Indicators.md`).
-- [ ] 2.5 Measure the size of an expression (basis for goals and scoring).
+- [x] 2.5 Measure the size of an expression: its number of leaves, the propositions and constants (see `Docs/Logic.md`).
 - [ ] 2.6 Automated tests for the core.
 
 **3 Game rules**
-- [ ] 3.1 Win condition.
+- [x] 3.1 Win condition: a Submit button, enabled while the formula is equivalent, and a result screen; the formula wins with the solution's size, and a defeat restarts the level, with no undo (see `Docs/LevelResult.md`).
 - [ ] 3.2 Select a sub-formula: tapping the selected block again widens the selection.
 - [ ] 3.3 Define a selected sub-formula as a new proposition: it takes the next free letter, replaces the sub-formula and joins the proposition palette with its definition, so it can be inserted elsewhere. This is how a new letter enters the formula; the palette has no New letter item.
 - [ ] 3.4 A legend of the laws (De Morgan and similar), for reference.
-- [ ] 3.5 Progression between levels.
+- [ ] 3.5 Progression between levels: after a victory, the result screen's OK loads the next level instead of restarting.
 
 **4 Interface and polish**
 - [ ] 4.1 Menu, level select, notation choice and HUD (UMG, like the panel).
@@ -221,10 +223,11 @@ Items are numbered in order. A new item takes its place in the sequence, and the
 - Code against the inheritance rule (see Engineering principles): `ABlock::FitToText` is used only by `APropositionBlock`.
 - Logs that do not follow the `bIsDebug` pattern yet (see Code style): the gesture logs of `AThisIsLogicPlayerController` and the ortho width log of `ACameraPawn`.
 - `URoundedBackgroundComponent` has two ways to set its color: `SetColor`, before `Build`, and `ChangeColor`, after it, which changes the dynamic material's color at runtime, as the blocks' outline needs for the selection. Keeping only `ChangeColor` asks for two changes: the dynamic material created in `SetBaseMaterial` rather than in `Build`, which also stops each `Build` from creating a new one; and the colors out of the constructors, which run before `SetData` hands the material over. `AOperatorBlock` already sets its color in `OnConstruction`, chosen from its token, while `APropositionBlock` still sets its color in its constructor, and `ABlock::CreateOutline` sets the outline's there too; each subclass could give its color through a virtual method, as with `GetLabelSize`, and `ABlock::OnConstruction` would apply it. `UBlockBoard` already sets its color after `SetBaseMaterial`.
-- The panel does not keep its size relative to the blocks on every window: UMG scales it by the window's shortest side, while the camera follows the window's height on windows wider than 50:28 and its width on narrower ones, so on narrower windows and on every portrait window the panel grows relative to the blocks, up to about 1.8 times; below 480 pixels on the shortest side, as in a small editor viewport, the engine's default curve stops shrinking it, so it grows further (see `Docs/Scale.md`). Even at the right scale, by an estimate with UMG's default font on a 16:9 window, the panel covers the formula's sixth row, which the formula's background has room for, so those blocks hide under the buttons, and a press on a disabled button reaches them (see `Docs/Input.md`). A possible solution: the Scale To Fit rule (Project Settings, Engine > User Interface, DPI Scale Rule), which skips the curve and scales UMG relative to a Design Screen Size, set in the proportions of the camera's minimum area (50:28), plus room for the panel in the table's arrangement. Low priority, by the author's decision.
+- The panel does not keep its size relative to the blocks on every window: UMG scales it by the window's shortest side, while the camera follows the window's height on windows wider than 50:28 and its width on narrower ones, so on narrower windows and on every portrait window the panel grows relative to the blocks, up to about 1.8 times; below 480 pixels on the shortest side, as in a small editor viewport, the engine's default curve stops shrinking it, so it grows further (see `Docs/Scale.md`). Even at the right scale, by an estimate with UMG's default font on a 16:9 window, the panel covers the formula's sixth row, which the formula's background has room for, so those blocks hide under the buttons, and a press on a disabled button reaches them (see `Docs/Input.md`). A possible solution: the Scale To Fit rule (Project Settings, Engine > User Interface, DPI Scale Rule), which skips the curve and scales UMG relative to a Design Screen Size, set in the proportions of the camera's minimum area (50:28), plus room for the panel in the table's arrangement. With it, the row could also line up with the operator palette on every window: anchored at the center, as now, with its left edge at a fixed distance from it; an anchor at the left would not do, since wider windows show more table at the sides. Today a left padding of 24, set by eye, lines the row up on one window only (see `Docs/Visuals.md`), and the row grew with Submit, so on narrow windows it runs past the screen's edges sooner. Low priority, by the author's decision.
 - `URoundedBackgroundComponent` exposes `Color` and `CornerSegments` to the editor (`EditAnywhere`) since its first commit, against the data rules, although only code sets them: as plain fields, they need no `UPROPERTY` at all.
 - The blocks' labels still use the engine's default text material, `DefaultTextMaterialOpaque`, which reacts to light; with no light on the table they come out black, which is their color anyway. `M_Text`, the indicators' unlit text material, could serve them too: the board would read it from the settings with the font and pass it through the factory to each block, with `SetData` (see `Docs/Font.md`).
 - Hardware ray tracing (`r.RayTracing`, `r.PathTracing`, `r.Lumen.HardwareRayTracing`) and mesh distance fields (`r.GenerateMeshDistanceFields`) are still on in `DefaultEngine.ini`, as the project template set them, although they served only Lumen, now off, and the path tracer. Turning them off would shorten shader compilation, at the cost of an editor restart and a shader recompilation (see `Docs/Visuals.md`).
+- The size counts only the leaves (see `Docs/Logic.md`), so the ¬ and the parentheses are free: ¬(¬P ∨ ¬Q) wins against the solution P ∧ Q, a redundant pair of parentheses passes, and a level whose simplification only removes ¬, such as a double negation, would start solved (see `Docs/Levels.md`). Refinements by the operators or the parentheses were set aside, since the solutions are written by hand (see `Docs/Logic.md`).
 
 ## Maintaining this file
 

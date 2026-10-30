@@ -19,6 +19,8 @@ DECLARE_DELEGATE(FOnRestartRequested);
 
 DECLARE_DELEGATE(FOnUndoRequested);
 
+DECLARE_DELEGATE(FOnSubmitRequested);
+
 UCLASS(Abstract)
 class THISISLOGIC_API UCommandPanel :
 	public UUserWidget
@@ -71,6 +73,15 @@ class THISISLOGIC_API UCommandPanel :
 		{
 			this->OnUndoRequested.BindUObject(Listener, Callback);
 		}
+	
+		template<typename UserClass>
+		void SetSubmitRequestedListener(
+			UserClass* Listener, void (UserClass::* Callback)()
+		)
+		{
+			this->OnSubmitRequested.
+				BindUObject(Listener, Callback);
+		}
 
 		void UpdateSelection(
 			bool bHasSelection, bool bIsPropositionSelected
@@ -81,6 +92,12 @@ class THISISLOGIC_API UCommandPanel :
 
 			this->ToggleMinimizedButton->
 				SetIsEnabled(bIsPropositionSelected);
+		}
+
+		void UpdateEquivalence(bool bIsEquivalent)
+		{
+			this->SubmitButton->
+				SetIsEnabled(bIsEquivalent);
 		}
 
 	#pragma endregion
@@ -133,7 +150,16 @@ class THISISLOGIC_API UCommandPanel :
 					"OnUndoClicked"
 				);
 			
+			FAuxUI::
+				AssignButtonClick(
+					this,
+					this->SubmitButton,
+					"OnSubmitClicked"
+				);
+			
 			this->UpdateSelection(false, false);
+
+			this->UpdateEquivalence(false);
 		}
 
 	#pragma region PrivateMethods
@@ -195,6 +221,17 @@ class THISISLOGIC_API UCommandPanel :
 			this->OnUndoRequested.Execute();
 		}
 
+		UFUNCTION()
+		void OnSubmitClicked()
+		{
+			bool bHasSubmitListener =
+				this->OnSubmitRequested.IsBound();
+
+			check(bHasSubmitListener);
+
+			this->OnSubmitRequested.Execute();
+		}
+
 		void RequestAllMinimized(bool bMinimized)
 		{
 			bool bHasAllMinimizedListener =
@@ -230,6 +267,9 @@ class THISISLOGIC_API UCommandPanel :
 	
 		UPROPERTY(meta = (BindWidget))
 		TObjectPtr<UButton> UndoButton;
+
+		UPROPERTY(meta = (BindWidget))
+		TObjectPtr<UButton> SubmitButton;
 		
 		FOnAllMinimizedRequested OnAllMinimizedRequested;
 	
@@ -241,6 +281,8 @@ class THISISLOGIC_API UCommandPanel :
 		FOnRestartRequested OnRestartRequested;
 	
 		FOnUndoRequested OnUndoRequested;
+
+		FOnSubmitRequested OnSubmitRequested;
 	
 	#pragma endregion
 };

@@ -37,6 +37,11 @@ class FUndoHistory
 
 			return this->Snapshots.Last();
 		}
+	
+		void Clear()
+		{
+			this->Snapshots.Empty();
+		}
 
 	private:
 

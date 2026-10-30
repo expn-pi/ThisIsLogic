@@ -9,6 +9,7 @@
 
 #include "CameraPawn.h"
 #include "../UI/CommandPanel.h"
+#include "../UI/ResultScreen.h"
 #include "ThisIsLogicSettings.h"
 #include "../Input/BackgroundTarget.h"
 #include "../Gameplay/Level/LevelRow.h"
@@ -71,7 +72,9 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 				);
 
 			this->CreatePanel(Formula, Exercise);
-
+			
+			this->CreateResultScreen(Exercise);
+			
 			this->StartExercise(Exercise);
 
 			this->CreateOperatorPalette(Formula);
@@ -235,6 +238,11 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 					Panel, &UCommandPanel::UpdateSelection
 				);
 
+			Exercise->
+				SetEquivalenceChangedListener(
+					Panel, &UCommandPanel::UpdateEquivalence
+				);
+
 			Panel->
 				SetAllMinimizedRequestedListener(
 					Formula, &AFormula::SetAllMinimized
@@ -260,9 +268,48 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 					Exercise, &AExercise::Undo
 				);
 
+			Panel->
+				SetSubmitRequestedListener(
+					Exercise, &AExercise::Submit
+				);
+
 			Panel->AddToViewport();
 		}
 
+		void CreateResultScreen(AExercise* Exercise)
+		{
+			UWorld* World = this->GetWorld();
+
+			APlayerController* PlayerController =
+				World->GetFirstPlayerController();
+
+			const UThisIsLogicSettings* Settings =
+				GetDefault<UThisIsLogicSettings>();
+
+			TSubclassOf<UResultScreen> ScreenClass =
+				Settings->GetResultScreenClass();
+
+			UResultScreen* Screen =
+				CreateWidget<
+					UResultScreen
+				>(PlayerController, ScreenClass);
+
+			Exercise->
+				SetSubmittedListener(
+					Screen, &UResultScreen::Show
+				);
+
+			Screen->
+				SetOkRequestedListener(
+					Exercise, &AExercise::Restart
+				);
+
+			int32 ZOrder =
+				AThisIsLogicGameMode::ResultScreenZOrder;
+
+			Screen->AddToViewport(ZOrder);
+		}
+	
 		void StartExercise(AExercise* Exercise)
 		{
 			FTransform Transform = this->GetExerciseTransform();
@@ -338,4 +385,6 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 		static constexpr double MaxRowWidth = 40.0;
 
 		static constexpr double BackgroundTargetDepth = 5.0;
+	
+		static constexpr int32 ResultScreenZOrder = 1;
 };

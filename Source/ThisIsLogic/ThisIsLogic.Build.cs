@@ -15,7 +15,7 @@ public class ThisIsLogic : ModuleRules
 				"InputCore", "EnhancedInput",
 				"ProceduralMeshComponent",
 				"DeveloperSettings",
-				"UMG"
+				"UMG", "SlateCore"
 			};
 
 		PublicDependencyModuleNames.AddRange(Modules);

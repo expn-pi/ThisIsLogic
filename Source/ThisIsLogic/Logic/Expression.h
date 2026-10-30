@@ -10,6 +10,7 @@
 
 class FExpression
 {
+	#pragma region PublicMethods
 	public:
 
 		explicit FExpression(const FToken& InToken) :
@@ -26,7 +27,8 @@ class FExpression
 		{
 		}
 
-		bool operator == (const FExpression& Other) const = default;
+		bool operator ==
+			(const FExpression& Other) const = default;
 
 		bool Evaluate(const std::vector<bool>& Values) const
 		{
@@ -71,6 +73,29 @@ class FExpression
 			return this->IsRowsEquivalentTo(ValueCount, Other);
 		}
 
+		bool HasSameSizeAs(const FExpression& Other) const
+		{
+			bool bIsDebug = false;
+
+			int LeafCount = this->CountLeaves();
+
+			int OtherLeafCount = Other.CountLeaves();
+
+			if (bIsDebug)
+			{
+				UE_LOGFMT(
+					LogTemp, Warning,
+					"Leaves: this {0}, other {1}",
+					LeafCount, OtherLeafCount
+				);
+			}
+
+			return LeafCount == OtherLeafCount;
+		}
+	
+	#pragma endregion
+	
+	#pragma region PrivateMethods
 	private:
 
 		bool EvaluateImplication(const std::vector<bool>& Values)
@@ -223,6 +248,34 @@ class FExpression
 			return ValueCount;
 		}
 
+		int CountLeaves() const
+		{
+			bool bIsLeaf = this->Operands.empty();
+
+			if (bIsLeaf)
+			{
+				return 1;
+			}
+			else
+			{
+				return this->CountOperandsLeaves();
+			}
+		}
+
+		int CountOperandsLeaves() const
+		{
+			int LeafCount = 0;
+
+			for (const FExpression& Operand : this->Operands)
+			{
+				int OperandLeafCount = Operand.CountLeaves();
+
+				LeafCount += OperandLeafCount;
+			}
+
+			return LeafCount;
+		}
+	
 		static std::vector<bool> GetRowValues(
 			int Row, int ValueCount
 		)
@@ -240,6 +293,8 @@ class FExpression
 
 			return Values;
 		}
+	
+	#pragma endregion
 
 		FToken Token;
 
