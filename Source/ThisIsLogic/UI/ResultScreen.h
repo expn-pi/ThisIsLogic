@@ -10,7 +10,7 @@
 
 #include "ResultScreen.generated.h"
 
-DECLARE_DELEGATE(FOnOkRequested);
+DECLARE_DELEGATE_OneParam(FOnOkRequested, bool);
 
 UCLASS(Abstract)
 class THISISLOGIC_API UResultScreen :
@@ -22,21 +22,29 @@ class THISISLOGIC_API UResultScreen :
 
 		template<typename UserClass>
 		void SetOkRequestedListener(
-			UserClass* Listener, void (UserClass::* Callback)()
+			UserClass* Listener,
+			void (UserClass::* Callback)(bool)
 		)
 		{
 			this->OnOkRequested.BindUObject(Listener, Callback);
 		}
 
-		void Show(bool bIsSolved)
+		void SetIsLastLevel(bool bNewIsLastLevel)
 		{
+			this->bIsLastLevel = bNewIsLastLevel;
+		}
+
+		void Show(bool bNewIsSolved)
+		{
+			this->bIsSolved = bNewIsSolved;
+
 			FString Message;
 
 			FColor SRGBColor;
 
-			if (bIsSolved)
+			if (this->bIsSolved)
 			{
-				Message = "Congratulations!\nYou solved it!";
+				Message = this->GetVictoryMessage();
 
 				SRGBColor = FColor(0xFF22D3EE);
 			}
@@ -55,9 +63,7 @@ class THISISLOGIC_API UResultScreen :
 
 			this->SetOutlineColor(OutlineColor);
 
-			this->SetVisibility(
-				ESlateVisibility::Visible
-			);
+			this->SetVisibility(ESlateVisibility::Visible);
 		}
 
 	protected:
@@ -109,7 +115,7 @@ class THISISLOGIC_API UResultScreen :
 
 			check(bHasOkListener);
 
-			this->OnOkRequested.Execute();
+			this->OnOkRequested.Execute(this->bIsSolved);
 		}
 
 		void SetOutlineColor(const FLinearColor& Color)
@@ -132,6 +138,22 @@ class THISISLOGIC_API UResultScreen :
 
 			this->OkButton->SetStyle(Style);
 		}
+	
+		FString GetVictoryMessage() const
+		{
+			FString Message;
+
+			if (this->bIsLastLevel)
+			{
+				Message = "Congratulations!\nAll levels solved!";
+			}
+			else
+			{
+				Message = "Congratulations!\nYou solved it!";
+			}
+
+			return Message;
+		}
 
 		UPROPERTY(meta = (BindWidget))
 		TObjectPtr<UBorder> ResultBorder;
@@ -143,4 +165,8 @@ class THISISLOGIC_API UResultScreen :
 		TObjectPtr<UButton> OkButton;
 
 		FOnOkRequested OnOkRequested;
+	
+		bool bIsSolved = false;
+
+		bool bIsLastLevel = false;
 };

@@ -13,20 +13,20 @@ Each symbol of the formula is a block, and the blocks are laid out in rows, like
 - **Validity:** is the sequence of blocks a well-formed formula? ✔ on cyan if it is, ✗ on red if it is not.
 - **Equivalence:** is it still equivalent to the level's starting formula? ≡ on cyan if it is, ≢ on red if it is not, ∅ on gray while the formula is not well formed.
 
-Proposition blocks hold a sentence and a letter, and can be minimized (letter) or maximized (letter and sentence, as in "P: Alarm on"). Operator blocks cover the constants ⊤ and ⊥, ¬, ∧, ∨, ⊕, NAND (↑), NOR (↓), →, ←, ↔ and the parentheses.
+Proposition blocks hold a sentence and a letter, and can be minimized (letter) or maximized (letter and sentence, as in "P: Motion sensor on"). Operator blocks cover the constants ⊤ and ⊥, ¬, ∧, ∨, ⊕, NAND (↑), NOR (↓), →, ←, ↔ and the parentheses.
 
 New blocks come from two palettes: the operators, in a column on the left, and the level's propositions, at the top, which double as a legend of their sentences.
 
-When the formula seems as simple as it gets, the player submits it with the Submit button, which works only while the formula is equivalent. It wins if it has as few propositions and constants as the level's solution; otherwise the player loses, and the level starts over.
+When the formula seems as simple as it gets, the player submits it with the Submit button, which works only while the formula is equivalent. It wins if it has as few propositions and constants as the level's solution, and the next level opens; otherwise the player loses, and the level starts over.
 
 ### Example
 
 | | |
 |---|---|
 | **Statement** | The alarm goes off if the motion, window and door sensors are all on; or if the motion and window sensors are on but the door sensor is off; or if the motion sensor is on but the window sensor is off. |
-| **Propositions** | P: Alarm on; Q: Motion sensor on; R: Window sensor on; S: Door sensor on |
-| **Starting formula** | `P ↔ (Q ∧ R ∧ S) ∨ (Q ∧ R ∧ ¬S) ∨ (Q ∧ ¬R)` |
-| **Solution** | `P ↔ Q` |
+| **Propositions** | P: Motion sensor on; Q: Window sensor on; R: Door sensor on |
+| **Starting formula** | `(P ∧ Q ∧ R) ∨ (P ∧ Q ∧ ¬R) ∨ (P ∧ ¬Q)` |
+| **Solution** | `P` |
 
 ## Features
 
@@ -44,8 +44,8 @@ When the formula seems as simple as it gets, the player submits it with the Subm
 - [x] Logic core: parser with the usual precedence of logic courses, evaluation and equivalence by truth table
 - [x] Validity and equivalence indicators, each a colored circle with a symbol, updated after every change
 - [x] Win condition: a Submit button, enabled while the formula is equivalent, and a result screen; the formula wins with as few propositions and constants as the level's solution
-- [ ] Progression between levels
-- [ ] Menu, level select and saved progress
+- [x] Progression between levels, played in sequence
+- [ ] Menu and saved progress
 
 ## Built with
 
@@ -117,7 +117,7 @@ classDiagram
     AThisIsLogicGameMode ..> ACameraPawn
     AThisIsLogicGameMode ..> AFormula
     AThisIsLogicGameMode ..> ABackgroundTarget
-    AThisIsLogicGameMode ..> AExercise
+    AThisIsLogicGameMode --> AExercise
     AThisIsLogicGameMode ..> UCommandPanel
     AThisIsLogicGameMode ..> UResultScreen
     AThisIsLogicGameMode ..> AOperatorPalette
@@ -155,30 +155,7 @@ classDiagram
     UBlockBoard --> ABlock
     UBlockBoard ..> APropositionBlock
     UBlockBoard --> URoundedBackgroundComponent
-    UBlockBoard ..> UThisIsLogicSettings
-    FBlockBoardRows --> FBlockRow
-    FBlockBoardRows ..> ABlock
-    FBlockRow ..> ABlock
-
-    FBlockFactory --> FNotation
-    FBlockFactory ..> ABlock
-    FBlockFactory ..> AOperatorBlock
-    FBlockFactory ..> APropositionBlock
-
-    AOperatorBlock --|> ABlock
-    APropositionBlock --|> ABlock
-    ABlock ..|> IPointerTarget
-    ABlock --> URoundedBackgroundComponent
-
-    ABackgroundTarget ..|> IPointerTarget
-    AThisIsLogicPlayerController --> IPointerTarget
-
-    UThisIsLogicSettings ..> UCommandPanel
-    UThisIsLogicSettings ..> UResultScreen
-    UCommandPanel ..> FAuxUI
-    UResultScreen ..> FAuxUI
-    WBP_CommandPanel --|> UCommandPanel
-    WBP_ResultScreen --|> UResultScreen
+    UBlockBoard
 ```
 
 ## License

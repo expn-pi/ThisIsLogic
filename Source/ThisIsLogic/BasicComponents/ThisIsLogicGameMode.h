@@ -4,6 +4,7 @@
 #include "Engine/World.h"
 #include "Engine/DataTable.h"
 #include "Blueprint/UserWidget.h"
+#include "Kismet/GameplayStatics.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/PlayerController.h"
 
@@ -40,7 +41,10 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 		{
 			Super::BeginPlay();
 			
-			FLevelRow LevelRow = this->ReadLevelRow();
+			this->LevelIndex = this->ReadLevelIndex();
+
+			FLevelRow LevelRow =
+				this->ReadLevelRow(this->LevelIndex);
 
 			// For quick tests, change below:
 			//		LevelRow.Formula with
@@ -66,16 +70,15 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 
 			this->CreateBackgroundTarget(Formula);
 
-			AExercise* Exercise =
-				this->SpawnExercise(
-					Formula, StartingText, SolutionText
-				);
+			this->SpawnExercise(
+				Formula, StartingText, SolutionText
+			);
 
-			this->CreatePanel(Formula, Exercise);
+			this->CreatePanel(Formula);
 			
-			this->CreateResultScreen(Exercise);
+			this->CreateResultScreen();
 			
-			this->StartExercise(Exercise);
+			this->StartExercise();
 
 			this->CreateOperatorPalette(Formula);
 
@@ -84,8 +87,28 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 
 	#pragma region PrivateMethods
 	private:
+		
+		int32 ReadLevelIndex() const
+		{
+			FString Key = AThisIsLogicGameMode::GetLevelIndexKey();
+
+			int32 Index =
+				UGameplayStatics::
+					GetIntOption(
+						this->OptionsString, Key, 0
+					);
+
+			return Index;
+		}
 	
-		FLevelRow ReadLevelRow() const
+		static FString GetLevelIndexKey()
+		{
+			FString Key = "LevelIndex";
+
+			return Key;
+		}
+	
+		FLevelRow ReadLevelRow(int32 RowIndex) const
 		{
 			const UThisIsLogicSettings* Settings =
 				GetDefault<UThisIsLogicSettings>();
@@ -94,20 +117,36 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 
 			TArray<FName> RowNames = LevelTable->GetRowNames();
 
-			FName FirstRowName = RowNames[0];
+			FName FirstRowName = RowNames[RowIndex];
 
 			const TCHAR* ContextString =
 				TEXT("AThisIsLogicGameMode");
 
 			const FLevelRow* Row =
 				LevelTable->
-					FindRow<FLevelRow>(FirstRowName, ContextString);
+					FindRow<
+						FLevelRow
+					>(FirstRowName, ContextString);
 
 			bool bHasRow = Row != nullptr;
 
 			check(bHasRow);
 
 			return *Row;
+		}
+	
+		int32 GetLevelCount() const
+		{
+			const UThisIsLogicSettings* Settings =
+				GetDefault<UThisIsLogicSettings>();
+
+			UDataTable* LevelTable = Settings->GetLevelTable();
+
+			TArray<FName> RowNames = LevelTable->GetRowNames();
+
+			int32 LevelCount = RowNames.Num();
+
+			return LevelCount;
 		}
 
 		AFormula* CreateFormula(
@@ -170,7 +209,7 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 			return Transform;
 		}
 
-		AExercise* SpawnExercise(
+		void SpawnExercise(
 			AFormula* Formula, const FString& StartingText,
 			const FString& SolutionText
 		)
@@ -181,15 +220,15 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 
 			UClass* ExerciseClass = AExercise::StaticClass();
 
-			AExercise* Exercise =
+			this->Exercise =
 				World->
 					SpawnActorDeferred<
 						AExercise
 					>(ExerciseClass, Transform);
 
-			Exercise->SetFormula(Formula);
+			this->Exercise->SetFormula(Formula);
 
-			Exercise->
+			this->Exercise->
 				SetFormulasTexts(
 					StartingText, SolutionText
 				);
@@ -205,17 +244,13 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 			UMaterialInterface* TextMaterial =
 				Settings->GetTextMaterial();
 
-			Exercise->
+			this->Exercise->
 				SetIndicatorsAssets(
 					Material, Font, TextMaterial
 				);
-
-			return Exercise;
 		}
 
-		void CreatePanel(
-			AFormula* Formula, AExercise* Exercise
-		)
+		void CreatePanel(AFormula* Formula)
 		{
 			UWorld* World = this->GetWorld();
 
@@ -238,7 +273,7 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 					Panel, &UCommandPanel::UpdateSelection
 				);
 
-			Exercise->
+			this->Exercise->
 				SetEquivalenceChangedListener(
 					Panel, &UCommandPanel::UpdateEquivalence
 				);
@@ -257,26 +292,28 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 				SetRemoveRequestedListener(
 					Formula, &AFormula::RemoveSelectedBlock
 				);
-
+			
+			AExercise* ExerciseObject = this->Exercise.Get();
+			
 			Panel->
 				SetRestartRequestedListener(
-					Exercise, &AExercise::Restart
+					ExerciseObject, &AExercise::Restart
 				);
 
 			Panel->
 				SetUndoRequestedListener(
-					Exercise, &AExercise::Undo
+					ExerciseObject, &AExercise::Undo
 				);
 
 			Panel->
 				SetSubmitRequestedListener(
-					Exercise, &AExercise::Submit
+					ExerciseObject, &AExercise::Submit
 				);
 
 			Panel->AddToViewport();
 		}
 
-		void CreateResultScreen(AExercise* Exercise)
+		void CreateResultScreen()
 		{
 			UWorld* World = this->GetWorld();
 
@@ -294,15 +331,24 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 					UResultScreen
 				>(PlayerController, ScreenClass);
 
-			Exercise->
+			this->Exercise->
 				SetSubmittedListener(
 					Screen, &UResultScreen::Show
 				);
 
 			Screen->
 				SetOkRequestedListener(
-					Exercise, &AExercise::Restart
+					this,
+					&AThisIsLogicGameMode::AcceptResult
 				);
+
+			int32 LevelCount = this->GetLevelCount();
+
+			int32 LastIndex = LevelCount - 1;
+
+			bool bIsLastLevel = this->LevelIndex == LastIndex;
+
+			Screen->SetIsLastLevel(bIsLastLevel);
 
 			int32 ZOrder =
 				AThisIsLogicGameMode::ResultScreenZOrder;
@@ -310,11 +356,50 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 			Screen->AddToViewport(ZOrder);
 		}
 	
-		void StartExercise(AExercise* Exercise)
+		void AcceptResult(bool bIsSolved)
+		{
+			if (bIsSolved)
+			{
+				this->OpenNextLevel();
+			}
+			else
+			{
+				this->Exercise->Restart();
+			}
+		}
+
+		void OpenNextLevel()
+		{
+			int32 LevelCount = this->GetLevelCount();
+
+			int32 NextIndex = (this->LevelIndex + 1) % LevelCount;
+
+			FString Key = AThisIsLogicGameMode::GetLevelIndexKey();
+
+			FString Separator = "=";
+
+			FString IndexText = FString::FromInt(NextIndex);
+
+			FString Options = Key + Separator + IndexText;
+
+			FString MapText =
+				UGameplayStatics::
+					GetCurrentLevelName(this);
+
+			FName MapName = FName(*MapText);
+
+			UGameplayStatics::
+				OpenLevel(
+					this, MapName,
+					true, Options
+				);
+		}
+	
+		void StartExercise()
 		{
 			FTransform Transform = this->GetExerciseTransform();
 
-			Exercise->FinishSpawning(Transform);
+			this->Exercise->FinishSpawning(Transform);
 		}
 
 		void CreateOperatorPalette(AFormula* Formula)
@@ -382,6 +467,11 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 	
 	#pragma endregion
 
+		UPROPERTY()
+		TObjectPtr<AExercise> Exercise;
+	
+		int32 LevelIndex = 0;
+	
 		static constexpr double MaxRowWidth = 40.0;
 
 		static constexpr double BackgroundTargetDepth = 5.0;

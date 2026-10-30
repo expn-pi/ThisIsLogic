@@ -1,2 +1,13 @@
 Name,Statement,Formula,Sentences,Solution
-Alarm,"The alarm goes off if the motion, window and door sensors are all on; or if the motion and window sensors are on but the door sensor is off; or if the motion sensor is on but the window sensor is off.",1 = ( 2 AND 3 AND 4 ) OR ( 2 AND 3 AND NOT 4 ) OR ( 2 AND NOT 3 ),"(""Alarm on"",""Motion sensor on"",""Window sensor on"",""Door sensor on"")",1 = 2
+1,"Vou ao parque se fizer sol, ou então não vou.",1 OR FALSE,"(""Fez sol"")",1
+2,Só vou nessa festa se eu não estiver muito cansado... só que não.,NOT 1 AND FALSE,"(""Estou muito cansado"")",FALSE
+3,"Vou levar o guarda-chuva se chover; mas se não chover, também vou levar",1 OR NOT 1,"(""Choveu"")",TRUE
+4,Só saio da cama se tiver café ou se tiver café,1 OR 1,"(""Tem café"")",1
+5,"Vou levar esse casaco estiver frio, ou fizer muito frio com vento forte",1 OR ( 1 AND 2 ),"(""Muito Frio"",""Vento forte"")",1
+6,"Só vou nesse show se eu tiver dinheiro; ou, se não tiver e alguém me emprestar.",1 OR NOT 1 AND 2,"(""Tenho dinheiro"",""Alguém me emprestou dinheiro"")",1 OR 2
+7,"A luz dessa escada só acende se o interruptor de baixo estiver ligado e o de cima não, ou se o interruptor de cima estiver ligado e o de baixo não.",1 AND NOT 2 OR NOT 1 AND 2,"(""Interruptor de baixo ligado"",""Interruptor de cima ligado"")",1 XOR 2
+8,"Vou dar a ração do gato se ele ainda estiver vivo, ou se estiver vivo e também estiver morto",1 OR 1 AND NOT 1,"(""O gato está vivo"")",1
+9,"Vamos para a praia quando for feriado e fizer sol, e também quando for feriado e não fizer sol",1 AND 2 OR 1 AND NOT 2,"(""É feriado"",""Faz sol"")",1
+10,"Eu saio sempre que não chove, ou então na sexta-feira se não estiver chovendo.",NOT 1 OR 2 AND NOT 1,"(""Chove"",""É sexta-feira"")",NOT 1
+11,"Vamos casar no dia que não estiver chovendo, que não estivermos trabalhando, nem viajando e nem muito cansados se econtrarmos um padre",NOT ( 1 OR NOT 2 OR 3 OR NOT 4 ) AND 3,"(""Chove"",""Tenho tempo"",""É alta temporada"",""Tenho companhia"")",FALSE
+12,"The alarm goes off if the motion, window and door sensors are all on; or if the motion and window sensors are on but the door sensor is off; or if the motion sensor is on but the window sensor is off.",( 1 AND 2 AND 3 ) OR ( 1 AND 2 AND NOT 3 ) OR ( 1 AND NOT 2 ),"(""Motion sensor on"",""Window sensor on"",""Door sensor on"")",1
