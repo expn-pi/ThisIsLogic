@@ -426,8 +426,8 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 				);
 			
 			Palette->
-				SetInsertAfterRequestedListener(
-					Formula, &AFormula::InsertBlockAfter
+				SetInsertBeforeRequestedListener(
+					Formula, &AFormula::InsertBlockBefore
 				);
 		}
 	
@@ -458,8 +458,8 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 				);
 
 			Palette->
-				SetInsertAfterRequestedListener(
-					Formula, &AFormula::InsertBlockAfter
+				SetInsertBeforeRequestedListener(
+					Formula, &AFormula::InsertBlockBefore
 				);
 
 			Palette->FinishSpawning(Transform);

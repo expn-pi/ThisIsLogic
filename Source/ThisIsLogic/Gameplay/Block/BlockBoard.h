@@ -143,19 +143,26 @@ class THISISLOGIC_API UBlockBoard : public USceneComponent
 
 			this->AddBlocks(NewBlocks);
 		}
-	
-		void CreateBlock(const FToken& Token)
+
+		void CreateBlockAtStart(const FToken& Token)
 		{
 			this->CreateBlockAt(Token, 0);
 		}
 
-		void CreateBlockBefore(
+		void CreateBlockAtEnd(const FToken& Token)
+		{
+			int32 Index = this->Blocks.Num();
+
+			this->CreateBlockAt(Token, Index);
+		}
+
+		ABlock* CreateBlockBefore(
 			const FToken& Token, ABlock* NextBlock
 		)
 		{
 			int32 Index = this->Blocks.Find(NextBlock);
 
-			this->CreateBlockAt(Token, Index);
+			return this->CreateBlockAt(Token, Index);
 		}
 
 		ABlock* CreateBlockAfter(
@@ -169,35 +176,29 @@ class THISISLOGIC_API UBlockBoard : public USceneComponent
 
 			return this->CreateBlockAt(Token, Index);
 		}
-	
-		ABlock* GetNextBlock(ABlock* ActualBlock)
+
+		ABlock* GetNextBlock(ABlock* Block) const
 		{
-			int32 ActualIndex =
-				this->Blocks.Find(ActualBlock);
-			
-			int32 BlocksNum = this->Blocks.Num();
-			
-			int32 LastIndex = BlocksNum - 1;
-			
-			bool bIsLast = ActualIndex == LastIndex;
-			
+			int32 Index = this->Blocks.Find(Block);
+
+			int32 BlockCount = this->Blocks.Num();
+
+			int32 LastIndex = BlockCount - 1;
+
+			bool bIsLast = Index == LastIndex;
+
 			if (bIsLast)
 			{
 				return nullptr;
 			}
 			else
 			{
-				int32 NextIndex = ActualIndex + 1;
-				
-				return this->Blocks[NextIndex]; 
+				int32 NextIndex = Index + 1;
+
+				return this->Blocks[NextIndex];
 			}
 		}
 
-		void CreateBlockAtStart(const FToken& Token)
-		{
-			this->CreateBlockAt(Token, 0);
-		}
-	
 		void RemoveBlock(ABlock* Block)
 		{
 			Block->Destroy();

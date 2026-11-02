@@ -106,31 +106,13 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 
 			if (bHasSelection)
 			{
-				ABlock* ActualBlock = this->SelectedBlock;
-				
-				ABlock* NewBlock =
-					this->Board->
-						CreateBlockAfter(Token, ActualBlock);
-				
-				this->SelectBlock(NewBlock);
-			}
-			else
-			{
-				this->Board->CreateBlock(Token);
-			}
-
-			this->NotifyChanged();
-		}
-
-		void InsertBlockAfter(const FToken& Token)
-		{
-			bool bHasSelection = this->HasSelection();
-
-			if (bHasSelection)
-			{
 				ABlock* Selected = this->SelectedBlock;
 
-				this->Board->CreateBlockAfter(Token, Selected);
+				ABlock* NewBlock =
+					this->Board->
+						CreateBlockAfter(Token, Selected);
+
+				this->SelectBlock(NewBlock);
 			}
 			else
 			{
@@ -140,23 +122,47 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 			this->NotifyChanged();
 		}
 	
+		void InsertBlockBefore(const FToken& Token)
+		{
+			bool bHasSelection = this->HasSelection();
+
+			if (bHasSelection)
+			{
+				ABlock* Selected = this->SelectedBlock;
+
+				ABlock* NewBlock =
+					this->Board->
+						CreateBlockBefore(Token, Selected);
+
+				this->SelectBlock(NewBlock);
+			}
+			else
+			{
+				this->Board->CreateBlockAtEnd(Token);
+			}
+
+			this->NotifyChanged();
+		}
+	
 		void RemoveSelectedBlock()
 		{
-			ABlock* ActualBlock = this->SelectedBlock;
+			ABlock* Selected = this->SelectedBlock;
 
-			this->DeselectBlock();
-			
 			ABlock* NextBlock =
-				this->Board->GetNextBlock(ActualBlock);
-			
+				this->Board->GetNextBlock(Selected);
+
 			bool bHasNext = NextBlock != nullptr;
-			
+
 			if (bHasNext)
 			{
 				this->SelectBlock(NextBlock);
 			}
-			
-			this->Board->RemoveBlock(ActualBlock);
+			else
+			{
+				this->ClearSelection();
+			}
+
+			this->Board->RemoveBlock(Selected);
 
 			this->NotifyChanged();
 		}

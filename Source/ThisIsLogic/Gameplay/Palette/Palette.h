@@ -11,7 +11,7 @@
 DECLARE_DELEGATE_OneParam(FOnPaletteInsertRequested, const FToken&);
 
 DECLARE_DELEGATE_OneParam(
-	FOnPaletteInsertAfterRequested, const FToken&
+	FOnPaletteInsertBeforeRequested, const FToken&
 );
 
 UCLASS(Abstract)
@@ -31,12 +31,12 @@ class THISISLOGIC_API APalette : public AAbstractBlocksManager
 		}
 	
 		template<typename UserClass>
-		void SetInsertAfterRequestedListener(
+		void SetInsertBeforeRequestedListener(
 			UserClass* Listener,
 			void (UserClass::* Callback)(const FToken&)
 		)
 		{
-			this->OnInsertAfterRequested.
+			this->OnInsertBeforeRequested.
 				BindUObject(Listener, Callback);
 		}
 
@@ -83,7 +83,7 @@ class THISISLOGIC_API APalette : public AAbstractBlocksManager
 		virtual void OnBlockLongPressed(ABlock* Block)
 			override
 		{
-			this->RequestInsertAfter(Block);
+			this->RequestInsertBefore(Block);
 		}
 	
 	#pragma endregion
@@ -102,21 +102,21 @@ class THISISLOGIC_API APalette : public AAbstractBlocksManager
 			this->OnInsertRequested.Execute(Token);
 		}
 
-		void RequestInsertAfter(ABlock* Block)
+		void RequestInsertBefore(ABlock* Block)
 		{
-			bool bHasInsertAfterListener =
-				this->OnInsertAfterRequested.IsBound();
+			bool bHasInsertBeforeListener =
+				this->OnInsertBeforeRequested.IsBound();
 
-			check(bHasInsertAfterListener);
+			check(bHasInsertBeforeListener);
 
 			FToken Token = Block->GetToken();
 
-			this->OnInsertAfterRequested.Execute(Token);
+			this->OnInsertBeforeRequested.Execute(Token);
 		}
 
 		FOnPaletteInsertRequested OnInsertRequested;
 
-		FOnPaletteInsertAfterRequested OnInsertAfterRequested;
+		FOnPaletteInsertBeforeRequested OnInsertBeforeRequested;
 
 		static constexpr double RowHeightRatio = 1.1;
 };
