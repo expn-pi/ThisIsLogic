@@ -106,9 +106,13 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 
 			if (bHasSelection)
 			{
-				ABlock* Selected = this->SelectedBlock;
-
-				this->Board->CreateBlockBefore(Token, Selected);
+				ABlock* ActualBlock = this->SelectedBlock;
+				
+				ABlock* NewBlock =
+					this->Board->
+						CreateBlockAfter(Token, ActualBlock);
+				
+				this->SelectBlock(NewBlock);
 			}
 			else
 			{
@@ -138,13 +142,21 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 	
 		void RemoveSelectedBlock()
 		{
-			ABlock* Block = this->SelectedBlock;
+			ABlock* ActualBlock = this->SelectedBlock;
 
 			this->DeselectBlock();
-
-			this->Board->RemoveBlock(Block);
-
-			this->NotifySelectionChanged();
+			
+			ABlock* NextBlock =
+				this->Board->GetNextBlock(ActualBlock);
+			
+			bool bHasNext = NextBlock != nullptr;
+			
+			if (bHasNext)
+			{
+				this->SelectBlock(NextBlock);
+			}
+			
+			this->Board->RemoveBlock(ActualBlock);
 
 			this->NotifyChanged();
 		}

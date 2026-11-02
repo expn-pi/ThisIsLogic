@@ -146,9 +146,7 @@ class THISISLOGIC_API UBlockBoard : public USceneComponent
 	
 		void CreateBlock(const FToken& Token)
 		{
-			int32 Index = this->Blocks.Num();
-
-			this->CreateBlockAt(Token, Index);
+			this->CreateBlockAt(Token, 0);
 		}
 
 		void CreateBlockBefore(
@@ -160,7 +158,7 @@ class THISISLOGIC_API UBlockBoard : public USceneComponent
 			this->CreateBlockAt(Token, Index);
 		}
 
-		void CreateBlockAfter(
+		ABlock* CreateBlockAfter(
 			const FToken& Token, ABlock* PreviousBlock
 		)
 		{
@@ -169,7 +167,30 @@ class THISISLOGIC_API UBlockBoard : public USceneComponent
 
 			int32 Index = PreviousIndex + 1;
 
-			this->CreateBlockAt(Token, Index);
+			return this->CreateBlockAt(Token, Index);
+		}
+	
+		ABlock* GetNextBlock(ABlock* ActualBlock)
+		{
+			int32 ActualIndex =
+				this->Blocks.Find(ActualBlock);
+			
+			int32 BlocksNum = this->Blocks.Num();
+			
+			int32 LastIndex = BlocksNum - 1;
+			
+			bool bIsLast = ActualIndex == LastIndex;
+			
+			if (bIsLast)
+			{
+				return nullptr;
+			}
+			else
+			{
+				int32 NextIndex = ActualIndex + 1;
+				
+				return this->Blocks[NextIndex]; 
+			}
 		}
 
 		void CreateBlockAtStart(const FToken& Token)
@@ -382,7 +403,7 @@ class THISISLOGIC_API UBlockBoard : public USceneComponent
 			this->UpdateLayout();
 		}
 
-		void CreateBlockAt(
+		ABlock* CreateBlockAt(
 			const FToken& Token, int32 Index
 		)
 		{
@@ -393,6 +414,8 @@ class THISISLOGIC_API UBlockBoard : public USceneComponent
 			this->Blocks.Insert(Block, Index);
 
 			this->UpdateLayout();
+			
+			return Block;
 		}
 	
 		ABlock* SpawnBlock(const FToken& Token)
