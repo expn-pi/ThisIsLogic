@@ -1,0 +1,13 @@
+Name,Statement,Formula,Sentences,Solution
+1,"Notícia do grupo da família, eu só acredito se tiver fonte. Senão, não acredito, não.",1 OR FALSE,"(""Tem fonte"")",1
+2,"Dessa vez eu vou ler os termos de uso antes de aceitar, se não forem longos... só que não.",NOT 1 AND FALSE,"(""Os termos são longos"")",FALSE
+3,"Se o voto for obrigatório, eu voto. Se não for, voto do mesmo jeito.",1 OR NOT 1,"(""O voto é obrigatório"")",TRUE
+4,Eu só levanto da cama se tiver café... ou se tiver café.,1 OR 1,"(""Tem café"")",1
+5,A gente vai ter filhos quando estiver pronto. Ou quando estiver pronto e com casa própria.,1 OR ( 1 AND 2 ),"(""Estamos prontos"",""Temos casa própria"")",1
+6,"O mapa do celular funciona com internet. Sem internet, só se eu tiver baixado o mapa antes.",1 OR NOT 1 AND 2,"(""Tem internet"",""Baixei o mapa antes"")",1 OR 2
+7,"Lá em casa, a luz da escada acende se o interruptor de baixo estiver ligado e o de cima não, ou se o de cima estiver ligado e o de baixo não.",1 AND NOT 2 OR NOT 1 AND 2,"(""Interruptor de baixo ligado"",""Interruptor de cima ligado"")",1 XOR 2
+8,Eu dou ração pro gato se ele estiver vivo. Ou se estiver vivo e morto ao mesmo tempo.,1 OR 1 AND NOT 1,"(""O gato está vivo"")",1
+9,"Na prova de lógica, você passa se estudar e tiver sorte. E também passa se estudar e não tiver sorte.",1 AND 2 OR 1 AND NOT 2,"(""Você estuda"",""Você tem sorte"")",1
+10,A bola parada continua parada se ninguém chutar. Ou se ela for pesada e ninguém chutar.,NOT 1 OR 2 AND NOT 1,"(""Alguém chuta a bola"",""A bola é pesada"")",NOT 1
+11,"A IA só acerta se o texto não for longo, informal, em inglês ou sem exemplos, como pedi no começo, e se for em inglês, como pedi no final.",NOT ( 1 OR NOT 2 OR 3 OR NOT 4 ) AND 3,"(""É longo"",""É formal"",""É em inglês"",""Tem exemplos"")",FALSE
+12,"Eu existo se penso, duvido e sonho. Ou se penso e duvido, mas não sonho. Ou se penso, mas não duvido.",( 1 AND 2 AND 3 ) OR ( 1 AND 2 AND NOT 3 ) OR ( 1 AND NOT 2 ),"(""Eu penso"",""Eu duvido"",""Eu sonho"")",1

@@ -13,7 +13,7 @@ Each symbol of the formula is a block, and the blocks are laid out in rows, like
 - **Validity:** is the sequence of blocks a well-formed formula? ✔ on cyan if it is, ✗ on red if it is not.
 - **Equivalence:** is it still equivalent to the level's starting formula? ≡ on cyan if it is, ≢ on red if it is not, ∅ on gray while the formula is not well formed.
 
-Proposition blocks hold a sentence and a letter, and can be minimized (letter) or maximized (letter and sentence, as in "P: Motion sensor on"). Operator blocks cover the constants ⊤ and ⊥, ¬, ∧, ∨, ⊕, NAND (↑), NOR (↓), →, ←, ↔ and the parentheses.
+Proposition blocks hold a sentence and a letter, and can be minimized (letter) or maximized (letter and sentence, as in "P: I think"). Operator blocks cover the constants ⊤ and ⊥, ¬, ∧, ∨, ⊕, NAND (↑), NOR (↓), →, ←, ↔ and the parentheses.
 
 New blocks come from two palettes: the operators, in a column on the left, and the level's propositions, at the top, which double as a legend of their sentences.
 
@@ -23,8 +23,8 @@ When the formula seems as simple as it gets, the player submits it with the Subm
 
 | | |
 |---|---|
-| **Statement** | The alarm goes off if the motion, window and door sensors are all on; or if the motion and window sensors are on but the door sensor is off; or if the motion sensor is on but the window sensor is off. |
-| **Propositions** | P: Motion sensor on; Q: Window sensor on; R: Door sensor on |
+| **Statement** | I exist if I think, doubt and dream. Or if I think and doubt, but don't dream. Or if I think, but don't doubt. |
+| **Propositions** | P: I think; Q: I doubt; R: I dream |
 | **Starting formula** | `(P ∧ Q ∧ R) ∨ (P ∧ Q ∧ ¬R) ∨ (P ∧ ¬Q)` |
 | **Solution** | `P` |
 
@@ -75,7 +75,7 @@ Source/ThisIsLogic/
   UI/                UI widgets, with the logic in C++ and the layout in Widget Blueprints
   Visuals/           reusable visual components
 Content/             assets, in folders by feature
-Data/                source files of imported assets: the levels (CSV) and the font (TTF)
+Data/                source files of imported assets, the levels (CSV) and the font (TTF), and the levels in Portuguese, not imported
 Docs/                design decisions by area
 Images/              pictures shown in this README
 ```
