@@ -8,7 +8,7 @@ The player gets a statement in natural language, written as a "complex" boolean 
 
 ## How it works
 
-Each symbol of the formula is a block, and the blocks are laid out in rows, like the lines of a text. The player moves, adds and removes blocks freely. Two indicators help along the way:
+Each symbol of the formula is a block, and the blocks are laid out in rows, like the lines of a text. The player moves, adds and removes blocks freely. Below the formula, an info panel shows the level's statement, and two indicators help along the way:
 
 - **Validity:** is the sequence of blocks a well-formed formula? ✔ on cyan if it is, ✗ on red if it is not.
 - **Equivalence:** is it still equivalent to the level's starting formula? ≡ on cyan if it is, ≢ on red if it is not, ∅ on gray while the formula is not well formed.
@@ -43,6 +43,7 @@ When the formula seems as simple as it gets, the player submits it with the Subm
 - [x] Proposition palette, which doubles as a legend of the sentences and inserts propositions as the operator palette inserts operators
 - [x] Logic core: parser with the usual precedence of logic courses, evaluation and equivalence by truth table
 - [x] Validity and equivalence indicators, each a colored circle with a symbol, updated after every change
+- [x] The level's statement, shown beside the indicators and broken into lines that fit
 - [x] Win condition: a Submit button, enabled while the formula is equivalent, and a result screen; the formula wins with as few propositions and constants as the level's solution
 - [x] Progression between levels, played in sequence
 - [ ] Menu and saved progress
@@ -68,7 +69,7 @@ Requirements: Windows, Unreal Engine 5.8 and Visual Studio 2022 with the "Game d
 ```
 Source/ThisIsLogic/
   BasicComponents/   camera, player controller, settings, and the game mode, which assembles the table
-  Gameplay/          the exercise and its indicators, the formula, the palettes, the blocks and the levels
+  Gameplay/          the exercise and its info panel, the formula, the palettes, the blocks and the levels
   Input/             mouse routing interface
   Logic/             logic core, in standard C++, with the engine only for development logs
   UI/                UI widgets, with the logic in C++ and the layout in Widget Blueprints
@@ -128,13 +129,15 @@ classDiagram
 
     AExercise --> AFormula
     AExercise --> FUndoHistory
-    AExercise --> UIndicators
+    AExercise --> UInfoPanel
     AExercise --> FExpression
     AExercise ..> FFormulaAnalyzer
     AExercise ..> FFormulaParser
 
-    UIndicators --> URoundedBackgroundComponent
-    UIndicators --> FNotation
+    UInfoPanel --> UIndicator
+    UInfoPanel --> URoundedBackgroundComponent
+    UInfoPanel --> FNotation
+    UIndicator --> URoundedBackgroundComponent
 
     FFormulaParser ..> FExpression
     FExpression --> FExpression
@@ -155,14 +158,37 @@ classDiagram
     UBlockBoard --> ABlock
     UBlockBoard ..> APropositionBlock
     UBlockBoard --> URoundedBackgroundComponent
-    UBlockBoard
+    UBlockBoard ..> UThisIsLogicSettings
+    FBlockBoardRows --> FBlockRow
+    FBlockBoardRows ..> ABlock
+    FBlockRow ..> ABlock
+
+    FBlockFactory --> FNotation
+    FBlockFactory ..> ABlock
+    FBlockFactory ..> AOperatorBlock
+    FBlockFactory ..> APropositionBlock
+
+    AOperatorBlock --|> ABlock
+    APropositionBlock --|> ABlock
+    ABlock ..|> IPointerTarget
+    ABlock --> URoundedBackgroundComponent
+
+    ABackgroundTarget ..|> IPointerTarget
+    AThisIsLogicPlayerController --> IPointerTarget
+
+    UThisIsLogicSettings ..> UCommandPanel
+    UThisIsLogicSettings ..> UResultScreen
+    UCommandPanel ..> FAuxUI
+    UResultScreen ..> FAuxUI
+    WBP_CommandPanel --|> UCommandPanel
+    WBP_ResultScreen --|> UResultScreen
 ```
 
 ## License
 
 This project is licensed under the MIT License; see [LICENSE](LICENSE) for details.
 
-The font of the blocks and the indicators is DejaVu Sans Condensed Bold, distributed under its own free license; see [Data/Fonts/DejaVuSans/LICENSE](Data/Fonts/DejaVuSans/LICENSE).
+The font of the blocks and the info panel is DejaVu Sans Condensed Bold, distributed under its own free license; see [Data/Fonts/DejaVuSans/LICENSE](Data/Fonts/DejaVuSans/LICENSE).
 
 Unreal Engine is a trademark of Epic Games, Inc., and its use is governed by the [Unreal Engine EULA](https://www.unrealengine.com/eula). This repository contains no engine code.
 

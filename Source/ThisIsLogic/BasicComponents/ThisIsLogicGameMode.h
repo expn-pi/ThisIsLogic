@@ -53,7 +53,9 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 			//			FQuickTestLevel::GetSolution();
 			//		And LevelRow.Sentences with
 			//			FQuickTestLevel::GetSentences();
-
+			
+			FString StatementText = LevelRow.Statement;
+			
 			FString StartingText =
 				LevelRow.Formula;
 				//FQuickTestLevel::GetFormula();
@@ -71,7 +73,7 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 			this->CreateBackgroundTarget(Formula);
 
 			this->SpawnExercise(
-				Formula, StartingText, SolutionText
+				StatementText, StartingText, SolutionText, Formula 
 			);
 
 			this->CreatePanel(Formula);
@@ -155,7 +157,7 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 		{
 			UWorld* World = this->GetWorld();
 
-			FVector Location = FVector(1.6, 0.0, 0.0);
+			FVector Location = FVector(7.3, 0.0, 0.0);
 
 			FTransform Transform = FTransform(Location);
 
@@ -202,7 +204,8 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 
 		FTransform GetExerciseTransform() const
 		{
-			FVector Location = FVector(5.1, 20.6, 0.0);
+			FVector Location =
+				FVector(-12.3, 20.6, 0.0);
 
 			FTransform Transform = FTransform(Location);
 
@@ -210,8 +213,9 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 		}
 
 		void SpawnExercise(
-			AFormula* Formula, const FString& StartingText,
-			const FString& SolutionText
+			const FString& StatementText,
+			const FString& StartingText,
+			const FString& SolutionText, AFormula* Formula
 		)
 		{
 			UWorld* World = this->GetWorld();
@@ -245,8 +249,8 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 				Settings->GetTextMaterial();
 
 			this->Exercise->
-				SetIndicatorsAssets(
-					Material, Font, TextMaterial
+				SetInfoPanelData(
+					StatementText, Material, Font, TextMaterial
 				);
 		}
 

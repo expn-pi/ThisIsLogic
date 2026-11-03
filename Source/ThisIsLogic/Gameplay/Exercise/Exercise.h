@@ -4,7 +4,7 @@
 #include "GameFramework/Actor.h"
 #include "Components/SceneComponent.h"
 
-#include "Indicators.h"
+#include "InfoPanel.h"
 #include "UndoHistory.h"
 #include "../Formula/Formula.h"
 #include "../Block/BlockData.h"
@@ -36,14 +36,14 @@ class THISISLOGIC_API AExercise : public AActor
 
 			this->RootComponent = Root;
 
-			FName IndicatorsName = TEXT("Indicators");
+			FName InfoPanelName = TEXT("InfoPanel");
 
-			this->Indicators =
+			this->InfoPanel =
 				CreateDefaultSubobject<
-					UIndicators
-				>(IndicatorsName);
+					UInfoPanel
+				>(InfoPanelName);
 
-			this->Indicators->SetupAttachment(Root);
+			this->InfoPanel->SetupAttachment(Root);
 		}
 
 		void SetFormula(AFormula* NewFormula)
@@ -51,13 +51,17 @@ class THISISLOGIC_API AExercise : public AActor
 			this->Formula = NewFormula;
 		}
 
-		void SetIndicatorsAssets(
+		void SetInfoPanelData(
+			const FString& StatementText,
 			UMaterialInterface* Material, UFont* Font,
 			UMaterialInterface* TextMaterial
 		)
 		{
-			this->Indicators->
-				SetAssets(Material, Font, TextMaterial);
+			this->InfoPanel->
+				SetData(
+					StatementText, Material,
+					Font, TextMaterial
+				);
 		}
 
 		void SetFormulasTexts(
@@ -284,7 +288,7 @@ class THISISLOGIC_API AExercise : public AActor
 
 			this->bIsSolved = bIsEquivalent && bHasSolutionSize;
 
-			this->Indicators->Show(bIsWellFormed, bIsEquivalent);
+			this->InfoPanel->Show(bIsWellFormed, bIsEquivalent);
 
 			this->NotifyEquivalenceChanged(bIsEquivalent);
 		}
@@ -308,7 +312,7 @@ class THISISLOGIC_API AExercise : public AActor
 		TObjectPtr<AFormula> Formula;
 
 		UPROPERTY(VisibleAnywhere)
-		TObjectPtr<UIndicators> Indicators;
+		TObjectPtr<UInfoPanel> InfoPanel;
 
 		TArray<FToken> StartingTokens;
 
