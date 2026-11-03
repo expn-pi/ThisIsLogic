@@ -1,13 +1,13 @@
 Name,Statement,Formula,Sentences,Solution
-1,"Vou ao parque se fizer sol, ou então não vou.",1 OR FALSE,"(""Fez sol"")",1
-2,Só vou nessa festa se eu não estiver muito cansado... só que não.,NOT 1 AND FALSE,"(""Estou muito cansado"")",FALSE
-3,"Vou levar o guarda-chuva se chover; mas se não chover, também vou levar",1 OR NOT 1,"(""Choveu"")",TRUE
-4,Só saio da cama se tiver café ou se tiver café,1 OR 1,"(""Tem café"")",1
-5,"Vou levar esse casaco se fizer muito frio, ou muito frio com vento forte",1 OR ( 1 AND 2 ),"(""Muito frio"",""Vento forte"")",1
-6,"Só vou nesse show se eu tiver dinheiro; ou, se não tiver e alguém me emprestar.",1 OR NOT 1 AND 2,"(""Tenho dinheiro"",""Alguém me emprestou dinheiro"")",1 OR 2
-7,"A luz dessa escada só acende se o interruptor de baixo estiver ligado e o de cima não, ou se o interruptor de cima estiver ligado e o de baixo não.",1 AND NOT 2 OR NOT 1 AND 2,"(""Interruptor de baixo ligado"",""Interruptor de cima ligado"")",1 XOR 2
-8,"Vou dar a ração do gato se ele ainda estiver vivo, ou se estiver vivo e também estiver morto",1 OR 1 AND NOT 1,"(""O gato está vivo"")",1
-9,"Vamos para a praia quando for feriado e fizer sol, e também quando for feriado e não fizer sol",1 AND 2 OR 1 AND NOT 2,"(""É feriado"",""Faz sol"")",1
-10,"Eu saio sempre que não chove, ou então na sexta-feira se não estiver chovendo.",NOT 1 OR 2 AND NOT 1,"(""Chove"",""É sexta-feira"")",NOT 1
-11,"A IA só acerta se o texto não for longo, informal, em inglês ou sem exemplos, como pedi no começo, e se for em inglês, como pedi no final.",NOT ( 1 OR NOT 2 OR 3 OR NOT 4 ) AND 3,"(""É longo"",""É formal"",""É em inglês"",""Tem exemplos"")",FALSE
-12,"The alarm goes off if the motion, window and door sensors are all on; or if the motion and window sensors are on but the door sensor is off; or if the motion sensor is on but the window sensor is off.",( 1 AND 2 AND 3 ) OR ( 1 AND 2 AND NOT 3 ) OR ( 1 AND NOT 2 ),"(""Motion sensor on"",""Window sensor on"",""Door sensor on"")",1
+1,"News from the family group chat? I only believe it if there's a source. Otherwise, I don't.",1 OR FALSE,"(""There's a source"")",1
+2,"This time I'll read the terms and conditions before I hit accept, if they're not too long... not!",NOT 1 AND FALSE,"(""The terms are too long"")",FALSE
+3,"If voting is mandatory, I vote. If it isn't, I vote anyway.",1 OR NOT 1,"(""Voting is mandatory"")",TRUE
+4,I only get out of bed if there's coffee... or if there's coffee.,1 OR 1,"(""There's coffee"")",1
+5,We'll have kids when we're ready. Or when we're ready and have our own place.,1 OR ( 1 AND 2 ),"(""We're ready"",""We have our own place"")",1
+6,"The map app on my phone works when there's internet. Without internet, only if I downloaded the map ahead of time.",1 OR NOT 1 AND 2,"(""There's internet"",""I downloaded the map"")",1 OR 2
+7,"At home, the stair light comes on if the downstairs switch is on and the upstairs one isn't, or if the upstairs one is on and the downstairs one isn't.",1 AND NOT 2 OR NOT 1 AND 2,"(""Downstairs switch on"",""Upstairs switch on"")",1 XOR 2
+8,I feed the cat if it's alive. Or if it's alive and dead at the same time.,1 OR 1 AND NOT 1,"(""The cat is alive"")",1
+9,"On the logic test, you pass if you study and get lucky. And you also pass if you study and don't get lucky.",1 AND 2 OR 1 AND NOT 2,"(""You study"",""You get lucky"")",1
+10,A ball sitting still stays still if nobody kicks it. Or if it's heavy and nobody kicks it.,NOT 1 OR 2 AND NOT 1,"(""Someone kicks the ball"",""The ball is heavy"")",NOT 1
+11,"The AI gets it right if the text isn't long, informal, in English or without examples, like I asked at the start, and if it's in English, like I asked at the end.",NOT ( 1 OR NOT 2 OR 3 OR NOT 4 ) AND 3,"(""It's long"",""It's formal"",""It's in English"",""It has examples"")",FALSE
+12,"I exist if I think, doubt and dream. Or if I think and doubt, but don't dream. Or if I think, but don't doubt.",( 1 AND 2 AND 3 ) OR ( 1 AND 2 AND NOT 3 ) OR ( 1 AND NOT 2 ),"(""I think"",""I doubt"",""I dream"")",1
