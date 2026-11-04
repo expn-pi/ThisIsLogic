@@ -46,7 +46,7 @@ class THISISLOGIC_API UResultScreen :
 			{
 				Message = this->GetVictoryMessage();
 
-				SRGBColor = FColor(0xFF22D3EE);
+				SRGBColor = FColor(0xFF16D7D7);
 			}
 			else
 			{

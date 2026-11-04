@@ -65,7 +65,7 @@ class THISISLOGIC_API AOperatorBlock :
 			}
 			else
 			{
-				SRGBColor = FColor(0xFF5EB8EA);
+				SRGBColor = FColor(0xFF88C0FF);
 			}
 
 			FLinearColor BlockColor = FLinearColor(SRGBColor);

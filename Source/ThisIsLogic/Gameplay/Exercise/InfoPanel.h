@@ -460,7 +460,7 @@ class THISISLOGIC_API UInfoPanel : public USceneComponent
 
 			if (bAnswer)
 			{
-				SRGBColor = FColor(0xFF22D3EE);
+				SRGBColor = FColor(0xFF16D7D7);
 			}
 			else
 			{
@@ -474,7 +474,7 @@ class THISISLOGIC_API UInfoPanel : public USceneComponent
 
 		static FLinearColor GetNoAnswerColor()
 		{
-			FColor SRGBColor = FColor(0xFF8B949E);
+			FColor SRGBColor = FColor(0xFFBB86F2);
 
 			FLinearColor Color = FLinearColor(SRGBColor);
 
