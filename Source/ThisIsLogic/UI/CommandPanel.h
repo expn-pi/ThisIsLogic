@@ -83,6 +83,22 @@ class THISISLOGIC_API UCommandPanel :
 				BindUObject(Listener, Callback);
 		}
 
+		void SetData(const FLinearColor& SubmitColor)
+		{
+			FSlateColor OutlineColor =
+				FSlateColor(SubmitColor);
+
+			FButtonStyle Style = this->SubmitButton->GetStyle();
+
+			Style.Normal.OutlineSettings.Color = OutlineColor;
+
+			Style.Hovered.OutlineSettings.Color = OutlineColor;
+
+			Style.Pressed.OutlineSettings.Color = OutlineColor;
+
+			this->SubmitButton->SetStyle(Style);
+		}
+
 		void UpdateSelection(
 			bool bHasSelection, bool bIsPropositionSelected
 		)

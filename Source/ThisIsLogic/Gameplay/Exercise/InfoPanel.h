@@ -45,9 +45,18 @@ class THISISLOGIC_API UInfoPanel : public USceneComponent
 		void SetData(
 			const FString& NewStatementText,
 			UMaterialInterface* BaseMaterial, UFont* Font,
-			UMaterialInterface* TextMaterial
+			UMaterialInterface* TextMaterial,
+			const FLinearColor& NewYesColor,
+			const FLinearColor& NewNoColor,
+			const FLinearColor& NewNotApplicableColor
 		)
 		{
+			this->YesColor = NewYesColor;
+
+			this->NoColor = NewNoColor;
+
+			this->NotApplicableColor = NewNotApplicableColor;
+
 			this->StatementBackground->
 				SetBaseMaterial(BaseMaterial);
 
@@ -376,7 +385,7 @@ class THISISLOGIC_API UInfoPanel : public USceneComponent
 		void ShowValidity(bool bIsWellFormed)
 		{
 			FLinearColor Color =
-				UInfoPanel::GetAnswerColor(bIsWellFormed);
+				this->GetAnswerColor(bIsWellFormed);
 
 			FString Symbol =
 				UInfoPanel::GetValiditySymbol(bIsWellFormed);
@@ -389,10 +398,9 @@ class THISISLOGIC_API UInfoPanel : public USceneComponent
 		)
 		{
 			FLinearColor Color =
-				UInfoPanel::
-					GetEquivalenceColor(
-						bIsWellFormed, bIsEquivalent
-					);
+				this->GetEquivalenceColor(
+					bIsWellFormed, bIsEquivalent
+				);
 
 			FString Symbol =
 				this->GetEquivalenceSymbol(
@@ -440,45 +448,30 @@ class THISISLOGIC_API UInfoPanel : public USceneComponent
 
 		// Colors
 
-		static FLinearColor GetEquivalenceColor(
+		FLinearColor GetEquivalenceColor(
 			bool bIsWellFormed, bool bIsEquivalent
-		)
+		) const
 		{
 			if (bIsWellFormed)
 			{
-				return UInfoPanel::GetAnswerColor(bIsEquivalent);
+				return this->GetAnswerColor(bIsEquivalent);
 			}
 			else
 			{
-				return UInfoPanel::GetNoAnswerColor();
+				return this->NotApplicableColor;
 			}
 		}
 
-		static FLinearColor GetAnswerColor(bool bAnswer)
+		FLinearColor GetAnswerColor(bool bAnswer) const
 		{
-			FColor SRGBColor;
-
 			if (bAnswer)
 			{
-				SRGBColor = FColor(0xFF16D7D7);
+				return this->YesColor;
 			}
 			else
 			{
-				SRGBColor = FColor(0xFFEF4444);
+				return this->NoColor;
 			}
-
-			FLinearColor Color = FLinearColor(SRGBColor);
-
-			return Color;
-		}
-
-		static FLinearColor GetNoAnswerColor()
-		{
-			FColor SRGBColor = FColor(0xFFBB86F2);
-
-			FLinearColor Color = FLinearColor(SRGBColor);
-
-			return Color;
 		}
 
 	#pragma endregion
@@ -505,6 +498,12 @@ class THISISLOGIC_API UInfoPanel : public USceneComponent
 		FNotation Notation;
 	
 		FString StatementText;
+
+		FLinearColor YesColor;
+
+		FLinearColor NoColor;
+
+		FLinearColor NotApplicableColor;
 
 		static constexpr float CircleDiameter = 2.f;
 

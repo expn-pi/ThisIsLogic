@@ -93,6 +93,44 @@ class THISISLOGIC_API UThisIsLogicSettings :
 			return Table;
 		}
 
+		// Colors
+
+		FLinearColor GetYesColor() const
+		{
+			FColor SRGBColor = FColor(0xFF16D7D7);
+
+			FLinearColor Color = FLinearColor(SRGBColor);
+
+			return Color;
+		}
+
+		FLinearColor GetNoColor() const
+		{
+			FColor SRGBColor = FColor(0xFFEF4444);
+
+			FLinearColor Color = FLinearColor(SRGBColor);
+
+			return Color;
+		}
+
+		FLinearColor GetNotApplicableColor() const
+		{
+			FColor SRGBColor = FColor(0xFFBB86F2);
+
+			FLinearColor Color = FLinearColor(SRGBColor);
+
+			return Color;
+		}
+
+		FLinearColor GetDefeatColor() const
+		{
+			FColor SRGBColor = FColor(0xFFFF0000);
+
+			FLinearColor Color = FLinearColor(SRGBColor);
+
+			return Color;
+		}
+
 	private:
 
 		UPROPERTY(

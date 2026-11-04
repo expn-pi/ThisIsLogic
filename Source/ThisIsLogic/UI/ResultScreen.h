@@ -29,6 +29,16 @@ class THISISLOGIC_API UResultScreen :
 			this->OnOkRequested.BindUObject(Listener, Callback);
 		}
 
+		void SetData(
+			const FLinearColor& NewVictoryColor,
+			const FLinearColor& NewDefeatColor
+		)
+		{
+			this->VictoryColor = NewVictoryColor;
+
+			this->DefeatColor = NewDefeatColor;
+		}
+
 		void SetIsLastLevel(bool bNewIsLastLevel)
 		{
 			this->bIsLastLevel = bNewIsLastLevel;
@@ -40,26 +50,24 @@ class THISISLOGIC_API UResultScreen :
 
 			FString Message;
 
-			FColor SRGBColor;
+			FLinearColor OutlineColor;
 
 			if (this->bIsSolved)
 			{
 				Message = this->GetVictoryMessage();
 
-				SRGBColor = FColor(0xFF16D7D7);
+				OutlineColor = this->VictoryColor;
 			}
 			else
 			{
 				Message = "Not simple enough!\nTry again?";
 
-				SRGBColor = FColor(0xFFFF0000);
+				OutlineColor = this->DefeatColor;
 			}
 
 			FText Text = FText::FromString(Message);
 
 			this->MessageText->SetText(Text);
-
-			FLinearColor OutlineColor = FLinearColor(SRGBColor);
 
 			this->SetOutlineColor(OutlineColor);
 
@@ -165,6 +173,10 @@ class THISISLOGIC_API UResultScreen :
 		TObjectPtr<UButton> OkButton;
 
 		FOnOkRequested OnOkRequested;
+
+		FLinearColor VictoryColor;
+
+		FLinearColor DefeatColor;
 	
 		bool bIsSolved = false;
 

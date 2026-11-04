@@ -54,13 +54,18 @@ class THISISLOGIC_API AExercise : public AActor
 		void SetInfoPanelData(
 			const FString& StatementText,
 			UMaterialInterface* Material, UFont* Font,
-			UMaterialInterface* TextMaterial
+			UMaterialInterface* TextMaterial,
+			const FLinearColor& YesColor,
+			const FLinearColor& NoColor,
+			const FLinearColor& NotApplicableColor
 		)
 		{
 			this->InfoPanel->
 				SetData(
 					StatementText, Material,
-					Font, TextMaterial
+					Font, TextMaterial,
+					YesColor, NoColor,
+					NotApplicableColor
 				);
 		}
 

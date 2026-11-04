@@ -248,9 +248,17 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 			UMaterialInterface* TextMaterial =
 				Settings->GetTextMaterial();
 
+			FLinearColor YesColor = Settings->GetYesColor();
+
+			FLinearColor NoColor = Settings->GetNoColor();
+
+			FLinearColor NotApplicableColor =
+				Settings->GetNotApplicableColor();
+
 			this->Exercise->
 				SetInfoPanelData(
-					StatementText, Material, Font, TextMaterial
+					StatementText, Material, Font, TextMaterial,
+					YesColor, NoColor, NotApplicableColor
 				);
 		}
 
@@ -271,6 +279,10 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 				CreateWidget<
 					UCommandPanel
 				>(PlayerController, PanelClass);
+
+			FLinearColor SubmitColor = Settings->GetYesColor();
+
+			Panel->SetData(SubmitColor);
 
 			Formula->
 				SetSelectionChangedListener(
@@ -334,6 +346,16 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 				CreateWidget<
 					UResultScreen
 				>(PlayerController, ScreenClass);
+
+			FLinearColor VictoryColor = Settings->GetYesColor();
+
+			FLinearColor DefeatColor = Settings->GetDefeatColor();
+
+			Screen->
+				SetData(
+					VictoryColor,
+					DefeatColor
+				);
 
 			this->Exercise->
 				SetSubmittedListener(
