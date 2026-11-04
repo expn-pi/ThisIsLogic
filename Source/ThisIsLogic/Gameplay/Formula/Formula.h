@@ -9,8 +9,8 @@
 
 #include "Formula.generated.h"
 
-DECLARE_DELEGATE_TwoParams(
-	FOnFormulaSelectionChanged, bool, bool
+DECLARE_DELEGATE_ThreeParams(
+	FOnFormulaSelectionChanged, bool, bool, bool
 );
 
 DECLARE_DELEGATE(FOnFormulaChanged);
@@ -62,7 +62,7 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 		template<typename UserClass>
 		void SetSelectionChangedListener(
 			UserClass* Listener,
-			void (UserClass::* Callback)(bool, bool)
+			void (UserClass::* Callback)(bool, bool, bool)
 		)
 		{
 			this->OnSelectionChanged.
@@ -88,6 +88,8 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 		{
 			this->Board->SetAllMinimized(bMinimized);
 
+			this->NotifySelectionChanged();
+
 			this->NotifyChanged();
 		}
 
@@ -96,6 +98,8 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 			ABlock* Selected = this->SelectedBlock;
 
 			this->Board->ToggleMinimized(Selected);
+
+			this->NotifySelectionChanged();
 
 			this->NotifyChanged();
 		}
@@ -278,6 +282,23 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 		{
 			return this->SelectedBlock != nullptr;
 		}
+
+		bool IsSelectedMinimized() const
+		{
+			bool bHasSelection = this->HasSelection();
+
+			if (bHasSelection)
+			{
+				FBlockState State =
+					this->SelectedBlock->GetState();
+
+				return State.bMinimized;
+			}
+			else
+			{
+				return false;
+			}
+		}
 	
 		void NotifySelectionChanged()
 		{
@@ -288,9 +309,13 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 
 			bool bHasSelection = this->HasSelection();
 
+			bool bIsSelectedMinimized =
+				this->IsSelectedMinimized();
+
 			this->OnSelectionChanged.
 				Execute(
-					bHasSelection, this->bIsPropositionSelected
+					bHasSelection, this->bIsPropositionSelected,
+					bIsSelectedMinimized
 				);
 		}
 	

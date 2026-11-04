@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Components/Button.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/TextBlock.h"
 #include "Components/HorizontalBox.h"
 
 #include "AuxUI.h"
@@ -100,7 +101,8 @@ class THISISLOGIC_API UCommandPanel :
 		}
 
 		void UpdateSelection(
-			bool bHasSelection, bool bIsPropositionSelected
+			bool bHasSelection, bool bIsPropositionSelected,
+			bool bIsSelectedMinimized
 		)
 		{
 			this->SelectionButtonsBox->
@@ -108,6 +110,13 @@ class THISISLOGIC_API UCommandPanel :
 
 			this->ToggleMinimizedButton->
 				SetIsEnabled(bIsPropositionSelected);
+
+			if (bIsPropositionSelected)
+			{
+				this->ShowToggleMinimizedText(
+					bIsSelectedMinimized
+				);
+			}
 		}
 
 		void UpdateEquivalence(bool bIsEquivalent)
@@ -173,7 +182,9 @@ class THISISLOGIC_API UCommandPanel :
 					"OnSubmitClicked"
 				);
 			
-			this->UpdateSelection(false, false);
+			this->UpdateSelection(false, false, false);
+
+			this->ShowToggleMinimizedText(false);
 
 			this->UpdateEquivalence(false);
 		}
@@ -248,6 +259,24 @@ class THISISLOGIC_API UCommandPanel :
 			this->OnSubmitRequested.Execute();
 		}
 
+		void ShowToggleMinimizedText(bool bIsMinimized)
+		{
+			FString Text;
+
+			if (bIsMinimized)
+			{
+				Text = "Maximize";
+			}
+			else
+			{
+				Text = "Minimize";
+			}
+
+			FText ButtonText = FText::FromString(Text);
+
+			this->ToggleMinimizedText->SetText(ButtonText);
+		}
+
 		void RequestAllMinimized(bool bMinimized)
 		{
 			bool bHasAllMinimizedListener =
@@ -274,6 +303,9 @@ class THISISLOGIC_API UCommandPanel :
 	
 		UPROPERTY(meta = (BindWidget))
 		TObjectPtr<UButton> ToggleMinimizedButton;
+
+		UPROPERTY(meta = (BindWidget))
+		TObjectPtr<UTextBlock> ToggleMinimizedText;
 
 		UPROPERTY(meta = (BindWidget))
 		TObjectPtr<UButton> RemoveButton;
