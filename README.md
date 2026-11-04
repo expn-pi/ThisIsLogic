@@ -8,14 +8,14 @@ The player gets a statement in natural language, written as a "complex" boolean 
 
 ## How it works
 
-Each symbol of the formula is a block, and the blocks are laid out in rows, like the lines of a text. The player moves, adds and removes blocks freely. Below the formula, an info panel shows the level's statement, and two indicators help along the way:
+Each symbol of the formula is a block, and the blocks are laid out in rows, like the lines of a text. The player moves, adds and removes blocks freely. At the top of the table, an info panel shows the level's statement, and two indicators help along the way:
 
 - **Validity:** is the sequence of blocks a well-formed formula? ✔ on cyan if it is, ✗ on red if it is not.
-- **Equivalence:** is it still equivalent to the level's starting formula? ≡ on cyan if it is, ≢ on red if it is not, ∅ on gray while the formula is not well formed.
+- **Equivalence:** is it still equivalent to the level's starting formula? ≡ on cyan if it is, ≢ on red if it is not, ∅ on purple while the formula is not well formed. The formula's outline takes the same color.
 
 Proposition blocks hold a sentence and a letter, and can be minimized (letter) or maximized (letter and sentence, as in "P: I think"). Operator blocks cover the constants ⊤ and ⊥, ¬, ∧, ∨, ⊕, NAND (↑), NOR (↓), →, ←, ↔ and the parentheses.
 
-New blocks come from two palettes: the operators, in a column on the left, and the level's propositions, at the top, which double as a legend of their sentences.
+New blocks come from two palettes: the operators, in a column on the left, and the level's propositions, between the info panel and the formula, which double as a legend of their sentences.
 
 When the formula seems as simple as it gets, the player submits it with the Submit button, which works only while the formula is equivalent. It wins if it has as few propositions and constants as the level's solution, and the next level opens; otherwise the player loses, and the level starts over.
 
@@ -38,7 +38,7 @@ When the formula seems as simple as it gets, the player submits it with the Subm
 - [x] Levels loaded from a data table
 - [x] Command panel to minimize or maximize propositions, remove the selected block, undo any command and restart the level
 - [x] Camera that frames the table on windows of any shape
-- [x] A readable table: high-contrast colors, a bold, condensed font, the parentheses in gray, a background behind each group of blocks and an outline that marks the selected block
+- [x] A readable table: high-contrast colors, a bold, condensed font, the parentheses in gray, a background behind each group of blocks, an outline that marks the selected block and an outline on the formula that follows the equivalence indicator
 - [x] Operator palette: a tap inserts an operator after the selected block, like typing in a text editor, or at the start of the formula; a long press inserts it before the selected block, or at the end
 - [x] Proposition palette, which doubles as a legend of the sentences and inserts propositions as the operator palette inserts operators
 - [x] Logic core: parser with the usual precedence of logic courses, evaluation and equivalence by truth table
