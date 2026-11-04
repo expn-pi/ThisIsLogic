@@ -243,10 +243,12 @@ class THISISLOGIC_API UInfoPanel : public USceneComponent
 		{
 			float Margin = UInfoPanel::BackgroundMargin;
 
-			float RightY = -IndicatorsWidth - Margin;
+			float Gap = UInfoPanel::CircleDiameter * 0.15f;
+
+			float RightY = -IndicatorsWidth - Gap;
 
 			float Width =
-				UInfoPanel::PanelWidth - IndicatorsWidth - Margin;
+				UInfoPanel::PanelWidth - IndicatorsWidth - Gap;
 
 			float CenterY = RightY - Width * 0.5f;
 

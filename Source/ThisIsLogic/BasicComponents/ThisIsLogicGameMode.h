@@ -157,7 +157,7 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 		{
 			UWorld* World = this->GetWorld();
 
-			FVector Location = FVector(7.3, 0.0, 0.0);
+			FVector Location = FVector(1.6, 0.0, 0.0);
 
 			FTransform Transform = FTransform(Location);
 
@@ -205,7 +205,7 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 		FTransform GetExerciseTransform() const
 		{
 			FVector Location =
-				FVector(-12.3, 20.6, 0.0);
+				FVector(11.9, 20.6, 0.0);
 
 			FTransform Transform = FTransform(Location);
 
@@ -441,7 +441,7 @@ class THISISLOGIC_API AThisIsLogicGameMode :
 		{
 			UWorld* World = this->GetWorld();
 
-			FVector Location = FVector(13.0, 0.0, 0.0);
+			FVector Location = FVector(7.3, 0.0, 0.0);
 
 			FTransform Transform = FTransform(Location);
 
