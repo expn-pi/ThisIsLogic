@@ -75,6 +75,12 @@ class THISISLOGIC_API APalette : public AAbstractBlocksManager
 			return APalette::RowHeightRatio;
 		}
 
+		virtual float GetOutlineThicknessRatio() const
+			override
+		{
+			return APalette::OutlineThicknessRatio;
+		}
+
 		virtual void OnBlockTapped(ABlock* Block) override
 		{
 			this->RequestInsert(Block);
@@ -119,4 +125,6 @@ class THISISLOGIC_API APalette : public AAbstractBlocksManager
 		FOnPaletteInsertBeforeRequested OnInsertBeforeRequested;
 
 		static constexpr double RowHeightRatio = 1.1;
+
+		static constexpr float OutlineThicknessRatio = 0.f;
 };

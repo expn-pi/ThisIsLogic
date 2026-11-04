@@ -43,12 +43,16 @@ class THISISLOGIC_API AAbstractBlocksManager : public AActor
 			int32 BackgroundRowCount =
 				this->GetBackgroundRowCount();
 
+			float OutlineThicknessRatio =
+				this->GetOutlineThicknessRatio();
+
 			this->Board->
 				SetData(
 					RowHeightRatio,
 					AAbstractBlocksManager::BlockHeight,
 					MaxRowWidth,
-					BackgroundRowCount
+					BackgroundRowCount,
+					OutlineThicknessRatio
 				);
 		}
 
@@ -80,6 +84,13 @@ class THISISLOGIC_API AAbstractBlocksManager : public AActor
 			unimplemented();
 
 			return 0;
+		}
+
+		virtual float GetOutlineThicknessRatio() const
+		{
+			unimplemented();
+
+			return 0.f;
 		}
 	
 		virtual void OnBlockTapped(ABlock* Block)

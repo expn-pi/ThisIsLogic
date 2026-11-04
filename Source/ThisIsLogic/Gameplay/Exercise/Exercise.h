@@ -295,6 +295,14 @@ class THISISLOGIC_API AExercise : public AActor
 
 			this->InfoPanel->Show(bIsWellFormed, bIsEquivalent);
 
+			FLinearColor OutlineColor =
+				this->InfoPanel->
+					GetEquivalenceColor(
+						bIsWellFormed, bIsEquivalent
+					);
+
+			this->Formula->SetOutlineColor(OutlineColor);
+
 			this->NotifyEquivalenceChanged(bIsEquivalent);
 		}
 
