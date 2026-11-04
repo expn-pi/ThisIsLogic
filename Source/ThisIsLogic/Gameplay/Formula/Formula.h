@@ -77,6 +77,11 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 			this->OnChanged.BindUObject(Listener, Callback);
 		}
 
+		void SetOutlineColor(const FLinearColor& Color)
+		{
+			this->Board->SetOutlineColor(Color);
+		}
+
 		void ClearSelection()
 		{
 			this->DeselectBlock();
@@ -225,6 +230,12 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 			return AFormula::BackgroundRowCount;
 		}
 
+		virtual float GetOutlineThicknessRatio() const
+			override
+		{
+			return AFormula::OutlineThicknessRatio;
+		}
+
 	#pragma endregion
 	
 	#pragma region PrivateMethods
@@ -344,6 +355,8 @@ class THISISLOGIC_API AFormula : public AAbstractBlocksManager
 		static constexpr double RowHeightRatio = 1.5;
 	
 		static constexpr int32 BackgroundRowCount = 6;
+
+		static constexpr float OutlineThicknessRatio = 0.06f;
 	
 	#pragma endregion
 };

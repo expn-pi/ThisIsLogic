@@ -37,6 +37,20 @@ class THISISLOGIC_API UBlockBoard : public USceneComponent
 				SetCollisionEnabled(
 					ECollisionEnabled::NoCollision
 				);
+
+			FName OutlineName = TEXT("Outline");
+
+			this->Outline =
+				CreateDefaultSubobject<
+					URoundedBackgroundComponent
+				>(OutlineName);
+
+			this->Outline->SetupAttachment(this);
+
+			this->Outline->
+				SetCollisionEnabled(
+					ECollisionEnabled::NoCollision
+				);
 		}
 	
 		void SetOrigin(const FVector& Origin)
@@ -46,7 +60,8 @@ class THISISLOGIC_API UBlockBoard : public USceneComponent
 
 		void SetData(
 			double RowHeightRatio, float BlockHeight,
-			double MaxRowWidth, int32 BackgroundRowCount
+			double MaxRowWidth, int32 BackgroundRowCount,
+			float OutlineThicknessRatio
 		)
 		{
 			this->Rows.
@@ -77,8 +92,14 @@ class THISISLOGIC_API UBlockBoard : public USceneComponent
 				);
 
 			this->BuildBackground(
-				BackgroundWidth, BackgroundHeight, BlockHeight
+				BackgroundWidth, BackgroundHeight,
+				BlockHeight, OutlineThicknessRatio
 			);
+		}
+
+		void SetOutlineColor(const FLinearColor& Color)
+		{
+			this->Outline->ChangeColor(Color);
 		}
 	
 		void SetSentences(
@@ -311,9 +332,23 @@ class THISISLOGIC_API UBlockBoard : public USceneComponent
 	private:
 		
 		void BuildBackground(
-			float Width, float Height, float BlockHeight
+			float Width, float Height, float BlockHeight,
+			float OutlineThicknessRatio
 		)
 		{
+			float Thickness = BlockHeight * OutlineThicknessRatio;
+
+			float Border = Thickness * 2.f;
+
+			float InnerWidth = Width - Border;
+
+			float InnerHeight = Height - Border;
+
+			float CornerRadius =
+				BlockHeight * UBlockBoard::BackgroundRadiusRatio;
+
+			float InnerRadius = CornerRadius - Thickness;
+
 			this->Background->
 				SetBaseMaterial(this->BlockMaterial);
 
@@ -324,17 +359,45 @@ class THISISLOGIC_API UBlockBoard : public USceneComponent
 
 			this->Background->SetColor(BackgroundColor);
 
-			float CornerRadius =
-				BlockHeight * UBlockBoard::BackgroundRadiusRatio;
+			this->Background->SetCornerRadius(InnerRadius);
 
-			this->Background->SetCornerRadius(CornerRadius);
-
-			this->Background->Build(Width, Height);
+			this->Background->Build(InnerWidth, InnerHeight);
 
 			FVector Location =
 				this->GetBackgroundLocation(Height, BlockHeight);
 
 			this->Background->SetRelativeLocation(Location);
+
+			bool bHasOutline = Thickness > 0.f;
+
+			if (bHasOutline)
+			{
+				this->BuildOutline(
+					Width, Height, CornerRadius, BlockHeight
+				);
+			}
+		}
+
+		void BuildOutline(
+			float Width, float Height, float CornerRadius,
+			float BlockHeight
+		)
+		{
+			this->Outline->SetBaseMaterial(this->BlockMaterial);
+
+			this->Outline->SetCornerRadius(CornerRadius);
+
+			this->Outline->Build(Width, Height);
+
+			FVector Location =
+				this->GetBackgroundLocation(Height, BlockHeight);
+
+			float Depth =
+				BlockHeight * UBlockBoard::OutlineDepthRatio;
+
+			Location.Z = -Depth;
+
+			this->Outline->SetRelativeLocation(Location);
 		}
 
 		float GetBackgroundMargin(float BlockHeight) const
@@ -534,6 +597,9 @@ class THISISLOGIC_API UBlockBoard : public USceneComponent
 		UPROPERTY(VisibleAnywhere)
 		TObjectPtr<URoundedBackgroundComponent> Background;
 
+		UPROPERTY(VisibleAnywhere)
+		TObjectPtr<URoundedBackgroundComponent> Outline;
+
 		UPROPERTY()
 		TObjectPtr<UFont> BlockFont;
 
@@ -564,6 +630,8 @@ class THISISLOGIC_API UBlockBoard : public USceneComponent
 		static constexpr float BackgroundRadiusRatio = 0.4f;
 
 		static constexpr float BackgroundDepthRatio = 0.1f;
+
+		static constexpr float OutlineDepthRatio = 0.15f;
 
 	#pragma endregion
 };

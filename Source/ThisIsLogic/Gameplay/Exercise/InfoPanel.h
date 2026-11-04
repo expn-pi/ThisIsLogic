@@ -93,6 +93,20 @@ class THISISLOGIC_API UInfoPanel : public USceneComponent
 			this->ShowEquivalence(bIsWellFormed, bIsEquivalent);
 		}
 
+		FLinearColor GetEquivalenceColor(
+			bool bIsWellFormed, bool bIsEquivalent
+		) const
+		{
+			if (bIsWellFormed)
+			{
+				return this->GetAnswerColor(bIsEquivalent);
+			}
+			else
+			{
+				return this->NotApplicableColor;
+			}
+		}
+
 	#pragma endregion
 
 	protected:
@@ -447,20 +461,6 @@ class THISISLOGIC_API UInfoPanel : public USceneComponent
 		}
 
 		// Colors
-
-		FLinearColor GetEquivalenceColor(
-			bool bIsWellFormed, bool bIsEquivalent
-		) const
-		{
-			if (bIsWellFormed)
-			{
-				return this->GetAnswerColor(bIsEquivalent);
-			}
-			else
-			{
-				return this->NotApplicableColor;
-			}
-		}
 
 		FLinearColor GetAnswerColor(bool bAnswer) const
 		{
